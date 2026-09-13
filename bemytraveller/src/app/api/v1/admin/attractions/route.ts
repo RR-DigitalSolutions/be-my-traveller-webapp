@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 export async function GET(req: NextRequest) {
   try {
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       ];
     }
     if (destinationId) {
-      query.destinationId = new ObjectId(destinationId);
+      query.destinationId = new Types.ObjectId(destinationId);
     }
     if (destinationSlug) {
       query.destinationSlug = destinationSlug;
@@ -92,14 +92,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve destination details if ID is provided
-    let finalDestId = destinationId ? new ObjectId(destinationId) : undefined;
+    let finalDestId = destinationId ? new Types.ObjectId(destinationId) : undefined;
     let finalDestSlug = destinationSlug || "";
     let finalDestName = destinationName || "";
     let finalStateSlug = stateSlug || "";
     let finalStateName = stateName || "";
 
     if (destinationId) {
-      const dest = await db.collection("destinations").findOne({ _id: new ObjectId(destinationId) });
+      const dest = await db.collection("destinations").findOne({ _id: new Types.ObjectId(destinationId) });
       if (dest) {
         finalDestSlug = dest.slug;
         finalDestName = dest.name;

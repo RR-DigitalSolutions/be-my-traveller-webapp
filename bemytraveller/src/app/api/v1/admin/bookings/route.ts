@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 export async function GET(req: NextRequest) {
   try {
@@ -109,7 +109,7 @@ export async function PATCH(req: NextRequest) {
     if (paymentStatus !== undefined) updateDoc.paymentStatus = paymentStatus;
     if (status !== undefined) updateDoc.status = status;
 
-    await db.collection("bookings").updateOne({ _id: new ObjectId(id) }, { $set: updateDoc });
+    await db.collection("bookings").updateOne({ _id: new Types.ObjectId(id) }, { $set: updateDoc });
 
     return NextResponse.json({ success: true, message: "Booking updated" });
   } catch (error) {

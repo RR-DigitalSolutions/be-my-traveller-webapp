@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
+type ObjectIdType = Types.ObjectId;
 
 export async function GET(req: NextRequest) {
   try {
@@ -33,15 +34,15 @@ export async function GET(req: NextRequest) {
       ];
     }
     if (countryId) {
-      if (ObjectId.isValid(countryId)) {
-        query.countryId = new ObjectId(countryId);
+      if (Types.ObjectId.isValid(countryId)) {
+        query.countryId = new Types.ObjectId(countryId);
       } else {
         query.countrySlug = countryId.toLowerCase();
       }
     }
     if (stateId) {
-      if (ObjectId.isValid(stateId)) {
-        query.stateId = new ObjectId(stateId);
+      if (Types.ObjectId.isValid(stateId)) {
+        query.stateId = new Types.ObjectId(stateId);
       } else {
         query.stateSlug = stateId.toLowerCase();
       }
@@ -141,17 +142,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve parent metadata if passed
-    let finalCountryId: ObjectId | undefined = undefined;
+    let finalCountryId: ObjectIdType | undefined = undefined;
     let finalCountrySlug = countrySlug;
     let finalCountryName = countryName;
 
-    let finalStateId: ObjectId | undefined = undefined;
+    let finalStateId: ObjectIdType | undefined = undefined;
     let finalStateSlug = stateSlug;
     let finalStateName = stateName;
 
     if (countryId) {
-      if (ObjectId.isValid(countryId)) {
-        finalCountryId = new ObjectId(countryId);
+      if (Types.ObjectId.isValid(countryId)) {
+        finalCountryId = new Types.ObjectId(countryId);
         const parentCountry = await db.collection("destinations").findOne({ _id: finalCountryId });
         if (parentCountry) {
           finalCountrySlug = parentCountry.slug;
@@ -171,8 +172,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (stateId) {
-      if (ObjectId.isValid(stateId)) {
-        finalStateId = new ObjectId(stateId);
+      if (Types.ObjectId.isValid(stateId)) {
+        finalStateId = new Types.ObjectId(stateId);
         const parentState = await db.collection("destinations").findOne({ _id: finalStateId });
         if (parentState) {
           finalStateSlug = parentState.slug;

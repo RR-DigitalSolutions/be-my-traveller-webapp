@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 export async function PATCH(
   req: NextRequest,
@@ -24,7 +24,7 @@ export async function PATCH(
     delete updateDoc._id;
 
     await db.collection("blogs").updateOne(
-      { _id: new ObjectId(id) },
+      { _id: new Types.ObjectId(id) },
       { $set: updateDoc }
     );
 
@@ -50,7 +50,7 @@ export async function DELETE(
     const db = mongoose.connection.db;
     if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 500 });
 
-    await db.collection("blogs").deleteOne({ _id: new ObjectId(id) });
+    await db.collection("blogs").deleteOne({ _id: new Types.ObjectId(id) });
     return NextResponse.json({ success: true, message: "Blog deleted" });
   } catch (error) {
     console.error("[Blog DELETE error]:", error);

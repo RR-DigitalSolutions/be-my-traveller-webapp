@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 export async function GET(
   _req: NextRequest,
@@ -18,7 +18,7 @@ export async function GET(
     const db = mongoose.connection.db;
     if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 500 });
 
-    const destination = await db.collection("destinations").findOne({ _id: new ObjectId(id) });
+    const destination = await db.collection("destinations").findOne({ _id: new Types.ObjectId(id) });
     if (!destination) {
       return NextResponse.json({ error: "Destination not found" }, { status: 404 });
     }
@@ -58,9 +58,9 @@ export async function PATCH(
     }
 
     if (body.countryId) {
-      if (ObjectId.isValid(body.countryId)) {
-        updateDoc.countryId = new ObjectId(body.countryId);
-        const parentCountry = await db.collection("destinations").findOne({ _id: new ObjectId(body.countryId) });
+      if (Types.ObjectId.isValid(body.countryId)) {
+        updateDoc.countryId = new Types.ObjectId(body.countryId);
+        const parentCountry = await db.collection("destinations").findOne({ _id: new Types.ObjectId(body.countryId) });
         if (parentCountry) {
           updateDoc.countrySlug = parentCountry.slug;
           updateDoc.countryName = parentCountry.name;
@@ -79,9 +79,9 @@ export async function PATCH(
     }
 
     if (body.stateId) {
-      if (ObjectId.isValid(body.stateId)) {
-        updateDoc.stateId = new ObjectId(body.stateId);
-        const parentState = await db.collection("destinations").findOne({ _id: new ObjectId(body.stateId) });
+      if (Types.ObjectId.isValid(body.stateId)) {
+        updateDoc.stateId = new Types.ObjectId(body.stateId);
+        const parentState = await db.collection("destinations").findOne({ _id: new Types.ObjectId(body.stateId) });
         if (parentState) {
           updateDoc.stateSlug = parentState.slug;
           updateDoc.stateName = parentState.name;
@@ -111,9 +111,9 @@ export async function PATCH(
       updateDoc.coverImageStr = body.coverImage;
     }
 
-    if (ObjectId.isValid(id)) {
+    if (Types.ObjectId.isValid(id)) {
       await db.collection("destinations").updateOne(
-        { _id: new ObjectId(id) },
+        { _id: new Types.ObjectId(id) },
         { $set: updateDoc }
       );
     } else {
@@ -123,8 +123,8 @@ export async function PATCH(
       );
     }
 
-    const updatedDestination = ObjectId.isValid(id)
-      ? await db.collection("destinations").findOne({ _id: new ObjectId(id) })
+    const updatedDestination = Types.ObjectId.isValid(id)
+      ? await db.collection("destinations").findOne({ _id: new Types.ObjectId(id) })
       : await db.collection("destinations").findOne({ slug: id });
 
     return NextResponse.json({ success: true, destination: updatedDestination, message: "Destination updated successfully" });
@@ -149,7 +149,7 @@ export async function DELETE(
     const db = mongoose.connection.db;
     if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 500 });
 
-    await db.collection("destinations").deleteOne({ _id: new ObjectId(id) });
+    await db.collection("destinations").deleteOne({ _id: new Types.ObjectId(id) });
     return NextResponse.json({ success: true, message: "Destination deleted" });
   } catch (error) {
     console.error("[Destination DELETE error]:", error);

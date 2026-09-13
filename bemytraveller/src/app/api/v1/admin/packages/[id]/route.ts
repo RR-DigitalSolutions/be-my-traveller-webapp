@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/mongoose";
 import { auth } from "@/lib/auth/auth";
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 
 export async function GET(
   _req: NextRequest,
@@ -19,8 +19,8 @@ export async function GET(
     if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 500 });
 
     let pkg = null;
-    if (ObjectId.isValid(id)) {
-      pkg = await db.collection("packages").findOne({ _id: new ObjectId(id) });
+    if (Types.ObjectId.isValid(id)) {
+      pkg = await db.collection("packages").findOne({ _id: new Types.ObjectId(id) });
     }
     if (!pkg) {
       pkg = await db.collection("packages").findOne({ slug: id });
@@ -108,7 +108,7 @@ export async function PATCH(
       updateDoc.coverImageStr = body.coverImage;
     }
 
-    const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { slug: id };
+    const filter = Types.ObjectId.isValid(id) ? { _id: new Types.ObjectId(id) } : { slug: id };
 
     await db.collection("packages").updateOne(filter, { $set: updateDoc });
 
@@ -140,7 +140,7 @@ export async function DELETE(
     const db = mongoose.connection.db;
     if (!db) return NextResponse.json({ error: "DB unavailable" }, { status: 500 });
 
-    const filter = ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { slug: id };
+    const filter = Types.ObjectId.isValid(id) ? { _id: new Types.ObjectId(id) } : { slug: id };
     await db.collection("packages").deleteOne(filter);
 
     return NextResponse.json({ success: true, message: "Package deleted successfully" });
