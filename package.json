@@ -1,0 +1,12 @@
+{
+  "name": "be-my-traveller-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix bemytraveller",
+    "build": "npm run build --prefix bemytraveller",
+    "start": "npm run start --prefix bemytraveller",
+    "lint": "npm run lint --prefix bemytraveller",
+    "type-check": "npm run type-check --prefix bemytraveller"
+  }
+}

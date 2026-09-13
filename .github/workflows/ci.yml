@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging, develop]
+
+jobs:
+  ci:
+    name: Type Check · Lint · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: bemytraveller/package-lock.json
+
+      - name: Install dependencies
+        working-directory: bemytraveller
+        run: npm ci
+
+      - name: TypeScript type check
+        working-directory: bemytraveller
+        run: npm run type-check
+
+      - name: ESLint
+        working-directory: bemytraveller
+        run: npm run lint
+
+      - name: Build
+        working-directory: bemytraveller
+        run: npm run build
+        env:
+          # Provide stub values so build doesn't fail on missing env vars
+          MONGODB_URI: mongodb://localhost:27017/bemytraveller_test
+          AUTH_SECRET: ci-build-secret-stub-32-characters!!
+          NEXT_PUBLIC_R2_PUBLIC_URL: https://cdn.example.com
+          R2_ACCOUNT_ID: test
+          R2_ACCESS_KEY_ID: test
+          R2_SECRET_ACCESS_KEY: test
+          R2_BUCKET_NAME: test
