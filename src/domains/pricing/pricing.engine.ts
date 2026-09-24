@@ -8,6 +8,7 @@
 // ============================================================
 
 import connectDB from "@/lib/db/mongoose";
+import { formatINR } from "@/lib/utils";
 import { PricingRuleModel } from "./pricing-rule.model";
 import { CouponModel } from "./coupon.model";
 import { TaxRuleModel } from "./tax-rule.model";
@@ -116,7 +117,7 @@ export class PricingEngine {
     items.push({
       type: "BASE",
       name: "Base Package Price",
-      description: `${adults} adult${adults > 1 ? "s" : ""} × ₹${pricePerAdult.toLocaleString()}`,
+      description: `${adults} adult${adults > 1 ? "s" : ""} × ${formatINR(pricePerAdult)}`,
       quantity: adults,
       unitPrice: pricePerAdult,
       totalPrice: baseAdultTotal,

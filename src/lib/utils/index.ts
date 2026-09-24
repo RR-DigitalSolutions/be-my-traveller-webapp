@@ -15,15 +15,25 @@ export function slugify(text: string): string {
 }
 
 /**
+ * Safely coerce values to a finite number.
+ * Avoids null/undefined/NaN crashes when pricing data is missing.
+ */
+export function safeNumber(value: number | string | null | undefined, fallback = 0): number {
+  const parsed = Number(value ?? fallback);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+/**
  * Format a number as Indian currency.
  * Example: 48000 → "₹48,000"
  */
-export function formatINR(amount: number): string {
+export function formatINR(amount: number | string | null | undefined, fallback = 0): string {
+  const safeAmount = safeNumber(amount, fallback);
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 /**

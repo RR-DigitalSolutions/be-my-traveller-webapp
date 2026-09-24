@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface HotelItem {
   _id: string;
@@ -180,7 +181,7 @@ export default function AdminHotelsPage() {
                 <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Contract Base Rate</span>
-                    <p className="text-sm font-black text-amber-400">₹{h.basePricePerNight.toLocaleString("en-IN")} <span className="text-[10px] text-slate-400 font-normal">/ night</span></p>
+                    <p className="text-sm font-black text-amber-400">{formatINR(h.basePricePerNight)} <span className="text-[10px] text-slate-400 font-normal">/ night</span></p>
                   </div>
                   <button
                     onClick={() => handleDelete(h._id, h.name)}

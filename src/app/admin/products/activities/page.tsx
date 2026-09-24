@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface ActivityItem {
   _id: string;
@@ -156,10 +157,10 @@ export default function AdminActivitiesPage() {
                     ⏱ {a.duration}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-white">
-                    ₹{a.adultPrice.toLocaleString("en-IN")}
+                    {formatINR(a.adultPrice)}
                   </td>
                   <td className="py-3.5 px-4 font-bold text-slate-400">
-                    ₹{a.childPrice.toLocaleString("en-IN")}
+                    {formatINR(a.childPrice)}
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <button

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import { formatINR } from "@/lib/utils";
 
 export interface SeasonalHikePeriod {
   id?: string;
@@ -254,7 +255,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   )}
                   {savingsPerAdult > 0 && (
                     <span className="bg-slate-900/90 text-amber-300 text-[11px] font-black px-2.5 py-1 rounded-full shadow-md backdrop-blur-xs flex items-center gap-1 border border-amber-500/30">
-                      <span>💰 Save ₹{Number(savingsPerAdult).toLocaleString("en-IN")}/adult</span>
+                      <span>💰 Save {formatINR(savingsPerAdult)}/adult</span>
                     </span>
                   )}
                 </div>
@@ -392,16 +393,16 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                         </div>
                         <div className="flex items-baseline gap-1.5">
                           <p className="text-amber-600 font-black text-lg">
-                            ₹{Number(tierRate).toLocaleString("en-IN")}
+                            {formatINR(tierRate)}
                             <span className="text-[10px] font-normal text-slate-500"> / adult</span>
                           </p>
                           <span className="text-[10.5px] text-slate-400 line-through">
-                            ₹{Number(tierOrig).toLocaleString("en-IN")}
+                            {formatINR(tierOrig)}
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap gap-1">
                           <span className="text-[9.5px] font-black uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                            Save ₹{Number(tierSav).toLocaleString("en-IN")} ({activeDiscountPercent}% OFF)
+                            Save {formatINR(tierSav)} ({activeDiscountPercent}% OFF)
                           </span>
                           {activePeakHike && (
                             <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300/50">
@@ -591,7 +592,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   {tierOriginalPrice > unitPrice && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-slate-400 line-through">
-                        ₹{Number(tierOriginalPrice).toLocaleString("en-IN")}
+                        {formatINR(tierOriginalPrice)}
                       </span>
                       <span className="text-[9.5px] font-black uppercase text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
                         {activeDiscountPercent}% OFF
@@ -602,7 +603,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
 
                 <div className="flex items-baseline gap-2 pt-1">
                   <span className="text-3xl font-black text-slate-900">
-                    ₹{Number(unitPrice).toLocaleString("en-IN")}
+                    {formatINR(unitPrice)}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">/ adult</span>
                 </div>
@@ -691,35 +692,35 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                         <span>🎉</span>
                         <span>Instant Savings Applied</span>
                       </span>
-                      <span>-₹{Number(totalSavings).toLocaleString("en-IN")} ({activeDiscountPercent}% OFF)</span>
+                      <span>-{formatINR(totalSavings)} ({activeDiscountPercent}% OFF)</span>
                     </div>
                   )}
                   <div className="flex justify-between text-slate-500 line-through">
                     <span>Standard Total Value</span>
-                    <span>₹{Number(originalSubtotal).toLocaleString("en-IN")}</span>
+                    <span>{formatINR(originalSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-slate-700 font-medium">
-                    <span>{adults} Adults × ₹{Number(unitPrice).toLocaleString("en-IN")}</span>
-                    <span className="font-semibold">₹{Number(unitPrice * adults).toLocaleString("en-IN")}</span>
+                    <span>{adults} Adults × {formatINR(unitPrice)}</span>
+                    <span className="font-semibold">{formatINR(unitPrice * adults)}</span>
                   </div>
                   {children > 0 && (
                     <div className="flex justify-between text-slate-700 font-medium">
-                      <span>{children} Child × ₹{Number(childPrice).toLocaleString("en-IN")}</span>
-                      <span className="font-semibold">₹{Number(childPrice * children).toLocaleString("en-IN")}</span>
+                      <span>{children} Child × {formatINR(childPrice)}</span>
+                      <span className="font-semibold">{formatINR(childPrice * children)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-slate-600">
                     <span>GST (5%)</span>
-                    <span className="font-semibold">₹{Number(gst).toLocaleString("en-IN")}</span>
+                    <span className="font-semibold">{formatINR(gst)}</span>
                   </div>
                   <div className="flex justify-between text-slate-900 font-black text-sm pt-1.5 border-t border-slate-200">
                     <div>
                       <span>Total Quoted Cost</span>
                       {totalSavings > 0 && (
-                        <span className="block text-[10px] text-emerald-600 font-bold">You save ₹{Number(totalSavings).toLocaleString("en-IN")}</span>
+                        <span className="block text-[10px] text-emerald-600 font-bold">You save {formatINR(totalSavings)}</span>
                       )}
                     </div>
-                    <span className="text-amber-600 font-black text-base">₹{Number(total).toLocaleString("en-IN")}</span>
+                    <span className="text-amber-600 font-black text-base">{formatINR(total)}</span>
                   </div>
                 </div>
               </div>
@@ -737,9 +738,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
 
                 <a
                   href={`https://wa.me/919876543210?text=${encodeURIComponent(
-                    `Hi Be My Traveller! I'm interested in booking the "${pkg.title}" with ${activeTierData.title} accommodation for ${adults} Adults on ${travelDate}. Estimated total: ₹${total.toLocaleString(
-                      "en-IN"
-                    )}.`
+                    `Hi Be My Traveller! I'm interested in booking the "${pkg.title}" with ${activeTierData.title} accommodation for ${adults} Adults on ${travelDate}. Estimated total: ${formatINR(total)}.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -820,7 +819,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                     Plan Your {pkg.title}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {adults} Adults · {children} Children · {activeTierData.title} · Est. ₹{total.toLocaleString("en-IN")}
+                    {adults} Adults · {children} Children · {activeTierData.title} · Est. {formatINR(total)}
                   </p>
                 </div>
 

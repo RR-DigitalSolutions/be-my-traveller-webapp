@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface BookingItem {
   _id: string;
@@ -122,7 +123,7 @@ export default function AdminBookingsPage() {
                     </p>
                   </td>
                   <td className="py-3.5 px-4">
-                    <p className="font-black text-white text-sm">₹{b.paidAmount.toLocaleString("en-IN")}</p>
+                    <p className="font-black text-white text-sm">{formatINR(b.paidAmount)}</p>
                     <span
                       className={`text-[10px] font-bold ${
                         b.paidAmount >= b.totalAmount ? "text-emerald-400" : "text-amber-400"

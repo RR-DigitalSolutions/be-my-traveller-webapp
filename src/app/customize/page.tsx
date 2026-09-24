@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import { formatINR } from "@/lib/utils";
 
 export default function CustomTripBuilderPage() {
   const [selectedDestination, setSelectedDestination] = useState("Himachal Pradesh");
@@ -270,24 +271,24 @@ export default function CustomTripBuilderPage() {
               <div className="space-y-2 text-xs text-slate-600">
                 <div className="flex justify-between">
                   <span>Hotel Stay ({durationNights} Nights)</span>
-                  <span className="font-bold text-slate-900">₹{hotelCost.toLocaleString("en-IN")}</span>
+                  <span className="font-bold text-slate-900">{formatINR(hotelCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Private Cab ({durationNights + 1} Days)</span>
-                  <span className="font-bold text-slate-900">₹{cabCost.toLocaleString("en-IN")}</span>
+                  <span className="font-bold text-slate-900">{formatINR(cabCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Add-ons ({selectedAddons.length} selected)</span>
-                  <span className="font-bold text-slate-900">₹{addonsCost.toLocaleString("en-IN")}</span>
+                  <span className="font-bold text-slate-900">{formatINR(addonsCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Government GST (5%)</span>
-                  <span className="font-bold text-slate-900">₹{gst.toLocaleString("en-IN")}</span>
+                  <span className="font-bold text-slate-900">{formatINR(gst)}</span>
                 </div>
 
                 <div className="pt-2.5 border-t border-slate-200 flex justify-between text-base font-black text-slate-900">
                   <span>Grand Total</span>
-                  <span className="text-amber-600">₹{totalCalculated.toLocaleString("en-IN")}</span>
+                  <span className="text-amber-600">{formatINR(totalCalculated)}</span>
                 </div>
               </div>
 
@@ -314,7 +315,7 @@ export default function CustomTripBuilderPage() {
                     type="submit"
                     className="w-full py-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
                   >
-                    Lock Quote & Book (₹{totalCalculated.toLocaleString("en-IN")}) →
+                    Lock Quote & Book ({formatINR(totalCalculated)}) →
                   </button>
                 </form>
               )}

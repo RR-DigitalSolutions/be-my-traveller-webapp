@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface QuoteItem {
   _id: string;
@@ -93,7 +94,7 @@ export default function AdminQuotesPage() {
       `👥 *Travelers:* ${q.paxCount}\n` +
       `🏨 *Stay Tier:* ${q.hotelTier}\n` +
       `🚗 *Transfers:* ${q.cabType}\n\n` +
-      `💰 *Total Package Price:* ₹${q.totalAmount.toLocaleString("en-IN")} (Inclusive of all taxes & GST)\n\n` +
+      `💰 *Total Package Price:* ${formatINR(q.totalAmount)} (Inclusive of all taxes & GST)\n\n` +
       `✅ *Inclusions:* 4★/5★ Hotels, Daily Breakfast & Dinner, Private Sanitized Cab with Driver, Sightseeing Passes, 24/7 On-Trip Tour Support.\n\n` +
       `👉 Reply to this message to lock your dates or make adjustments!\n` +
       `📞 *Toll Free:* 1800 22 7979 | www.bemytraveller.com`;
@@ -104,7 +105,7 @@ export default function AdminQuotesPage() {
   };
 
   const copyQuoteSummary = (q: QuoteItem) => {
-    const text = `Be My Traveller Proposal - ${q.quoteNumber}\nCustomer: ${q.customerName}\nDestination: ${q.destination}\nDates: ${q.travelDates}\nAmount: ₹${q.totalAmount.toLocaleString("en-IN")}`;
+    const text = `Be My Traveller Proposal - ${q.quoteNumber}\nCustomer: ${q.customerName}\nDestination: ${q.destination}\nDates: ${q.travelDates}\nAmount: ${formatINR(q.totalAmount)}`;
     navigator.clipboard.writeText(text);
     setCopiedMsg(q._id);
     setTimeout(() => setCopiedMsg(null), 2000);
@@ -191,7 +192,7 @@ export default function AdminQuotesPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="text-sm font-black text-amber-400">
-                      ₹{q.totalAmount.toLocaleString("en-IN")}
+                      {formatINR(q.totalAmount)}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">

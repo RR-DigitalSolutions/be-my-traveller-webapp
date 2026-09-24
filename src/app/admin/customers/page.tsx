@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface CustomerItem {
   name: string;
@@ -160,7 +161,7 @@ export default function AdminCustomersPage() {
                     {c.totalBookings} Completed
                   </td>
                   <td className="py-3.5 px-4 font-black text-emerald-400 text-sm">
-                    ₹{c.totalSpend.toLocaleString("en-IN")}
+                    {formatINR(c.totalSpend)}
                   </td>
                   <td className="py-3.5 px-4 text-slate-400 text-[11px]">
                     {c.lastTrip}

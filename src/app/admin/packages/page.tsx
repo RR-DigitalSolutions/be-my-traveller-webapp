@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import MediaPickerModal, { MediaItem } from "@/components/common/MediaPickerModal";
+import { formatINR } from "@/lib/utils";
 
 interface ItineraryDay {
   day: number;
@@ -1016,20 +1017,20 @@ export default function AdminPackagesPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="font-black text-emerald-400 text-sm">
-                          ₹{Number(pkg.startingPrice || 14999).toLocaleString("en-IN")}
+                          {formatINR(pkg.startingPrice || 14999)}
                         </span>
                         <span className="text-[10px] text-slate-500 block">/ person</span>
                       </td>
                       <td className="py-3 px-4">
                         <div className="space-y-0.5 text-[11px]">
                           <span className="text-slate-300 block font-semibold">
-                            3★: ₹{Number(pkg.hotelTiers?.standard?.pricePerAdult || pkg.startingPrice || 18999).toLocaleString("en-IN")}
+                            3★: {formatINR(pkg.hotelTiers?.standard?.pricePerAdult || pkg.startingPrice || 18999)}
                           </span>
                           <span className="text-amber-400/90 block font-semibold">
-                            4★: ₹{Number(pkg.hotelTiers?.deluxe?.pricePerAdult || Math.round((pkg.startingPrice || 18999) * 1.3)).toLocaleString("en-IN")}
+                            4★: {formatINR(pkg.hotelTiers?.deluxe?.pricePerAdult || Math.round((pkg.startingPrice || 18999) * 1.3))}
                           </span>
                           <span className="text-purple-400/90 block font-semibold">
-                            5★: ₹{Number(pkg.hotelTiers?.luxury?.pricePerAdult || Math.round((pkg.startingPrice || 18999) * 1.9)).toLocaleString("en-IN")}
+                            5★: {formatINR(pkg.hotelTiers?.luxury?.pricePerAdult || Math.round((pkg.startingPrice || 18999) * 1.9))}
                           </span>
                         </div>
                       </td>
@@ -1650,14 +1651,14 @@ export default function AdminPackagesPage() {
                             <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
                               {disc > 0 && (
                                 <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">₹{t1Orig.toLocaleString("en-IN")}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save ₹{t1Sav.toLocaleString("en-IN")} ({disc}% OFF)</span>
+                                  <span>Original: <span className="line-through">{formatINR(t1Orig)}</span></span>
+                                  <span className="text-emerald-400 font-bold">Save {formatINR(t1Sav)} ({disc}% OFF)</span>
                                 </div>
                               )}
                               {formData.seasonalHike?.enabled && hike > 0 && (
                                 <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
                                   <span>Peak Season Fare:</span>
-                                  <span>₹{(t1Price + hike).toLocaleString("en-IN")} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
+                                  <span>{formatINR(t1Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
                                 </div>
                               )}
                             </div>
@@ -1745,14 +1746,14 @@ export default function AdminPackagesPage() {
                             <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
                               {disc > 0 && (
                                 <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">₹{t2Orig.toLocaleString("en-IN")}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save ₹{t2Sav.toLocaleString("en-IN")} ({disc}% OFF)</span>
+                                  <span>Original: <span className="line-through">{formatINR(t2Orig)}</span></span>
+                                  <span className="text-emerald-400 font-bold">Save {formatINR(t2Sav)} ({disc}% OFF)</span>
                                 </div>
                               )}
                               {formData.seasonalHike?.enabled && hike > 0 && (
                                 <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
                                   <span>Peak Season Fare:</span>
-                                  <span>₹{(t2Price + hike).toLocaleString("en-IN")} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
+                                  <span>{formatINR(t2Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
                                 </div>
                               )}
                             </div>
@@ -1840,14 +1841,14 @@ export default function AdminPackagesPage() {
                             <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
                               {disc > 0 && (
                                 <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">₹{t3Orig.toLocaleString("en-IN")}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save ₹{t3Sav.toLocaleString("en-IN")} ({disc}% OFF)</span>
+                                  <span>Original: <span className="line-through">{formatINR(t3Orig)}</span></span>
+                                  <span className="text-emerald-400 font-bold">Save {formatINR(t3Sav)} ({disc}% OFF)</span>
                                 </div>
                               )}
                               {formData.seasonalHike?.enabled && hike > 0 && (
                                 <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
                                   <span>Peak Season Fare:</span>
-                                  <span>₹{(t3Price + hike).toLocaleString("en-IN")} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
+                                  <span>{formatINR(t3Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
                                 </div>
                               )}
                             </div>
@@ -2157,22 +2158,22 @@ export default function AdminPackagesPage() {
                                   <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between">
                                     <span className="text-slate-400 font-medium">Deluxe 3★:</span>
                                     <span className="text-amber-400 font-bold">
-                                      <span className="text-slate-400 line-through mr-1 text-[11px]">₹{t1Base.toLocaleString("en-IN")}</span>
-                                      ₹{(t1Base + t1Hike).toLocaleString("en-IN")}
+                                      <span className="text-slate-400 line-through mr-1 text-[11px]">{formatINR(t1Base)}</span>
+                                      {formatINR(t1Base + t1Hike)}
                                     </span>
                                   </div>
                                   <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between">
                                     <span className="text-amber-300 font-medium">Super Deluxe 4★:</span>
                                     <span className="text-amber-400 font-bold">
-                                      <span className="text-slate-400 line-through mr-1 text-[11px]">₹{t2Base.toLocaleString("en-IN")}</span>
-                                      ₹{(t2Base + t2Hike).toLocaleString("en-IN")}
+                                      <span className="text-slate-400 line-through mr-1 text-[11px]">{formatINR(t2Base)}</span>
+                                      {formatINR(t2Base + t2Hike)}
                                     </span>
                                   </div>
                                   <div className="p-2 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-between">
                                     <span className="text-purple-300 font-medium">Luxury 5★:</span>
                                     <span className="text-purple-400 font-bold">
-                                      <span className="text-slate-400 line-through mr-1 text-[11px]">₹{t3Base.toLocaleString("en-IN")}</span>
-                                      ₹{(t3Base + t3Hike).toLocaleString("en-IN")}
+                                      <span className="text-slate-400 line-through mr-1 text-[11px]">{formatINR(t3Base)}</span>
+                                      {formatINR(t3Base + t3Hike)}
                                     </span>
                                   </div>
                                 </div>

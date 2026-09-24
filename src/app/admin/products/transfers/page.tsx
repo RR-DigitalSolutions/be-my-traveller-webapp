@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import MediaPickerModal, { MediaItem } from "@/components/common/MediaPickerModal";
+import { formatINR } from "@/lib/utils";
 
 export type TransferCategory =
   | "ALL"
@@ -458,7 +459,7 @@ export default function AdminTransfersPage() {
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Base Fare</span>
-            <span className="text-2xl font-black text-purple-300">₹{avgCost.toLocaleString("en-IN")}</span>
+            <span className="text-2xl font-black text-purple-300">{formatINR(avgCost)}</span>
           </div>
         </div>
       </div>
@@ -699,14 +700,14 @@ export default function AdminTransfersPage() {
                     <div>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xl font-black text-amber-400">
-                          ₹{t.costPerUnit.toLocaleString("en-IN")}
+                          {formatINR(t.costPerUnit)}
                         </span>
                         <span className="text-[10px] text-slate-400">{pricingUnitLabel}</span>
                       </div>
                       {t.originalPrice && t.originalPrice > t.costPerUnit ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-[11px] text-slate-500 line-through">
-                            ₹{t.originalPrice.toLocaleString("en-IN")}
+                            {formatINR(t.originalPrice)}
                           </span>
                           <span className="text-[10px] font-bold text-emerald-400">
                             {t.discountPercent || Math.round(((t.originalPrice - t.costPerUnit) / t.originalPrice) * 100)}% OFF
@@ -795,7 +796,7 @@ export default function AdminTransfersPage() {
                     </td>
                     <td className="p-4">
                       <div className="font-black text-amber-400 text-sm">
-                        ₹{t.costPerUnit.toLocaleString("en-IN")}
+                        {formatINR(t.costPerUnit)}
                       </div>
                       <span className="text-[10px] text-slate-500">
                         {t.pricingModel === "PER_PASSENGER" ? "per seat" : t.pricingModel === "PER_DAY" ? "per day" : "per cab"}
@@ -1293,7 +1294,7 @@ export default function AdminTransfersPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-2xl font-black text-amber-400">
-                        ₹{Number(formData.costPerUnit).toLocaleString("en-IN")}
+                        {formatINR(formData.costPerUnit)}
                       </span>
                       <span className="text-xs text-slate-400 block">
                         {formData.pricingModel === "PER_PASSENGER" ? "/ seat" : formData.pricingModel === "PER_DAY" ? "/ day" : "/ vehicle"}

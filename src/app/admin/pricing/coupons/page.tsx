@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { formatINR } from "@/lib/utils";
 
 interface CouponItem {
   _id: string;
@@ -138,13 +139,13 @@ export default function AdminCouponsPage() {
                     </span>
                   </td>
                   <td className="py-3.5 px-4 font-bold text-white">
-                    {c.discountType === "PERCENTAGE" ? `${c.discountValue}% OFF` : `₹${c.discountValue.toLocaleString("en-IN")} FLAT`}
+                    {c.discountType === "PERCENTAGE" ? `${c.discountValue}% OFF` : `${formatINR(c.discountValue)} FLAT`}
                   </td>
                   <td className="py-3.5 px-4 text-slate-300 font-medium">
-                    ₹{c.minBookingValue.toLocaleString("en-IN")}
+                    {formatINR(c.minBookingValue)}
                   </td>
                   <td className="py-3.5 px-4 text-slate-300 font-medium">
-                    ₹{c.maxDiscount.toLocaleString("en-IN")}
+                    {formatINR(c.maxDiscount)}
                   </td>
                   <td className="py-3.5 px-4 text-slate-400">
                     <span className="font-bold text-white">{c.usedCount}</span> / {c.usageLimit}
