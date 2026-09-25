@@ -43,6 +43,7 @@ const navItems: NavItem[] = [
       { label: "Blogs", href: "/admin/content/blogs" },
       { label: "FAQs", href: "/admin/content/faqs" },
       { label: "Reviews", href: "/admin/content/reviews" },
+      { label: "Holiday Themes", href: "/admin/content/themes" },
       { label: "Pages", href: "/admin/content/pages" },
     ],
   },

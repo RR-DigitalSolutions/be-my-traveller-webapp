@@ -15,9 +15,19 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
 
-  // If not logged in (e.g. on /admin/login), render the clean auth container
+  // If not logged in (e.g. on /admin/login), render the clean auth container.
+  // Keep a stable shell for the first render so the admin page does not flash full-screen
+  // before the session is available.
   if (!session?.user) {
-    return <div className="min-h-screen bg-slate-950">{children}</div>;
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Authenticated admin layout with sidebar and header

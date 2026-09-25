@@ -1,12 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import { normalizeThemeValue } from "@/lib/site-themes";
+
+interface ThemeOption {
+  name: string;
+  label: string;
+}
 
 export default function PackagesCatalogPage() {
   const [selectedTheme, setSelectedTheme] = useState("ALL");
   const [selectedDuration, setSelectedDuration] = useState("ALL");
+  const [themeOptions, setThemeOptions] = useState<ThemeOption[]>([
+    { name: "ALL", label: "All Themes" },
+    { name: "HONEYMOON", label: "Honeymoon & Romance" },
+    { name: "ADVENTURE", label: "Adventure & Trekking" },
+    { name: "HERITAGE", label: "Heritage & Culture" },
+    { name: "LUXURY", label: "Luxury Escapes" },
+  ]);
+
+  useEffect(() => {
+    const loadThemes = async () => {
+      try {
+        const response = await fetch("/api/v1/themes");
+        const data = await response.json();
+        const apiThemes = Array.isArray(data.themes) ? data.themes : [];
+        const nextThemes = apiThemes.length > 0 ? apiThemes.map((theme: any) => ({
+          name: String(theme.name || theme.slug || "").toUpperCase(),
+          label: String(theme.label || theme.name || theme.slug || ""),
+        })) : themeOptions;
+        setThemeOptions([{ name: "ALL", label: "All Themes" }, ...nextThemes]);
+      } catch (error) {
+        console.warn("Unable to load admin themes for packages page.", error);
+      }
+    };
+
+    loadThemes();
+  }, []);
 
   const allPackages = [
     {
@@ -102,7 +134,13 @@ export default function PackagesCatalogPage() {
   ];
 
   const filtered = allPackages.filter((p) => {
-    if (selectedTheme !== "ALL" && p.theme !== selectedTheme) return false;
+    const packageThemes = Array.isArray(p.theme) ? p.theme : [p.theme].filter(Boolean);
+    const selectedValue = normalizeThemeValue(selectedTheme);
+    const matchesTheme =
+      selectedValue === "ALL" ||
+      packageThemes.some((theme) => normalizeThemeValue(theme) === selectedValue);
+
+    if (!matchesTheme) return false;
     if (selectedDuration === "SHORT" && p.nights > 4) return false;
     if (selectedDuration === "MEDIUM" && (p.nights < 5 || p.nights > 7)) return false;
     if (selectedDuration === "LONG" && p.nights < 8) return false;
@@ -133,17 +171,17 @@ export default function PackagesCatalogPage() {
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
             <span className="text-slate-500 mr-1">Theme:</span>
-            {["ALL", "HONEYMOON", "ADVENTURE", "HERITAGE", "LUXURY"].map((theme) => (
+            {themeOptions.map((theme) => (
               <button
-                key={theme}
-                onClick={() => setSelectedTheme(theme)}
+                key={theme.name}
+                onClick={() => setSelectedTheme(theme.name)}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  selectedTheme === theme
+                  selectedTheme === theme.name
                     ? "bg-[#0b1b36] text-white shadow-sm"
                     : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
                 }`}
               >
-                {theme === "ALL" ? "All Themes" : theme}
+                {theme.label}
               </button>
             ))}
           </div>

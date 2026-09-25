@@ -1,6 +1,54 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { buildThemeHref } from "@/lib/site-themes";
+
+const defaultThemes = [
+  { slug: "honeymoon", name: "HONEYMOON", label: "Honeymoon & Romance" },
+  { slug: "adventure", name: "ADVENTURE", label: "Adventure & Trekking" },
+  { slug: "family", name: "FAMILY", label: "Family Holidays" },
+  { slug: "heritage", name: "HERITAGE", label: "Heritage & Culture" },
+  { slug: "luxury", name: "LUXURY", label: "Luxury Escapes" },
+  { slug: "beach", name: "BEACH", label: "Beach & Island Getaways" },
+];
 
 export default function SiteFooter() {
+  const [themes, setThemes] = useState(defaultThemes);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadThemes = async () => {
+      try {
+        const response = await fetch("/api/v1/themes");
+        if (!response.ok) return;
+        const data = await response.json();
+        const apiThemes = Array.isArray(data.themes) ? data.themes : [];
+        if (!isMounted || apiThemes.length === 0) return;
+
+        const nextThemes = apiThemes
+          .filter((theme: any) => theme.isActive !== false)
+          .map((theme: any) => ({
+            slug: String(theme.slug || theme.name || ""),
+            name: String(theme.name || theme.slug || "").toUpperCase(),
+            label: String(theme.label || theme.name || theme.slug || ""),
+          }));
+
+        if (nextThemes.length > 0) {
+          setThemes(nextThemes);
+        }
+      } catch (error) {
+        console.warn("Unable to load footer themes.", error);
+      }
+    };
+
+    loadThemes();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <footer className="bg-slate-950 text-slate-400 text-xs pt-10 pb-8 px-4 border-t border-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -35,12 +83,13 @@ export default function SiteFooter() {
           <div className="space-y-3">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Holiday Themes</h4>
             <ul className="space-y-2 text-[11px]">
-              <li><Link href="/packages?theme=HONEYMOON" className="hover:text-amber-400 transition-colors">Honeymoon Specials</Link></li>
-              <li><Link href="/packages?theme=FAMILY" className="hover:text-amber-400 transition-colors">Family Vacation Circuits</Link></li>
-              <li><Link href="/packages?theme=ADVENTURE" className="hover:text-amber-400 transition-colors">Adventure &amp; Trekking</Link></li>
-              <li><Link href="/packages?theme=SPIRITUAL" className="hover:text-amber-400 transition-colors">Spiritual &amp; Pilgrimage</Link></li>
-              <li><Link href="/packages?theme=LUXURY" className="hover:text-amber-400 transition-colors">Luxury Heritage Stays</Link></li>
-              <li><Link href="/customize?duration=SHORT" className="hover:text-amber-400 transition-colors">Weekend Roadtrips</Link></li>
+              {themes.slice(0, 6).map((theme) => (
+                <li key={theme.slug}>
+                  <Link href={buildThemeHref(theme.name)} className="hover:text-amber-400 transition-colors">
+                    {theme.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -68,6 +117,33 @@ export default function SiteFooter() {
               <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">Net Banking</span>
             </div>
           </div>
+        </div>
+
+        <div className="pt-6 border-t border-slate-800 grid gap-4 md:grid-cols-[1.1fr_0.9fr] text-[11px] text-slate-300">
+          <div className="space-y-2">
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Contact Details</h4>
+            <p>Call: +91 98765 43210</p>
+            <p>Email: hello@bemytraveller.com</p>
+            <p>WhatsApp: +91 98765 43210</p>
+            <p>Address: Connaught Place, New Delhi, India</p>
+          </div>
+
+          <form action="/contact" method="get" className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+            <h4 className="font-bold text-white text-xs uppercase tracking-wider">Request Callback</h4>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Enter your mobile number"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder:text-slate-500 outline-none"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-colors"
+            >
+              Request Callback
+            </button>
+          </form>
         </div>
 
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">

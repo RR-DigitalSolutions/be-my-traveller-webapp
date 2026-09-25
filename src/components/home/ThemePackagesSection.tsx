@@ -1,20 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { normalizeThemeValue } from "@/lib/site-themes";
 
 export default function ThemePackagesSection() {
-  const [activeTheme, setActiveTheme] = useState<string>("all");
+  const [activeTheme, setActiveTheme] = useState<string>("ALL");
+  const [themes, setThemes] = useState([
+    { id: "ALL", label: "🌟 All Signature Themes", icon: "✨" },
+    { id: "HONEYMOON", label: "Honeymoon & Romance", icon: "💍" },
+    { id: "ADVENTURE", label: "Adventure & Snow", icon: "🏔️" },
+    { id: "HERITAGE", label: "Heritage & Palaces", icon: "🏰" },
+    { id: "WILDLIFE", label: "Wildlife & Jungle Safaris", icon: "🐅" },
+    { id: "PILGRIMAGE", label: "Spiritual & Temple Circuits", icon: "🛕" },
+    { id: "BEACH", label: "Beach & Island Villas", icon: "🏖️" },
+  ]);
 
-  const themes = [
-    { id: "all", label: "🌟 All Signature Themes", icon: "✨" },
-    { id: "honeymoon", label: "Honeymoon & Romance", icon: "💍" },
-    { id: "adventure", label: "Adventure & Snow", icon: "🏔️" },
-    { id: "heritage", label: "Heritage & Palaces", icon: "🏰" },
-    { id: "wildlife", label: "Wildlife & Jungle Safaris", icon: "🐅" },
-    { id: "spiritual", label: "Spiritual & Temple Circuits", icon: "🛕" },
-    { id: "beach", label: "Beach & Island Villas", icon: "🏖️" },
-  ];
+  useEffect(() => {
+    const loadThemes = async () => {
+      try {
+        const response = await fetch("/api/v1/themes");
+        const data = await response.json();
+        const apiThemes = Array.isArray(data.themes) ? data.themes : [];
+        if (apiThemes.length > 0) {
+          const nextThemes = apiThemes.map((theme: any) => ({
+            id: String(theme.name || theme.slug || "").toUpperCase(),
+            label: String(theme.label || theme.name || theme.slug || ""),
+            icon: "✨",
+          }));
+          setThemes([{ id: "ALL", label: "🌟 All Signature Themes", icon: "✨" }, ...nextThemes]);
+        }
+      } catch (error) {
+        console.warn("Unable to load admin-managed themes for home section.", error);
+      }
+    };
+
+    loadThemes();
+  }, []);
 
   const themePackages = [
     {
@@ -116,9 +138,9 @@ export default function ThemePackagesSection() {
   ];
 
   const filteredPackages =
-    activeTheme === "all"
+    activeTheme === "ALL"
       ? themePackages
-      : themePackages.filter((p) => p.theme === activeTheme);
+      : themePackages.filter((p) => normalizeThemeValue(p.theme) === normalizeThemeValue(activeTheme));
 
   return (
     <section className="py-8 px-4 max-w-7xl mx-auto w-full">

@@ -5,7 +5,7 @@
 // ============================================================
 
 import mongoose from "mongoose";
-import dns from "dns";
+import dns from "node:dns";
 
 // Fix Windows / ISP DNS SRV resolution issues for MongoDB Atlas
 try {
