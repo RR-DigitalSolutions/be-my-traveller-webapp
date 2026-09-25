@@ -13,31 +13,38 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { nanoid } from "nanoid";
 
-// ── Validate required env vars ────────────────────────────────
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
-const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+// ── Optional R2 configuration ───────────────────────────────
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID?.trim();
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID?.trim();
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY?.trim();
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME?.trim();
+const R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim();
 
-if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
-  // Only throw in production — allow dev to run without R2
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Missing required R2 environment variables. Check .env.local"
-    );
+const hasR2Config = Boolean(
+  R2_ACCOUNT_ID &&
+    R2_ACCESS_KEY_ID &&
+    R2_SECRET_ACCESS_KEY &&
+    R2_BUCKET_NAME &&
+    R2_PUBLIC_URL
+);
+
+function ensureR2Configured(): void {
+  if (!hasR2Config) {
+    throw new Error("R2 storage is not configured for this deployment.");
   }
 }
 
 // ── R2 S3 Client ──────────────────────────────────────────────
-export const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: R2_ACCESS_KEY_ID ?? "",
-    secretAccessKey: R2_SECRET_ACCESS_KEY ?? "",
-  },
-});
+export const r2Client = hasR2Config
+  ? new S3Client({
+      region: "auto",
+      endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID ?? "",
+        secretAccessKey: R2_SECRET_ACCESS_KEY ?? "",
+      },
+    })
+  : null;
 
 // ── Allowed file types ────────────────────────────────────────
 const ALLOWED_IMAGE_TYPES = [
@@ -93,6 +100,7 @@ export async function generatePresignedUploadUrl(
   mimeType: string,
   size: number
 ): Promise<PresignedUploadResult> {
+  ensureR2Configured();
   validateUpload(mimeType, size);
 
   // Sanitize filename: lowercase, no spaces, with unique prefix
@@ -113,7 +121,7 @@ export async function generatePresignedUploadUrl(
     CacheControl: "public, max-age=31536000, immutable",
   });
 
-  const uploadUrl = await getSignedUrl(r2Client, command, {
+  const uploadUrl = await getSignedUrl(r2Client!, command, {
     expiresIn: 600, // 10 minutes
   });
 
@@ -127,9 +135,10 @@ export async function generatePresignedUploadUrl(
  * Called when a media record is deleted from MongoDB.
  */
 export async function deleteR2Object(r2Key: string): Promise<void> {
+  ensureR2Configured();
   const command = new DeleteObjectCommand({
     Bucket: R2_BUCKET_NAME,
     Key: r2Key,
   });
-  await r2Client.send(command);
+  await r2Client!.send(command);
 }

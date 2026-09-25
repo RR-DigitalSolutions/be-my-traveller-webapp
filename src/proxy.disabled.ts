@@ -1,13 +1,13 @@
 import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth/auth.config";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { authConfig } from "@/lib/auth/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest & { auth: unknown }) {
   const { pathname } = request.nextUrl;
-  const session = await auth();
+  const session = (request as { auth: { user?: { role?: string; permissions?: string[] } } | null }).auth;
 
   if (pathname.startsWith("/admin")) {
     if (pathname === "/admin/login") {
@@ -24,27 +24,18 @@ export async function proxy(request: NextRequest) {
     }
 
     const role = session.user.role || "";
-    const perms = (session.user.permissions as string[] | undefined) || [];
+    const perms = session.user.permissions || [];
     const isSuperAdmin = role === "SUPER_ADMIN" || perms.includes("*");
 
     if (pathname.startsWith("/admin/settings")) {
-      const hasSettingsAccess =
-        isSuperAdmin ||
-        perms.includes("settings.manage") ||
-        perms.includes("settings");
-
+      const hasSettingsAccess = isSuperAdmin || perms.includes("settings.manage") || perms.includes("settings");
       if (!hasSettingsAccess) {
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       }
     }
 
     if (pathname.startsWith("/admin/users")) {
-      const hasUsersAccess =
-        isSuperAdmin ||
-        role === "ADMIN" ||
-        perms.includes("user.manage") ||
-        perms.includes("users");
-
+      const hasUsersAccess = isSuperAdmin || role === "ADMIN" || perms.includes("user.manage") || perms.includes("users");
       if (!hasUsersAccess) {
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       }
@@ -54,13 +45,7 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/api/v1/admin") && pathname !== "/api/v1/admin/seed") {
     if (!session?.user) {
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "AUTH_ERROR",
-            message: "Authentication required",
-          },
-        },
+        { success: false, error: { code: "AUTH_ERROR", message: "Authentication required" } },
         { status: 401 }
       );
     }
@@ -73,9 +58,10 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/api/v1/admin/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
   ],
 };
 
-export default function proxyHandler(request: NextRequest) {
+export default auth(async function proxyHandler(request: NextRequest & { auth: unknown }) {
   return proxy(request);
-}
+});
