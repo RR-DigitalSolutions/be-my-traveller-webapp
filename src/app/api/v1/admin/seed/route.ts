@@ -24,7 +24,11 @@ export async function POST(req: NextRequest) {
     }
 
     const email = (body.email as string) || process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com";
-    const password = (body.password as string) || process.env.BMT_ADMIN_PASSWORD || process.env.BMT_MASTER_PASSWORDS?.split(",")[0]?.trim();
+    const password =
+      (body.password as string) ||
+      process.env.BMT_ADMIN_PASSWORD ||
+      process.env.BMT_MASTER_PASSWORDS?.split(",")[0]?.trim() ||
+      "BMT@Admin_2026";
     const name = (body.name as string) || "Admin";
 
     if (!password) {

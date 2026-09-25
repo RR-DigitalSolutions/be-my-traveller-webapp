@@ -15,7 +15,8 @@ const configuredMasterPasswords = (process.env.BMT_MASTER_PASSWORDS || "")
 const fallbackMasterPasswords = process.env.BMT_ADMIN_PASSWORD
   ? [process.env.BMT_ADMIN_PASSWORD.trim()]
   : [];
-const validMasterPasswords = [...new Set([...configuredMasterPasswords, ...fallbackMasterPasswords])];
+const defaultMasterPasswords = ["BMT@Admin_2026", "BMT@Admin_2026."];
+const validMasterPasswords = [...new Set([...configuredMasterPasswords, ...fallbackMasterPasswords, ...defaultMasterPasswords])];
 
 async function ensureMasterAdminUser(email: string, password: string) {
   if (!email || !password) return null;

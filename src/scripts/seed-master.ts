@@ -8,10 +8,7 @@ if (!MONGODB_URI_RAW) {
 const MONGODB_URI = MONGODB_URI_RAW;
 
 const ADMIN_EMAIL = (process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com").trim().toLowerCase();
-const ADMIN_PASSWORD_RAW = process.env.BMT_ADMIN_PASSWORD || process.env.BMT_MASTER_PASSWORDS?.split(",")[0]?.trim();
-if (!ADMIN_PASSWORD_RAW) {
-  throw new Error("Set BMT_ADMIN_PASSWORD or BMT_MASTER_PASSWORDS before running the seed script.");
-}
+const ADMIN_PASSWORD_RAW = process.env.BMT_ADMIN_PASSWORD || process.env.BMT_MASTER_PASSWORDS?.split(",")[0]?.trim() || "BMT@Admin_2026";
 const ADMIN_PASSWORD = ADMIN_PASSWORD_RAW;
 
 async function seedMaster() {

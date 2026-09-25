@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
                 type="text"
                 autoComplete="username"
                 {...register("email")}
-                placeholder="Admin or admin@bemytraveller.com"
+                placeholder="Username or email"
                 className="w-full px-4 py-2.5 rounded-lg bg-slate-700/50 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition text-sm"
               />
               {errors.email && (
