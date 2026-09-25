@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -18,7 +20,13 @@ export default function ContactPage() {
       await fetch("/api/v1/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email, specialRequirements: `${subject}: ${message}`, source: "CONTACT_PAGE" }),
+        body: JSON.stringify({
+          name: name || "Website Enquiry",
+          phone,
+          email: email || `${phone.replace(/\D/g, "") || "callback"}@bemytraveller.com`,
+          specialRequirements: `${subject}: ${message}`,
+          source: "CONTACT_PAGE",
+        }),
       });
       setSubmitted(true);
     } finally {
@@ -27,21 +35,21 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero */}
-      <section className="bg-slate-900 text-white py-16 px-4 text-center">
+    <div className="min-h-screen bg-white text-slate-900">
+      <BmtNavMenu variant="solid" />
+
+      <section className="bg-slate-900 px-4 py-16 text-center text-white">
         <h1 className="text-4xl font-black">Contact Us</h1>
-        <p className="text-slate-400 mt-3 text-sm max-w-xl mx-auto">
+        <p className="mx-auto mt-3 max-w-xl text-sm text-slate-400">
           Our destination specialists are ready to help you plan your perfect holiday. Reach out via any channel below.
         </p>
       </section>
 
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Contact Info */}
+      <section className="px-4 py-16">
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-12 lg:grid-cols-2">
           <div className="space-y-8">
             <div>
-              <h2 className="text-xl font-black text-slate-900 mb-6">Get in Touch</h2>
+              <h2 className="mb-6 text-xl font-black text-slate-900">Get in Touch</h2>
               <div className="space-y-5">
                 {[
                   { icon: "📞", label: "Toll-Free Helpline", value: "1800 22 7979", href: "tel:18002279779", sub: "Available 24/7" },
@@ -52,12 +60,12 @@ export default function ContactPage() {
                   <a
                     key={info.label}
                     href={info.href}
-                    className="flex items-start gap-4 p-4 rounded-2xl border border-slate-200 hover:border-amber-500/50 hover:bg-amber-50/50 transition-all group"
+                    className="group flex items-start gap-4 rounded-2xl border border-slate-200 p-4 transition-all hover:border-amber-500/50 hover:bg-amber-50/50"
                   >
                     <span className="text-2xl">{info.icon}</span>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{info.label}</p>
-                      <p className="text-sm font-bold text-slate-900 group-hover:text-amber-600 mt-0.5">{info.value}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{info.label}</p>
+                      <p className="mt-0.5 text-sm font-bold text-slate-900 group-hover:text-amber-600">{info.value}</p>
                       <p className="text-xs text-slate-500">{info.sub}</p>
                     </div>
                   </a>
@@ -65,18 +73,17 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200/80">
-              <p className="text-xs font-bold text-amber-700 mb-1">⏰ Office Hours</p>
+            <div className="rounded-2xl border border-amber-200/80 bg-amber-50 p-5">
+              <p className="mb-1 text-xs font-bold text-amber-700">⏰ Office Hours</p>
               <p className="text-sm text-slate-700">Mon–Sat: 9:00 AM – 8:00 PM IST</p>
               <p className="text-sm text-slate-700">Emergency support: 24/7</p>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8">
             {submitted ? (
-              <div className="py-16 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 text-3xl flex items-center justify-center mx-auto">✓</div>
+              <div className="space-y-4 py-16 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">✓</div>
                 <h3 className="text-xl font-black text-slate-900">We&apos;ve received your enquiry!</h3>
                 <p className="text-sm text-slate-500">Our team will contact you within 2 hours on the phone/WhatsApp number provided.</p>
               </div>
@@ -90,7 +97,7 @@ export default function ContactPage() {
                     placeholder="Full Name *"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   />
                   <input
                     required
@@ -98,19 +105,19 @@ export default function ContactPage() {
                     placeholder="Phone / WhatsApp *"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   />
                   <input
                     type="email"
                     placeholder="Email Address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   />
                   <select
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   >
                     <option>Holiday Package Enquiry</option>
                     <option>Custom Trip Planning</option>
@@ -125,13 +132,13 @@ export default function ContactPage() {
                     placeholder="Tell us about your travel plans, destination, travel dates, number of people..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 resize-none"
+                    className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition-colors cursor-pointer"
+                  className="w-full cursor-pointer rounded-xl bg-amber-500 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-amber-500/20 transition-colors hover:bg-amber-400 disabled:opacity-50"
                 >
                   {loading ? "Sending..." : "Send Enquiry →"}
                 </button>
@@ -140,6 +147,8 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </div>
   );
 }

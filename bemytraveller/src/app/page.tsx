@@ -948,7 +948,7 @@ export default function HomePage() {
               <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
                 B
               </span>
-              <span>© 2026 Be My Traveller Technologies Pvt. Ltd. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} Be My Traveller India Pvt. Ltd. All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4">
               <span>Made with ❤️ for Global Explorers · Technology Partner RRDS</span>

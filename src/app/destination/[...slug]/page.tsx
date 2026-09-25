@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Metadata } from "next";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 import DestinationCardCarousel, { DestinationCardItem } from "@/components/destinations/DestinationCardCarousel";
 import DestinationPackageGrid from "@/components/destinations/DestinationPackageGrid";
 import connectDB from "@/lib/db/mongoose";
@@ -1230,46 +1231,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
         </div>
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#0b1b36] text-white pt-12 pb-8 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3">Be My Traveller</h4>
-            <p className="text-slate-400 text-xs leading-relaxed">
-              India's premier experiential holiday company crafting bespoke vacations across Himachal, Kashmir, Kerala, Rajasthan, and 50+ global destinations.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3">Top Indian Holidays</h4>
-            <ul className="space-y-1.5 text-slate-400 text-xs">
-              <li><Link href="/destination/india/himachal/manali-tour-packages" className="hover:text-amber-400">Manali Tour Packages</Link></li>
-              <li><Link href="/destination/india/himachal-tour-packages" className="hover:text-amber-400">Himachal Pradesh Tours</Link></li>
-              <li><Link href="/destination/india/kashmir-tour-packages" className="hover:text-amber-400">Kashmir Holiday Packages</Link></li>
-              <li><Link href="/destination/india/kerala-tour-packages" className="hover:text-amber-400">Kerala Backwaters Tours</Link></li>
-              <li><Link href="/destination/india/rajasthan-tour-packages" className="hover:text-amber-400">Royal Rajasthan Packages</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3">Popular Places</h4>
-            <ul className="space-y-1.5 text-slate-400 text-xs">
-              <li><Link href="/destination/india/himachal/shimla-tour-packages" className="hover:text-amber-400">Shimla Packages</Link></li>
-              <li><Link href="/destination/india/kashmir/gulmarg-tour-packages" className="hover:text-amber-400">Gulmarg Gondola Tours</Link></li>
-              <li><Link href="/destination/india/kerala/munnar-tour-packages" className="hover:text-amber-400">Munnar Tea Hills</Link></li>
-              <li><Link href="/destination/india/rajasthan/jaipur-tour-packages" className="hover:text-amber-400">Jaipur Forts</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold text-white text-sm mb-3">24/7 Helpline</h4>
-            <p className="text-amber-400 font-extrabold text-base mb-1">1800 22 7979</p>
-            <p className="text-slate-400 text-xs">support@bemytraveller.com</p>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 pt-6 border-t border-slate-800 text-center text-slate-500 text-[11px] flex items-center justify-center gap-2 flex-wrap" data-watermark="RRDS">
-          <span>© 2026 Be My Traveller. All Rights Reserved.</span>
-          <span>•</span>
-          <span className="text-slate-400">Crafted with precision by RRDS</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions | Be My Traveller",
@@ -10,20 +12,22 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-black text-slate-900">{title}</h2>
-      <div className="text-sm text-slate-600 leading-relaxed space-y-2">{children}</div>
+      <div className="space-y-2 text-sm leading-relaxed text-slate-600">{children}</div>
     </div>
   );
 }
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-slate-900 text-white py-14 px-4 text-center">
+    <div className="min-h-screen bg-white text-slate-900">
+      <BmtNavMenu variant="solid" />
+
+      <div className="bg-slate-900 px-4 py-14 text-center text-white">
         <h1 className="text-3xl font-black">Terms & Conditions</h1>
-        <p className="text-slate-400 text-sm mt-2">Last updated: August 2026</p>
+        <p className="mt-2 text-sm text-slate-400">Last updated: August 2026</p>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-16 space-y-10">
+      <div className="mx-auto max-w-3xl space-y-10 px-4 py-16">
         <Section title="1. Acceptance of Terms">
           <p>By accessing and using the Be My Traveller website (bemytraveller.com) and its services, you accept and agree to be bound by these Terms and Conditions. If you do not agree, please do not use our platform.</p>
         </Section>
@@ -60,6 +64,8 @@ export default function TermsPage() {
           <p>For any queries regarding these terms, contact us at <a href="mailto:legal@bemytraveller.com" className="text-amber-600 hover:underline">legal@bemytraveller.com</a> or call <a href="tel:18002279779" className="text-amber-600 hover:underline">1800 22 7979</a>.</p>
         </Section>
       </div>
+
+      <SiteFooter />
     </div>
   );
 }

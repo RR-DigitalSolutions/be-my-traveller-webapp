@@ -154,6 +154,14 @@ export default function HomePage() {
     },
   ];
 
+  const getCanonicalDestinationUrl = (
+    slug: string,
+    destinationType: "domestic" | "international" | "honeymoon" | "adventure"
+  ) =>
+    destinationType === "domestic" || destinationType === "honeymoon" || destinationType === "adventure"
+      ? `/destination/india/${slug}-tour-packages`
+      : `/destination/${slug}-tour-packages`;
+
   const bestSellerPackages = [
     {
       id: "pkg-1",
@@ -537,7 +545,7 @@ export default function HomePage() {
           {(destinationTab === "domestic" ? domesticDestinations : internationalDestinations).map((dest) => (
             <Link
               key={dest.name}
-              href={`/destinations/${dest.slug}`}
+              href={getCanonicalDestinationUrl(dest.slug, destinationTab)}
               className="group relative rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-xl hover:border-amber-500/50 transition-all duration-300 flex flex-col"
             >
               {/* Image with overlay badge */}
@@ -870,38 +878,34 @@ export default function HomePage() {
       {/* ── Comprehensive OTA Footer (BMT Travel Portal) ── */}
       <footer className="bg-slate-950 text-slate-400 text-xs pt-10 pb-8 px-4 border-t border-slate-800">
         <div className="max-w-7xl mx-auto space-y-8">
-          {/* Main Footer Links Columns */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
-            {/* Column 1: Popular Domestic */}
             <div className="space-y-3">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">Domestic Holidays</h4>
               <ul className="space-y-2 text-[11px]">
-                <li><Link href="/destinations/himachal-pradesh" className="hover:text-amber-400 transition-colors">Himachal Tour Packages</Link></li>
-                <li><Link href="/destinations/kashmir" className="hover:text-amber-400 transition-colors">Kashmir Holiday Packages</Link></li>
-                <li><Link href="/destinations/kerala" className="hover:text-amber-400 transition-colors">Kerala Backwaters Tours</Link></li>
-                <li><Link href="/destinations/rajasthan" className="hover:text-amber-400 transition-colors">Rajasthan Forts & Palaces</Link></li>
-                <li><Link href="/destinations/goa" className="hover:text-amber-400 transition-colors">Goa Beach Packages</Link></li>
-                <li><Link href="/destinations/andaman" className="hover:text-amber-400 transition-colors">Andaman Islands Scuba</Link></li>
-                <li><Link href="/destinations/ladakh" className="hover:text-amber-400 transition-colors">Ladakh & Spiti Roadtrips</Link></li>
-                <li><Link href="/destinations/uttarakhand" className="hover:text-amber-400 transition-colors">Uttarakhand Spiritual Circuits</Link></li>
+                <li><Link href="/destination/india/himachal-tour-packages" className="hover:text-amber-400 transition-colors">Himachal Tour Packages</Link></li>
+                <li><Link href="/destination/india/kashmir-tour-packages" className="hover:text-amber-400 transition-colors">Kashmir Holiday Packages</Link></li>
+                <li><Link href="/destination/india/kerala-tour-packages" className="hover:text-amber-400 transition-colors">Kerala Backwaters Tours</Link></li>
+                <li><Link href="/destination/india/rajasthan-tour-packages" className="hover:text-amber-400 transition-colors">Rajasthan Forts & Palaces</Link></li>
+                <li><Link href="/destination/india/goa-tour-packages" className="hover:text-amber-400 transition-colors">Goa Beach Packages</Link></li>
+                <li><Link href="/destination/india/andaman-tour-packages" className="hover:text-amber-400 transition-colors">Andaman Islands Scuba</Link></li>
+                <li><Link href="/destination/india/ladakh-tour-packages" className="hover:text-amber-400 transition-colors">Ladakh & Spiti Roadtrips</Link></li>
+                <li><Link href="/destination/india/uttarakhand-tour-packages" className="hover:text-amber-400 transition-colors">Uttarakhand Spiritual Circuits</Link></li>
               </ul>
             </div>
 
-            {/* Column 2: Popular International */}
             <div className="space-y-3">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">International Tours</h4>
               <ul className="space-y-2 text-[11px]">
-                <li><Link href="/destinations/dubai" className="hover:text-amber-400 transition-colors">Dubai Tour Packages</Link></li>
-                <li><Link href="/destinations/bali" className="hover:text-amber-400 transition-colors">Bali Honeymoon Packages</Link></li>
-                <li><Link href="/destinations/thailand" className="hover:text-amber-400 transition-colors">Thailand Beach Holidays</Link></li>
-                <li><Link href="/destinations/vietnam" className="hover:text-amber-400 transition-colors">Vietnam & Ha Long Bay</Link></li>
-                <li><Link href="/destinations/singapore" className="hover:text-amber-400 transition-colors">Singapore & Sentosa</Link></li>
-                <li><Link href="/destinations/maldives" className="hover:text-amber-400 transition-colors">Maldives Overwater Villas</Link></li>
-                <li><Link href="/destinations/europe" className="hover:text-amber-400 transition-colors">Europe Grand Tours</Link></li>
+                <li><Link href="/destination/dubai-tour-packages" className="hover:text-amber-400 transition-colors">Dubai Tour Packages</Link></li>
+                <li><Link href="/destination/bali-tour-packages" className="hover:text-amber-400 transition-colors">Bali Honeymoon Packages</Link></li>
+                <li><Link href="/destination/thailand-tour-packages" className="hover:text-amber-400 transition-colors">Thailand Beach Holidays</Link></li>
+                <li><Link href="/destination/vietnam-tour-packages" className="hover:text-amber-400 transition-colors">Vietnam & Ha Long Bay</Link></li>
+                <li><Link href="/destination/singapore-tour-packages" className="hover:text-amber-400 transition-colors">Singapore & Sentosa</Link></li>
+                <li><Link href="/destination/maldives-tour-packages" className="hover:text-amber-400 transition-colors">Maldives Overwater Villas</Link></li>
+                <li><Link href="/destination/europe-tour-packages" className="hover:text-amber-400 transition-colors">Europe Grand Tours</Link></li>
               </ul>
             </div>
 
-            {/* Column 3: Holiday Themes */}
             <div className="space-y-3">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">Holiday Themes</h4>
               <ul className="space-y-2 text-[11px]">
@@ -914,7 +918,6 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Column 4: Company & Support */}
             <div className="space-y-3">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">Company & Legal</h4>
               <ul className="space-y-2 text-[11px]">
@@ -927,7 +930,6 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Column 5: Payment & Trust Badges */}
             <div className="space-y-3">
               <h4 className="font-bold text-white text-xs uppercase tracking-wider">Secure Booking</h4>
               <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -942,13 +944,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bottom Copyright Strip */}
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
             <div className="flex items-center gap-2">
               <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
                 B
               </span>
-              <span>© 2026 Be My Traveller Technologies Pvt. Ltd. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} Be My Traveller India Pvt. Ltd. All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4">
               <span>Made with ❤️ for Global Explorers · Technology Partner RRDS</span>

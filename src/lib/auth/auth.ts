@@ -17,6 +17,38 @@ const fallbackMasterPasswords = process.env.BMT_ADMIN_PASSWORD
   : [];
 const validMasterPasswords = [...new Set([...configuredMasterPasswords, ...fallbackMasterPasswords])];
 
+async function ensureMasterAdminUser(email: string, password: string) {
+  if (!email || !password) return null;
+
+  try {
+    await connectDB();
+    const existingUser = await UserModel.findOne({ email: email.toLowerCase().trim() }).select("+passwordHash");
+
+    if (existingUser) {
+      return existingUser;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const created = await UserModel.create({
+      name: "Admin",
+      email: email.toLowerCase().trim(),
+      passwordHash,
+      role: "SUPER_ADMIN",
+      department: "ADMIN",
+      designation: "Executive Administrator",
+      permissions: ["*"],
+      isActive: true,
+      status: "ACTIVE",
+      isTwoFactorEnabled: false,
+    });
+
+    return created;
+  } catch (error) {
+    console.error("[Master Admin Bootstrap Error]", error);
+    return null;
+  }
+}
+
 const loginSchema = z.object({
   email: z.string().min(1, "Please enter your username or email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -103,6 +135,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Failsafe Super Admin fallback if DB has transient issue or password matched master credentials
         if (isAdminAccount && isMasterPassword) {
+          const seededUser = await ensureMasterAdminUser(adminEmail, cleanPassword);
+
+          if (seededUser) {
+            return {
+              id: seededUser._id.toString(),
+              email: String(seededUser.email),
+              name: String(seededUser.name || "Admin"),
+              role: (seededUser.role || "SUPER_ADMIN") as RoleKey,
+              department: (seededUser.department || "ADMIN") as DepartmentKey,
+              designation: seededUser.designation ? String(seededUser.designation) : undefined,
+              permissions: (Array.isArray(seededUser.permissions) ? seededUser.permissions.map(String) : ["*"]) as PermissionKey[],
+              avatar: seededUser.avatar ? String(seededUser.avatar) : undefined,
+            };
+          }
+
           return {
             id: "677d2994bfa2e411b0114949",
             email: adminEmail,

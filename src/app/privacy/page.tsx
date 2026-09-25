@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Be My Traveller",
@@ -8,13 +10,15 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-slate-900 text-white py-14 px-4 text-center">
+    <div className="min-h-screen bg-white text-slate-900">
+      <BmtNavMenu variant="solid" />
+
+      <div className="bg-slate-900 px-4 py-14 text-center text-white">
         <h1 className="text-3xl font-black">Privacy Policy</h1>
-        <p className="text-slate-400 text-sm mt-2">Last updated: August 2026</p>
+        <p className="mt-2 text-sm text-slate-400">Last updated: August 2026</p>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-16 space-y-10 text-sm text-slate-600 leading-relaxed">
+      <div className="mx-auto max-w-3xl space-y-10 px-4 py-16 text-sm leading-relaxed text-slate-600">
         <section className="space-y-3">
           <h2 className="text-lg font-black text-slate-900">1. Information We Collect</h2>
           <p>We collect personal information that you voluntarily provide when submitting enquiry forms, including: full name, phone number, email address, travel preferences, and special requirements. We may also collect usage data (IP addresses, browser type, pages visited) through analytics tools.</p>
@@ -22,7 +26,7 @@ export default function PrivacyPage() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-black text-slate-900">2. How We Use Your Information</h2>
-          <ul className="list-disc pl-5 space-y-1">
+          <ul className="list-disc space-y-1 pl-5">
             <li>To respond to your travel enquiries and provide quotations</li>
             <li>To plan and manage your booked holiday packages</li>
             <li>To send relevant travel offers and itinerary suggestions (with your consent)</li>
@@ -55,6 +59,8 @@ export default function PrivacyPage() {
           <p>For privacy-related queries, contact: <a href="mailto:privacy@bemytraveller.com" className="text-amber-600 hover:underline">privacy@bemytraveller.com</a></p>
         </section>
       </div>
+
+      <SiteFooter />
     </div>
   );
 }
