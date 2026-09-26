@@ -1011,7 +1011,7 @@ export default function HomePage() {
                     <input
                       type="tel"
                       required
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder="e.g. +91 8091638090"
                       value={enquiryPhone}
                       onChange={(e) => setEnquiryPhone(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"

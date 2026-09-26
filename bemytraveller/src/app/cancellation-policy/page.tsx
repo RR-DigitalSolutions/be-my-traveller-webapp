@@ -80,7 +80,7 @@ export default function CancellationPolicyPage() {
           <span className="text-2xl">📞</span>
           <div>
             <p className="font-bold text-slate-900 text-sm">Need to cancel or amend your booking?</p>
-            <p className="text-xs text-slate-600 mt-1">Contact our support team immediately at <a href="tel:18002279779" className="text-amber-600 font-bold hover:underline">1800 22 7979</a> or email <a href="mailto:cancel@bemytraveller.com" className="text-amber-600 font-bold hover:underline">cancel@bemytraveller.com</a></p>
+            <p className="text-xs text-slate-600 mt-1">Contact our support team immediately at <a href="tel:918091638090" className="text-amber-600 font-bold hover:underline">+91 8091638090</a> or email <a href="mailto:cancel@bemytraveller.com" className="text-amber-600 font-bold hover:underline">cancel@bemytraveller.com</a></p>
             <Link href="/contact" className="inline-flex items-center gap-1 mt-3 text-xs font-bold text-amber-700 hover:text-amber-900">
               Contact Support →
             </Link>

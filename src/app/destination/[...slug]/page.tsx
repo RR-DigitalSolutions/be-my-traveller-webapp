@@ -1189,7 +1189,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
                 </Link>
 
                 <a
-                  href={`https://wa.me/9118002279779?text=${encodeURIComponent(`Hi Be My Traveller, I would like to enquire about ${current.name} Tour Packages.`)}`}
+                  href={`https://wa.me/918091638090?text=${encodeURIComponent(`Hi Be My Traveller, I would like to enquire about ${current.name} Tour Packages.`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-1.5 w-full py-2 text-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
@@ -1199,7 +1199,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
 
                 <div className="pt-2 text-[10.5px] text-slate-500 text-center space-y-0.5">
                   <p>🔒 Zero booking fee · Instant callback within 15 mins</p>
-                  <p>📞 Call Toll-Free: <a href="tel:18002279779" className="font-bold text-slate-700 hover:underline">1800 22 7979</a></p>
+                  <p>📞 24/7 Helpline: <a href="tel:918091638090" className="font-bold text-slate-700 hover:underline">+91 8091638090</a></p>
                 </div>
               </div>
             </div>

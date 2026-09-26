@@ -161,7 +161,7 @@ export default function AdminBookingsPage() {
                 <img src="/Logo for website PNG.webp" alt="Be My Traveller" className="h-10 object-contain" />
                 <div>
                   <h2 className="font-black text-lg text-slate-950 uppercase tracking-tight">Official Travel Voucher</h2>
-                  <p className="text-[11px] text-slate-600 font-semibold">Be My Traveller Pvt. Ltd. · 24/7 Helpline: 1800 22 7979</p>
+                  <p className="text-[11px] text-slate-600 font-semibold">Be My Traveller Pvt. Ltd. · 24/7 Helpline: +91 8091638090</p>
                 </div>
               </div>
               <div className="text-right">

@@ -116,10 +116,10 @@ export default function AboutPage() {
               Build My Itinerary →
             </Link>
             <a
-              href="tel:18002279779"
+              href="tel:918091638090"
               className="rounded-xl border border-slate-700 px-8 py-3.5 text-sm font-bold text-slate-300 transition-colors hover:border-slate-500 hover:text-white"
             >
-              📞 Call 1800 22 7979
+              📞 24/7 Call +91 8091638090
             </a>
           </div>
         </div>

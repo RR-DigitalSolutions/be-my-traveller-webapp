@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -26,6 +27,7 @@ interface BmtNavMenuProps {
 }
 
 export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps) {
+  const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail } = useSiteSettings();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>("india");
@@ -300,19 +302,15 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             {/* Left: info */}
             <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-none whitespace-nowrap">
               <a
-                href="tel:18002279779"
-                className="flex items-center gap-1.5 text-amber-400 font-bold hover:text-amber-300 transition-colors shrink-0"
-              >
+                href={`tel:${cleanPhone}`} className="flex items-center gap-1.5 text-amber-400 font-bold hover:text-amber-300 transition-colors shrink-0">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
-                24/7: 1800 22 7979
+                24/7: {helplinePhone}
               </a>
               <a
-                href="mailto:support@bemytraveller.com"
-                className="text-slate-300 hover:text-white transition-colors hidden sm:block shrink-0"
-              >
-                ✉ support@bemytraveller.com
+                href={`mailto:${supportEmail}`} className="text-slate-300 hover:text-white transition-colors hidden sm:block shrink-0">
+                ✉ {supportEmail}
               </a>
               <span className="text-emerald-400 font-semibold hidden md:flex items-center gap-1 shrink-0">
                 <span>✓</span> 100% Customized · Zero Hidden Charges
@@ -525,7 +523,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             {/* Desktop Right: Phone + CTA */}
             <div className="hidden lg:flex items-center gap-3 shrink-0">
               <a
-                href="tel:18002279779"
+                href={`tel:${cleanPhone}`}
                 className={`flex items-center gap-1.5 text-[13px] font-bold transition-colors ${
                   isSolid
                     ? "text-slate-800 hover:text-amber-600"
@@ -535,7 +533,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
-                1800 22 7979
+                {helplinePhone}
               </a>
               <Link
                 href="/customize"
@@ -545,29 +543,29 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
               </Link>
             </div>
 
-            {/* Mobile Hamburger */}
+            {/* Mobile Hamburger (High-Contrast & Always Visible) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={`lg:hidden flex flex-col gap-[5px] p-2 rounded-lg transition-colors cursor-pointer ${
-                isSolid ? "hover:bg-slate-100" : "hover:bg-white/10"
-              }`}
-              aria-label="Toggle menu"
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl transition-all cursor-pointer bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700/60 shadow-md backdrop-blur-md active:scale-95 shrink-0"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
-              <span
-                className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-                  isSolid ? "bg-slate-800" : "bg-white"
-                } ${mobileMenuOpen ? "rotate-45 translate-y-[7px]" : ""}`}
-              />
-              <span
-                className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-                  isSolid ? "bg-slate-800" : "bg-white"
-                } ${mobileMenuOpen ? "opacity-0" : ""}`}
-              />
-              <span
-                className={`w-5 h-0.5 rounded-full transition-all duration-200 ${
-                  isSolid ? "bg-slate-800" : "bg-white"
-                } ${mobileMenuOpen ? "-rotate-45 -translate-y-[7px]" : ""}`}
-              />
+              <div className="w-5 h-4 flex flex-col justify-between items-center">
+                <span
+                  className={`w-5 h-0.5 rounded-full bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "rotate-45 translate-y-[7px]" : ""
+                  }`}
+                />
+                <span
+                  className={`w-5 h-0.5 rounded-full bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "opacity-0" : ""
+                  }`}
+                />
+                <span
+                  className={`w-5 h-0.5 rounded-full bg-white transition-all duration-300 ${
+                    mobileMenuOpen ? "-rotate-45 -translate-y-[7px]" : ""
+                  }`}
+                />
+              </div>
             </button>
           </div>
         </div>
@@ -859,10 +857,11 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
               ✨ Plan My Custom Trip
             </Link>
             <a
-              href="tel:18002279779"
-              className="py-2 px-3 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold text-xs shrink-0 flex items-center gap-1"
+              href={`tel:${cleanPhone}`}
+              className="py-2.5 px-3 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors"
             >
-              📞 1800 22 7979
+              <span>📞</span>
+              <span>{helplinePhone}</span>
             </a>
           </div>
 

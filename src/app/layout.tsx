@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { SiteSettingsProvider } from "@/context/SiteSettingsContext";
+import FloatingWhatsApp from "@/components/common/FloatingWhatsApp";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
   authors: [{ name: "RR Digital Solutions (RRDS)" }],
   generator: "RRDS Travel Architecture Engine",
   other: {
-    "watermark": "RRDS",
+    watermark: "RRDS",
     "developed-by": "RR Digital Solutions",
   },
 };
@@ -40,7 +42,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-slate-900" data-author="RRDS">
-        {children}
+        <SiteSettingsProvider>
+          {children}
+          <FloatingWhatsApp />
+        </SiteSettingsProvider>
       </body>
     </html>
   );

@@ -140,64 +140,38 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      {/* Main Content Area: Quick Actions + Phase Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <div className="lg:col-span-2 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-white mb-5">⚡ Quick Actions</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="flex flex-col items-start gap-2 p-4 rounded-xl bg-slate-900/60 hover:bg-slate-700/60 border border-slate-700/50 hover:border-amber-500/30 transition-all group"
-              >
-                <span className="text-xl group-hover:scale-110 transition-transform">{action.icon}</span>
-                <span className="text-xs font-bold text-slate-300 group-hover:text-white leading-snug">{action.label}</span>
-              </Link>
-            ))}
+      {/* Main Content Area: Quick Actions (Full Screen Aligned) */}
+      <div className="w-full bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <span className="text-amber-400">⚡</span> Quick Actions
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">Direct shortcuts to manage content, leads & inventory</p>
           </div>
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            6 Fast Actions
+          </span>
         </div>
 
-        {/* Platform Build Status */}
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-          <h2 className="text-sm font-bold text-white mb-5">🏗️ Platform Build Progress</h2>
-          <div className="space-y-3">
-            {[
-              { phase: "Phase 0 · Architecture Blueprint", status: "done" },
-              { phase: "Phase 1 · Infrastructure Foundation", status: "done" },
-              { phase: "Phase 2 · CMS, Media & SEO", status: "done" },
-              { phase: "Phase 3 · Product & Pricing Engine", status: "done" },
-              { phase: "Phase 4 · Public Travel Portal & OTA UI", status: "done" },
-              { phase: "Phase 5 · Sales CRM & Inbound Pipeline", status: "done" },
-              { phase: "Phase 6 · Customization & Quotations", status: "done" },
-              { phase: "Phase 7 · Travel Ops & Voucher Engine", status: "done" },
-              { phase: "Phase 8 · AI Travel Assistant", status: "active" },
-            ].map((p) => (
-              <div key={p.phase} className="flex items-center gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    p.status === "done"
-                      ? "bg-emerald-500"
-                      : p.status === "active"
-                      ? "bg-amber-400 animate-pulse"
-                      : "bg-slate-700"
-                  }`}
-                />
-                <span
-                  className={`text-xs ${
-                    p.status === "done"
-                      ? "text-slate-500 line-through"
-                      : p.status === "active"
-                      ? "text-amber-300 font-bold"
-                      : "text-slate-600"
-                  }`}
-                >
-                  {p.phase}
-                </span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+          {quickActions.map((action) => (
+            <Link
+              key={action.label}
+              href={action.href}
+              className="flex flex-col items-start gap-2.5 p-4 rounded-xl bg-slate-900/70 hover:bg-slate-800/90 border border-slate-700/60 hover:border-amber-500/40 hover:shadow-lg hover:shadow-amber-500/5 transition-all group duration-200"
+            >
+              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-xl group-hover:scale-110 group-hover:bg-amber-500/10 transition-all">
+                {action.icon}
               </div>
-            ))}
-          </div>
+              <div className="w-full">
+                <span className="text-xs font-bold text-slate-200 group-hover:text-amber-400 leading-snug block transition-colors">
+                  {action.label}
+                </span>
+                <span className="text-[10px] text-slate-500 mt-1 block">Shortcut</span>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 

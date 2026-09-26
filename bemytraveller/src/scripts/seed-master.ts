@@ -855,7 +855,7 @@ async function seedMaster() {
   const sampleLeads = [
     {
       name: "Rahul Sharma",
-      phone: "+91 98765 43210",
+      phone: "+91 8091638090",
       email: "rahul.sharma@example.com",
       destinations: ["Himachal Pradesh"],
       travelDates: { from: new Date("2026-10-15"), to: new Date("2026-10-22"), flexible: true },

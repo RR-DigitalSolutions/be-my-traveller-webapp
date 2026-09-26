@@ -738,7 +738,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                 </button>
 
                 <a
-                  href={`https://wa.me/919876543210?text=${encodeURIComponent(
+                  href={`https://wa.me/${cleanWhatsApp || "918091638090"}?text=${encodeURIComponent(
                     `Hi Be My Traveller! I'm interested in booking the "${pkg.title}" with ${activeTierData.title} accommodation for ${adults} Adults on ${travelDate}. Estimated total: ${formatINR(total)}.`
                   )}`}
                   target="_blank"
@@ -752,7 +752,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
               {/* Trust badges */}
               <div className="pt-2 text-center text-[11px] text-slate-500 space-y-1">
                 <p>🔒 Zero booking fees · 100% money-safe guarantee</p>
-                <p>📞 24/7 Helpline: <a href="tel:18002279779" className="font-bold text-slate-700 hover:underline">1800 22 7979</a></p>
+                <p>📞 24/7 Helpline: <a href={`tel:${cleanPhone || "918091638090"}`} className="font-bold text-slate-700 hover:underline">{helplinePhone || "+91 8091638090"}</a></p>
               </div>
             </div>
 
@@ -844,7 +844,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="e.g. +91 98765 43210"
+                      placeholder="e.g. +91 8091638090"
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-hidden focus:border-amber-500"
                     />
                   </div>

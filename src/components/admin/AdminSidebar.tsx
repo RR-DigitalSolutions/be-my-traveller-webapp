@@ -171,12 +171,16 @@ interface AdminSidebarProps {
   userRole: RoleKey;
   permissions?: (PermissionKey | string)[];
   department?: DepartmentKey;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export default function AdminSidebar({
   userRole,
   permissions = [],
   department,
+  isOpen = false,
+  onClose,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -213,100 +217,134 @@ export default function AdminSidebar({
   });
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden">
-      {/* Logo */}
-      <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-800">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0">
-          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-bold text-white leading-tight">Be My Traveller</p>
-          <p className="text-xs text-slate-500">Admin Panel</p>
-        </div>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5">
-        {visibleItems.map((item) => {
-          const active = isActive(item.href);
-          const expanded = expandedItems.has(item.href);
-          const hasChildren = item.children && item.children.length > 0;
-
-          return (
-            <div key={item.href}>
-              {hasChildren ? (
-                <button
-                  onClick={() => toggleExpand(item.href)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
-                    active
-                      ? "bg-amber-500/10 text-amber-400"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                  )}
-                >
-                  <span className={cn(active ? "text-amber-400" : "text-slate-500")}>
-                    {item.icon}
-                  </span>
-                  <span className="flex-1">{item.label}</span>
-                  <svg
-                    className={cn(
-                      "w-4 h-4 transition-transform text-slate-600",
-                      expanded ? "rotate-90" : ""
-                    )}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ) : (
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active
-                      ? "bg-amber-500/10 text-amber-400"
-                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
-                  )}
-                >
-                  <span className={cn(active ? "text-amber-400" : "text-slate-500")}>
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              )}
-
-              {/* Children */}
-              {hasChildren && expanded && (
-                <div className="ml-9 mt-0.5 space-y-0.5 border-l border-slate-800 pl-3">
-                  {item.children!.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={cn(
-                        "block px-2 py-1.5 rounded-md text-xs font-medium transition-colors",
-                        pathname === child.href
-                          ? "text-amber-400 bg-amber-500/5"
-                          : "text-slate-500 hover:text-slate-200 hover:bg-slate-800"
-                      )}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
+      {/* Sidebar: Fixed Drawer on Mobile, Static Column on Desktop */}
+      <aside
+        className={cn(
+          "w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 overflow-hidden transition-transform duration-300 ease-in-out",
+          // Mobile Drawer vs Desktop
+          "fixed inset-y-0 left-0 z-50 lg:static lg:translate-x-0",
+          isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Logo & Mobile Close Button */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shrink-0 shadow-sm">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945" />
+              </svg>
             </div>
-          );
-        })}
-      </nav>
+            <div>
+              <p className="text-sm font-bold text-white leading-tight">Be My Traveller</p>
+              <p className="text-xs text-slate-500">Admin Panel</p>
+            </div>
+          </div>
 
-      {/* Bottom: app version */}
-      <div className="p-4 border-t border-slate-800">
-        <p className="text-xs text-slate-600">BMT Admin v1.0.0 · RBAC Active</p>
-      </div>
-    </aside>
+          {/* Close button on mobile */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            aria-label="Close navigation"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5">
+          {visibleItems.map((item) => {
+            const active = isActive(item.href);
+            const expanded = expandedItems.has(item.href);
+            const hasChildren = item.children && item.children.length > 0;
+
+            return (
+              <div key={item.href}>
+                {hasChildren ? (
+                  <button
+                    onClick={() => toggleExpand(item.href)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
+                      active
+                        ? "bg-amber-500/10 text-amber-400"
+                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                    )}
+                  >
+                    <span className={cn(active ? "text-amber-400" : "text-slate-500")}>
+                      {item.icon}
+                    </span>
+                    <span className="flex-1">{item.label}</span>
+                    <svg
+                      className={cn(
+                        "w-4 h-4 transition-transform text-slate-600",
+                        expanded ? "rotate-90" : ""
+                      )}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={() => onClose?.()}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      active
+                        ? "bg-amber-500/10 text-amber-400"
+                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                    )}
+                  >
+                    <span className={cn(active ? "text-amber-400" : "text-slate-500")}>
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </Link>
+                )}
+
+                {/* Children */}
+                {hasChildren && expanded && (
+                  <div className="ml-9 mt-0.5 space-y-0.5 border-l border-slate-800 pl-3">
+                    {item.children!.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={() => onClose?.()}
+                        className={cn(
+                          "block px-2 py-1.5 rounded-md text-xs font-medium transition-colors",
+                          pathname === child.href
+                            ? "text-amber-400 bg-amber-500/5"
+                            : "text-slate-500 hover:text-slate-200 hover:bg-slate-800"
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        {/* Bottom: app version */}
+        <div className="p-4 border-t border-slate-800 shrink-0">
+          <p className="text-xs text-slate-600">BMT Admin v1.0.0 · RBAC Active</p>
+        </div>
+      </aside>
+    </>
   );
 }

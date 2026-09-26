@@ -37,6 +37,17 @@ export async function GET() {
     await connectDB();
 
     let settings: any = await SiteSettingsModel.findOne().lean();
+    // If settings exist but still have old placeholder numbers, auto-upgrade
+    if (settings && (settings.primaryPhone === "+91 98765 43210" || settings.whatsappNumber === "+91 98765 43210" || !settings.primaryPhone)) {
+      await SiteSettingsModel.updateOne(
+        { _id: settings._id },
+        { $set: { primaryPhone: "+91 8091638090", emergencyHelpline: "+91 8091638090", whatsappNumber: "+91 8091638090" } }
+      );
+      settings.primaryPhone = "+91 8091638090";
+      settings.emergencyHelpline = "+91 8091638090";
+      settings.whatsappNumber = "+91 8091638090";
+    }
+
 
     if (!settings) {
       const created = await SiteSettingsModel.create({

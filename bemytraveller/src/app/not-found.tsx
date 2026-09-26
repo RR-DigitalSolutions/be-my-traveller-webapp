@@ -105,7 +105,7 @@ export default function NotFound() {
           </Link>
 
           <a
-            href="https://wa.me/919876543210?text=Hi%20Be%20My%20Traveller!%20I%20need%20help%20finding%20a%20tour%20package."
+            href="https://wa.me/918091638090?text=Hi%20Be%20My%20Traveller!%20I%20need%20help%20finding%20a%20tour%20package."
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer"
@@ -119,7 +119,7 @@ export default function NotFound() {
       {/* Footer Support Bar */}
       <footer className="relative z-10 border-t border-slate-900 bg-slate-950/80 py-4 px-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>Need immediate booking assistance? 24/7 Helpline: <a href="tel:18002279779" className="font-bold text-slate-300 hover:underline">1800 22 7979</a></span>
+          <span>Need immediate booking assistance? 24/7 Helpline: <a href="tel:918091638090" className="font-bold text-slate-300 hover:underline">+91 8091638090</a></span>
           <span className="text-[11px] text-slate-600">Be My Traveller © 2026 · All Rights Reserved</span>
         </div>
       </footer>

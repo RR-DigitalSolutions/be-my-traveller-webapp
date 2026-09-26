@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth/auth";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
+import AdminShell from "@/components/admin/AdminShell";
 
 export const metadata: Metadata = {
   title: { template: "%s | BMT Admin", default: "Dashboard | BMT Admin" },
@@ -15,28 +14,23 @@ export default async function AdminLayout({
 }) {
   const session = await auth();
 
-  // If not logged in (e.g. on /admin/login), render the clean auth container
+  // If not logged in (e.g. on /admin/login), render the clean auth container.
   if (!session?.user) {
-    return <div className="min-h-screen bg-slate-950">{children}</div>;
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <div className="mx-auto max-w-6xl px-4 py-10">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Authenticated admin layout with sidebar and header
+  // Authenticated responsive admin layout with AdminShell
   return (
-    <div className="flex h-screen bg-slate-950 overflow-hidden">
-      {/* Sidebar */}
-      <AdminSidebar
-        userRole={session.user.role}
-        permissions={session.user.permissions}
-        department={session.user.department}
-      />
-
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader user={session.user} />
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <AdminShell user={session.user}>
+      {children}
+    </AdminShell>
   );
 }

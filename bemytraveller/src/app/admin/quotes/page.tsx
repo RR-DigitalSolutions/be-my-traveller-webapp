@@ -96,7 +96,7 @@ export default function AdminQuotesPage() {
       `💰 *Total Package Price:* ₹${q.totalAmount.toLocaleString("en-IN")} (Inclusive of all taxes & GST)\n\n` +
       `✅ *Inclusions:* 4★/5★ Hotels, Daily Breakfast & Dinner, Private Sanitized Cab with Driver, Sightseeing Passes, 24/7 On-Trip Tour Support.\n\n` +
       `👉 Reply to this message to lock your dates or make adjustments!\n` +
-      `📞 *Toll Free:* 1800 22 7979 | www.bemytraveller.com`;
+      `📞 *Toll Free:* +91 8091638090 | www.bemytraveller.com`;
 
     const cleanPhone = q.customerPhone.replace(/[^0-9]/g, "");
     const url = `https://wa.me/${cleanPhone.startsWith("91") ? cleanPhone : "91" + cleanPhone}?text=${encodeURIComponent(text)}`;
@@ -261,7 +261,7 @@ export default function AdminQuotesPage() {
                   <input
                     type="tel"
                     required
-                    placeholder="+91 98765 43210"
+                    placeholder="+91 8091638090"
                     value={formData.customerPhone}
                     onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-amber-500"

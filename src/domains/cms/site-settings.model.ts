@@ -181,9 +181,9 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
         isPrimary: { type: Boolean, default: false },
       },
     ],
-    primaryPhone: { type: String, default: "+91 98765 43210" },
-    emergencyHelpline: { type: String, default: "+91 98765 00000" },
-    whatsappNumber: { type: String, default: "+91 98765 43210" },
+    primaryPhone: { type: String, default: "+91 8091638090" },
+    emergencyHelpline: { type: String, default: "+91 8091638090" },
+    whatsappNumber: { type: String, default: "+91 8091638090" },
     primaryEmail: { type: String, default: "hello@bemytraveller.com" },
     supportEmail: { type: String, default: "support@bemytraveller.com" },
     billingEmail: { type: String, default: "accounts@bemytraveller.com" },
@@ -230,7 +230,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
       emailSignature: {
         type: String,
         default:
-          "Warm Regards,\nBe My Traveller Holidays Concierge Team\n24/7 Helpline: +91 98765 43210 | support@bemytraveller.com",
+          "Warm Regards,\nBe My Traveller Holidays Concierge Team\n24/7 Helpline: +91 8091638090 | support@bemytraveller.com",
       },
       isActive: { type: Boolean, default: true },
     },

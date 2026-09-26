@@ -61,7 +61,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="9. Contact">
-          <p>For any queries regarding these terms, contact us at <a href="mailto:legal@bemytraveller.com" className="text-amber-600 hover:underline">legal@bemytraveller.com</a> or call <a href="tel:18002279779" className="text-amber-600 hover:underline">1800 22 7979</a>.</p>
+          <p>For any queries regarding these terms, contact us at <a href="mailto:legal@bemytraveller.com" className="text-amber-600 hover:underline">legal@bemytraveller.com</a> or call <a href="tel:918091638090" className="text-amber-600 hover:underline">+91 8091638090</a>.</p>
         </Section>
       </div>
 

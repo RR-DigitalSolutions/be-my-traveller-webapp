@@ -22,7 +22,7 @@ export default function AdminSettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false);
 
   const [isWaTestOpen, setIsWaTestOpen] = useState(false);
-  const [testWaRecipient, setTestWaRecipient] = useState("+91 98765 43210");
+  const [testWaRecipient, setTestWaRecipient] = useState("+91 8091638090");
   const [testWaMessage, setTestWaMessage] = useState("Namaste from Be My Traveller Concierge! Your test message is verified.");
   const [testingWa, setTestingWa] = useState(false);
 
@@ -88,9 +88,9 @@ export default function AdminSettingsPage() {
       },
     ],
 
-    primaryPhone: "+91 98765 43210",
-    emergencyHelpline: "+91 98765 00000",
-    whatsappNumber: "+91 98765 43210",
+    primaryPhone: "+91 8091638090",
+    emergencyHelpline: "+91 8091638090",
+    whatsappNumber: "+91 8091638090",
     primaryEmail: "hello@bemytraveller.com",
     supportEmail: "support@bemytraveller.com",
     billingEmail: "accounts@bemytraveller.com",
@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
       fromEmail: "noreply@bemytraveller.com",
       replyToEmail: "support@bemytraveller.com",
       emailSignature:
-        "Warm Regards,\nBe My Traveller Holidays Concierge Team\n24/7 Helpline: +91 98765 43210 | support@bemytraveller.com",
+        "Warm Regards,\nBe My Traveller Holidays Concierge Team\n24/7 Helpline: +91 8091638090 | support@bemytraveller.com",
       isActive: true,
     },
 
@@ -267,6 +267,7 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (data.success) {
         showToast("✓ All platform settings saved and synchronized!");
+        if (typeof window !== "undefined") window.dispatchEvent(new Event("site_settings_updated"));
       } else {
         showToast(data.error || "Failed to update settings", "error");
       }
@@ -1875,7 +1876,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={testWaRecipient}
                   onChange={(e) => setTestWaRecipient(e.target.value)}
-                  placeholder="+91 98765 43210"
+                  placeholder="+91 8091638090"
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-amber-500"
                 />
               </div>

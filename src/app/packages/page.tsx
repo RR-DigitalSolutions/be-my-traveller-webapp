@@ -10,6 +10,17 @@ interface ThemeOption {
   label: string;
 }
 
+const mergeThemeOptions = (base: ThemeOption[], incoming: ThemeOption[]) => {
+  const seen = new Set<string>();
+
+  return [...base, ...incoming].filter((theme) => {
+    const key = String(theme.name || "").trim().toUpperCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export default function PackagesCatalogPage() {
   const [selectedTheme, setSelectedTheme] = useState("ALL");
   const [selectedDuration, setSelectedDuration] = useState("ALL");
@@ -25,13 +36,17 @@ export default function PackagesCatalogPage() {
     const loadThemes = async () => {
       try {
         const response = await fetch("/api/v1/themes");
+        if (!response.ok) return;
+
         const data = await response.json();
         const apiThemes = Array.isArray(data.themes) ? data.themes : [];
-        const nextThemes = apiThemes.length > 0 ? apiThemes.map((theme: any) => ({
-          name: String(theme.name || theme.slug || "").toUpperCase(),
-          label: String(theme.label || theme.name || theme.slug || ""),
-        })) : themeOptions;
-        setThemeOptions([{ name: "ALL", label: "All Themes" }, ...nextThemes]);
+
+        const nextThemes = apiThemes.map((theme: any) => ({
+          name: String(theme.name || theme.slug || "").trim().toUpperCase(),
+          label: String(theme.label || theme.name || theme.slug || "").trim(),
+        }));
+
+        setThemeOptions(mergeThemeOptions([{ name: "ALL", label: "All Themes" }], nextThemes));
       } catch (error) {
         console.warn("Unable to load admin themes for packages page.", error);
       }
