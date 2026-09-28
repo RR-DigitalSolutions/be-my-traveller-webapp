@@ -25,32 +25,27 @@ jobs:
         with:
           node-version: "22"
           cache: "pnpm"
-          cache-dependency-path: bemytraveller/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: bemytraveller
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript type check
-        working-directory: bemytraveller
         run: pnpm run type-check
 
       - name: ESLint
-        working-directory: bemytraveller
         run: pnpm run lint
 
       - name: Build
-        working-directory: bemytraveller
         run: pnpm run build
         env:
           MONGODB_URI: mongodb://localhost:27017/bemytraveller_test
           AUTH_SECRET: ci-build-secret-stub-32-characters!!
-          NEXT_PUBLIC_R2_PUBLIC_URL: https://cdn.example.com
-          R2_ACCOUNT_ID: test
-          R2_ACCESS_KEY_ID: test
-          R2_SECRET_ACCESS_KEY: test
-          R2_BUCKET_NAME: test
+          NEXT_PUBLIC_APP_URL: https://bemytraveller.com
+          NEXT_PUBLIC_APP_NAME: "Be My Traveller"
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test
           CLOUDINARY_API_KEY: test
           CLOUDINARY_API_SECRET: test
-          CLOUDINARY_URL: cloudinary://test:test@test
-          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: test
+          SEED_SECRET: ci-seed-secret-stub
+          BMT_ADMIN_EMAIL: admin@test.com
+          BMT_ADMIN_PASSWORD: test-password-stub
