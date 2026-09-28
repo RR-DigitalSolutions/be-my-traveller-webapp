@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 interface HolidayThemeItem {
   _id?: string;
@@ -111,9 +112,9 @@ export default function ContentThemesPage() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Content</p>
             <h1 className="mt-2 text-2xl font-black text-white">Holiday Theme Manager</h1>
           </div>
-          <a href="/admin/content" className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white">
+          <Link href="/admin/content" className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-bold text-slate-300 hover:border-slate-500 hover:text-white">
             Back to Content Hub
-          </a>
+          </Link>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">

@@ -5,6 +5,7 @@ import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
 import SiteFooter from "@/components/common/SiteFooter";
 import { formatINR } from "@/lib/utils";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
 
 export interface SeasonalHikePeriod {
   id?: string;
@@ -58,6 +59,7 @@ export interface PackageData {
 }
 
 export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
+  const { cleanWhatsApp, cleanPhone, helplinePhone } = useSiteSettings();
   const [openDay, setOpenDay] = useState<number>(1);
   const [hotelTier, setHotelTier] = useState<"standard" | "deluxe" | "luxury">("deluxe");
   const [adults, setAdults] = useState(2);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 export interface MediaItem {
   _id: string;
@@ -81,13 +81,7 @@ export default function MediaPickerModal({
   const [customSlug, setCustomSlug] = useState("");
   const [assetTitle, setAssetTitle] = useState("");
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchMedia();
-    }
-  }, [isOpen, filterCategory]);
-
-  const fetchMedia = async () => {
+  const fetchMedia = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -103,7 +97,13 @@ export default function MediaPickerModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterCategory]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchMedia();
+    }
+  }, [isOpen, fetchMedia]);
 
   const currentEffectiveSlug =
     customSlug.trim() ||

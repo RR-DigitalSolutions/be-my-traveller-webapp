@@ -40,7 +40,7 @@ export function SiteSettingsProvider({
   );
   const [isLoading, setIsLoading] = useState(!initialSettings);
 
-  const fetchSettings = async () => {
+  const fetchSettings = React.useCallback(async () => {
     try {
       const res = await fetch("/api/v1/settings/public", { cache: "no-store" });
       if (res.ok) {
@@ -54,16 +54,18 @@ export function SiteSettingsProvider({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSettings();
 
     // Listen to custom cross-tab or in-page update event
-    const handleUpdate = () => fetchSettings();
+    const handleUpdate = () => {
+      fetchSettings();
+    };
     window.addEventListener("site_settings_updated", handleUpdate);
     return () => window.removeEventListener("site_settings_updated", handleUpdate);
-  }, []);
+  }, [fetchSettings]);
 
   const value = useMemo(() => {
     const cleanPhone = (settings.primaryPhone || "").replace(/\D/g, "");

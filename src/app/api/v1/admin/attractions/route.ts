@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve destination details if ID is provided
-    let finalDestId = destinationId ? new Types.ObjectId(destinationId) : undefined;
+    const finalDestId = destinationId ? new Types.ObjectId(destinationId) : undefined;
     let finalDestSlug = destinationSlug || "";
     let finalDestName = destinationName || "";
     let finalStateSlug = stateSlug || "";

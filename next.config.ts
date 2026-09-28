@@ -18,9 +18,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // ── Server-only packages that use Node.js built-ins (node:dns, node:net, etc.)
   // These must NOT be bundled by Turbopack/webpack into client or edge chunks.
-  // Covers: mongoose, @auth/mongodb-adapter, cloudinary, @aws-sdk/*, next-auth
+  // Covers direct deps and transitive importers of node: protocol built-ins.
   serverExternalPackages: [
     "mongoose",
+    "mongodb",
     "@auth/mongodb-adapter",
     "cloudinary",
     "@aws-sdk/client-s3",

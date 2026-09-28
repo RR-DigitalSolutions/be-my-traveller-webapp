@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPublicSiteSettings } from "@/lib/site-settings";
+import { getPublicSiteSettings } from "@/lib/site-settings-server";
 
 export const dynamic = "force-dynamic";
 
