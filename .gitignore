@@ -40,3 +40,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# duplicate/nested project folder — DO NOT re-add
+/bemytraveller/
+
+# npm lock file — this project uses pnpm
+package-lock.json
