@@ -1,2 +1,3 @@
-onlyBuiltDependencies:
-  - unrs-resolver
+# pnpm workspace configuration
+# onlyBuiltDependencies is declared in package.json under the "pnpm" key
+# so that Vercel and CI environments read it correctly
