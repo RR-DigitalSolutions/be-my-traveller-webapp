@@ -86,8 +86,8 @@ export async function GET() {
       cities,
       total: allDests.length,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Destinations Hierarchy GET Error]:", error);
-    return NextResponse.json({ error: "Failed to fetch destination hierarchy" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Failed to fetch destination hierarchy" }, { status: 500 });
   }
 }

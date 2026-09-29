@@ -7,11 +7,13 @@
 import mongoose from "mongoose";
 import dns from "node:dns";
 
-// Fix Windows / ISP DNS SRV resolution issues for MongoDB Atlas
-try {
-  dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "1.0.0.1"]);
-} catch (e) {
-  // Ignore if not supported in environment
+// Fix Windows / local ISP DNS SRV resolution issues for MongoDB Atlas
+if (process.platform === "win32") {
+  try {
+    dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "1.0.0.1"]);
+  } catch {
+    // Ignore if not supported in environment
+  }
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -19,7 +21,14 @@ const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error(
     "MONGODB_URI environment variable is not set. " +
-      "Add it to your .env.local file."
+      "Add it to your environment variables."
+  );
+}
+
+if (MONGODB_URI.includes("@cluster.mongodb.net")) {
+  console.error(
+    "[MongoDB Error] MONGODB_URI contains the placeholder domain 'cluster.mongodb.net'. " +
+      "Please update your MONGODB_URI in Vercel Project Settings with your actual MongoDB Atlas cluster connection string."
   );
 }
 

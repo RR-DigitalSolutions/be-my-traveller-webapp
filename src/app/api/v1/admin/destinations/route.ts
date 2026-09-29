@@ -88,9 +88,9 @@ export async function GET(req: NextRequest) {
       .toArray();
 
     return NextResponse.json({ destinations, total: destinations.length });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Admin Destinations GET Error]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
 
@@ -232,8 +232,8 @@ export async function POST(req: NextRequest) {
     const result = await db.collection("destinations").insertOne(doc);
 
     return NextResponse.json({ success: true, destination: { ...doc, _id: result.insertedId } }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Admin Destinations POST Error]:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Internal Server Error" }, { status: 500 });
   }
 }
