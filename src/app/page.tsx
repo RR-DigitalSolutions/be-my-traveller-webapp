@@ -258,9 +258,10 @@ export default function HomePage() {
           </div>
 
           {/* ── OTA Booking Search Card (Elevated White Box) ── */}
-          <div className="bg-white rounded-xl p-5 sm:p-7 shadow-2xl border border-slate-100 text-slate-900">
+          {/* ── OTA Booking Search Card (Elevated White Box) ── */}
+          <div className="bg-white rounded-2xl p-3.5 sm:p-7 shadow-2xl border border-slate-100 text-slate-900">
             {/* Search Type Selector Tabs */}
-            <div className="flex items-center gap-1 border-b border-slate-200 pb-0 mb-5 overflow-x-auto">
+            <div className="flex items-center gap-1 sm:gap-2 border-b border-slate-200 pb-0 mb-3.5 sm:mb-5 overflow-x-auto scrollbar-none">
               {[
                 { key: "holidays", icon: "🏖️", label: "Holiday Packages" },
                 { key: "custom", icon: "🧭", label: "Build Custom Itinerary" },
@@ -269,13 +270,13 @@ export default function HomePage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveSearchTab(tab.key as typeof activeSearchTab)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
                     activeSearchTab === tab.key
-                      ? "text-amber-600 border-amber-500"
+                      ? "text-amber-600 border-amber-500 bg-amber-50/60 rounded-t-lg"
                       : "text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300"
                   }`}
                 >
-                  <span>{tab.icon}</span> {tab.label}
+                  <span className="text-xs sm:text-sm">{tab.icon}</span> <span>{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -283,74 +284,74 @@ export default function HomePage() {
             {/* ── TAB 1: Holiday Packages ── */}
             {activeSearchTab === "holidays" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Departure City</label>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">From City</label>
                     <input
                       type="text"
                       value={fromCity}
                       onChange={(e) => setFromCity(e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
                       placeholder="e.g. New Delhi"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Flying / Starting From</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Starting From</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Destination</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Destination</label>
                     <input
                       type="text"
                       value={toDestination}
                       onChange={(e) => setToDestination(e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5"
-                      placeholder="e.g. Himachal Pradesh"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
+                      placeholder="e.g. Himachal"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">500+ destinations available</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">500+ destinations</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Travel Month</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Travel Month</label>
                     <select
                       value={travelMonth}
                       onChange={(e) => setTravelMonth(e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate"
                     >
                       {["September 2026","October 2026","November 2026","December 2026","January 2027","February 2027","March 2027","April 2027","May 2027"].map(m => (
                         <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Peak & off-season</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Peak & off-season</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Duration</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Duration</label>
                     <select
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate"
                     >
                       {["2 - 3 Nights","4 - 5 Nights","5 - 7 Nights","7 - 10 Nights","10 - 14 Nights","14+ Nights"].map(d => (
                         <option key={d} value={d}>{d}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Flexible nights</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Flexible nights</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => { setEnquiryPackage(`Holiday to ${toDestination} (${duration}, ${travelMonth})`); setIsEnquiryOpen(true); }}
-                    className="w-full min-h-[72px] rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm uppercase tracking-wide flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01]"
+                    className="col-span-2 lg:col-span-1 w-full py-3.5 sm:py-0 sm:min-h-[68px] rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wide flex flex-row lg:flex-col items-center justify-center gap-1.5 sm:gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Search Packages
+                    <span>Search Packages</span>
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] text-slate-400 font-semibold">🔥 Trending:</span>
+                <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto scrollbar-none whitespace-nowrap">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">🔥 Trending:</span>
                   {["Manali Snow Tour","Kashmir Houseboat","Kerala Backwaters","Royal Rajasthan","Andaman Islands","Goa Beach"].map(item => (
-                    <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[11px] font-medium transition-colors cursor-pointer">{item}</button>
+                    <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
                   ))}
                 </div>
               </div>
@@ -359,71 +360,71 @@ export default function HomePage() {
             {/* ── TAB 2: Build Custom Itinerary ── */}
             {activeSearchTab === "custom" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dream Destination</label>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Dream Destination</label>
                     <input
                       type="text"
                       value={toDestination}
                       onChange={(e) => setToDestination(e.target.value)}
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5"
-                      placeholder="e.g. Ladakh, Bali, Europe"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
+                      placeholder="e.g. Ladakh, Bali"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Domestic or International</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Domestic or International</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Travel Style</label>
-                    <select className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer">
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Travel Style</label>
+                    <select className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate">
                       {["Adventure & Trekking","Romantic Honeymoon","Family Vacation","Spiritual Pilgrimage","Luxury & Wellness","Budget Backpacking","Group Tour","Solo Exploration"].map(s => (
                         <option key={s}>{s}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">We customize it for you</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">We customize it for you</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Budget Per Person</label>
-                    <select className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer">
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Budget / Person</label>
+                    <select className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate">
                       {["Under ₹15,000","₹15,000 – ₹25,000","₹25,000 – ₹40,000","₹40,000 – ₹60,000","₹60,000 – ₹1,00,000","₹1,00,000+ (Luxury)"].map(b => (
                         <option key={b}>{b}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">All-inclusive estimate</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">All-inclusive estimate</span>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Approx Travel Date</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Approx Date</label>
                     <input
                       type="month"
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Flexible dates welcome</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Flexible dates welcome</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Group Size</label>
-                    <select className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer">
+                  <div className="col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Group Size</label>
+                    <select className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate">
                       {["Solo (1 Person)","Couple (2 People)","Family (3–5)","Group (6–10)","Large Group (10+)"].map(g => (
                         <option key={g}>{g}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Private cab sizing</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Private cab sizing</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => { setEnquiryPackage(`Custom Itinerary — ${toDestination}`); setIsEnquiryOpen(true); }}
-                    className="w-full min-h-[72px] rounded-2xl bg-gradient-to-br from-[#0b1b36] to-slate-800 hover:from-slate-700 hover:to-slate-900 text-white font-black text-sm uppercase tracking-wide flex flex-col items-center justify-center gap-1 shadow-lg transition-all cursor-pointer hover:scale-[1.01]"
+                    className="col-span-2 sm:col-span-1 w-full py-3.5 sm:py-0 sm:min-h-[68px] rounded-xl bg-gradient-to-br from-[#0b1b36] to-slate-800 hover:from-slate-700 hover:to-slate-900 text-white font-black text-xs sm:text-sm uppercase tracking-wide flex flex-row lg:flex-col items-center justify-center gap-1.5 sm:gap-1 shadow-lg transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <span className="text-lg">✨</span>
-                    Build My Itinerary
+                    <span className="text-base sm:text-lg">✨</span>
+                    <span>Build My Itinerary</span>
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] text-slate-400 font-semibold">✨ Popular Custom Trips:</span>
-                  {["Spiti Valley Circuit","South India Temple Route","Rajasthan Heritage Loop","Golden Triangle","North East Adventure","Europe in 12 Days"].map(item => (
-                    <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[11px] font-medium transition-colors cursor-pointer">{item}</button>
+                <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto scrollbar-none whitespace-nowrap">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">✨ Popular:</span>
+                  {["Spiti Valley Circuit","South India Temple Route","Rajasthan Heritage Loop","Golden Triangle","North East Adventure"].map(item => (
+                    <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
                   ))}
                 </div>
               </div>
@@ -432,60 +433,60 @@ export default function HomePage() {
             {/* ── TAB 3: Luxury Stays & Resorts ── */}
             {activeSearchTab === "hotels" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors lg:col-span-1">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Destination / Property</label>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+                  <div className="col-span-2 lg:col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Destination / Property</label>
                     <input
                       type="text"
                       placeholder="e.g. Manali, Udaipur..."
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">4★ & 5★ curated only</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">4★ & 5★ curated only</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Check-In Date</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Check-In Date</label>
                     <input
                       type="date"
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Arrival date</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Arrival date</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Check-Out Date</label>
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Check-Out Date</label>
                     <input
                       type="date"
-                      className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer"
                     />
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Departure date</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Departure date</span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 hover:border-amber-400 transition-colors">
-                    <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rooms & Guests</label>
-                    <select className="w-full bg-transparent text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer">
+                  <div className="col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Rooms & Guests</label>
+                    <select className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate">
                       {["1 Room · 1 Adult","1 Room · 2 Adults","2 Rooms · 2–4 Adults","2 Rooms · 4+ Adults","3+ Rooms (Group)"].map(r => (
                         <option key={r}>{r}</option>
                       ))}
                     </select>
-                    <span className="text-[11px] text-slate-400 mt-0.5 block">Private room basis</span>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Private room basis</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => { setEnquiryPackage("Luxury Stay Booking"); setIsEnquiryOpen(true); }}
-                    className="w-full min-h-[72px] rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm uppercase tracking-wide flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01]"
+                    className="col-span-2 lg:col-span-1 w-full py-3.5 sm:py-0 sm:min-h-[68px] rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wide flex flex-row lg:flex-col items-center justify-center gap-1.5 sm:gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                   >
-                    <span className="text-lg">🏨</span>
-                    Check Availability
+                    <span className="text-base sm:text-lg">🏨</span>
+                    <span>Check Availability</span>
                   </button>
                 </div>
 
                 {/* Hotel category filters */}
-                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
-                  <span className="text-[11px] text-slate-400 font-semibold">⭐ Popular Luxury Stays:</span>
-                  {["Private Pool Villas Bali","Heritage Havelis Rajasthan","Overwater Maldives Resort","Hill Station Chalets Shimla","Houseboat Alleppey","Jungle Lodges Coorg"].map(item => (
-                    <button key={item} className="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-medium transition-colors cursor-pointer">{item}</button>
+                <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto scrollbar-none whitespace-nowrap">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">⭐ Popular:</span>
+                  {["Private Pool Villas Bali","Heritage Havelis Rajasthan","Overwater Maldives Resort","Hill Station Chalets Shimla","Houseboat Alleppey"].map(item => (
+                    <button key={item} className="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
                   ))}
                 </div>
               </div>

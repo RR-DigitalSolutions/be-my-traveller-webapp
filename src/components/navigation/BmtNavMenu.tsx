@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
 import Link from "next/link";
 import Image from "next/image";
@@ -33,6 +34,11 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
   const [mobileExpandedSection, setMobileExpandedSection] = useState<string | null>("india");
   const [mobileExpandedState, setMobileExpandedState] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isSolid = isScrolled || variant === "solid";
@@ -820,11 +826,11 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         </div>
       )}
 
-      {/* ── Mobile Full-Screen Drawer (Optimized & Compact) ── */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100] bg-white overflow-y-auto">
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200 sticky top-0 bg-white z-10 shadow-xs">
+      {/* ── Mobile Full-Screen Drawer (Rendered via Portal on document.body to bypass header stacking context) ── */}
+      {mobileMenuOpen && mounted && createPortal(
+        <div className="lg:hidden fixed inset-0 z-[9999] bg-white flex flex-col h-[100dvh] w-full overflow-hidden shadow-2xl animate-in fade-in duration-200">
+          {/* Mobile Top Header */}
+          <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200 bg-white shrink-0 shadow-xs">
             <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
               <div className="relative w-36 h-10">
                 <Image
@@ -833,75 +839,92 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                   fill
                   className="object-contain object-left"
                   sizes="144px"
+                  priority
                 />
               </div>
             </Link>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-              aria-label="Close menu"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <a
+                href={`tel:${cleanPhone}`}
+                className="w-9 h-9 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 flex items-center justify-center text-sm border border-amber-200 transition-colors"
+                aria-label="Call Helpline"
+                title="Call 24/7 Helpline"
+              >
+                📞
+              </a>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-base transition-colors cursor-pointer"
+                aria-label="Close menu"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
-          {/* Mobile Quick CTA */}
-          <div className="px-4 py-2.5 bg-amber-50/80 border-b border-amber-100 flex items-center justify-between gap-2">
+          {/* Quick Primary Actions Bar */}
+          <div className="px-3.5 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-slate-50 border-b border-amber-200/60 flex items-center gap-2 shrink-0">
             <Link
               href="/customize"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 text-center py-2 px-3 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-xs"
+              className="flex-1 text-center py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-sm shadow-amber-500/25 flex items-center justify-center gap-1.5"
             >
-              ✨ Plan My Custom Trip
+              <span>✨</span>
+              <span>Plan Custom Trip</span>
             </Link>
             <a
-              href={`tel:${cleanPhone}`}
-              className="py-2.5 px-3 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-xs hover:bg-slate-50 transition-colors"
+              href={`https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent("Hi! I would like to plan a trip with Be My Traveller.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shrink-0 transition-colors"
             >
-              <span>📞</span>
-              <span>{helplinePhone}</span>
+              <span>💬</span>
+              <span>WhatsApp</span>
             </a>
           </div>
 
-          {/* Mobile Nav Items */}
-          <div className="divide-y divide-slate-100 text-sm">
+          {/* Scrollable Nav Content Body */}
+          <div className="flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-100 pb-6">
             {/* 1. India Holidays Accordion */}
             <div>
               <button
                 onClick={() => setMobileExpandedSection(mobileExpandedSection === "india" ? null : "india")}
-                className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-900 bg-slate-50/50 cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3.5 font-bold text-slate-900 bg-slate-50/60 cursor-pointer"
               >
-                <span className="flex items-center gap-1.5 text-[13.5px]">
-                  <span>🇮🇳</span>
+                <span className="flex items-center gap-2 text-[14px]">
+                  <span className="text-base">🇮🇳</span>
                   <span>India Holidays (States &amp; Places)</span>
                 </span>
-                <svg
-                  className={`w-4 h-4 text-slate-400 transition-transform ${
-                    mobileExpandedSection === "india" ? "rotate-180" : ""
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                    28 States
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                      mobileExpandedSection === "india" ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
               </button>
 
               {mobileExpandedSection === "india" && (
-                <div className="bg-slate-50/90 px-3 py-2 space-y-3">
+                <div className="bg-slate-50/90 px-3.5 py-2.5 space-y-3">
                   <Link
                     href="/destination/india-tour-packages"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block text-center py-1.5 px-3 rounded-lg bg-amber-500 text-slate-950 font-black text-[11.5px] shadow-2xs"
+                    className="block text-center py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xs"
                   >
                     View All India Tour Packages (250+) →
                   </Link>
 
                   {Object.entries(indiaRegions).map(([region, states]) => (
                     <div key={region} className="space-y-1.5">
-                      <p className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 px-1 pt-1">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 px-1 pt-1">
                         {region}
                       </p>
 
@@ -909,34 +932,34 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                         {states.map((st) => (
                           <div
                             key={st.stateSlug}
-                            className="rounded-xl border border-slate-200/80 bg-white p-2 shadow-3xs"
+                            className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-2xs space-y-1.5"
                           >
                             <div className="flex items-center justify-between">
                               <Link
                                 href={st.url}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="font-bold text-[12px] text-slate-900 hover:text-amber-600 flex items-center gap-1"
+                                className="font-bold text-[13px] text-slate-900 hover:text-amber-600 flex items-center gap-1.5"
                               >
-                                {st.isHot && <span className="text-[9px]">🔥</span>}
+                                {st.isHot && <span className="text-[10px]">🔥</span>}
                                 <span>{st.name}</span>
                               </Link>
                               <Link
                                 href={st.url}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full"
+                                className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full"
                               >
                                 {st.count}
                               </Link>
                             </div>
 
-                            {/* Nested Places on Mobile */}
-                            <div className="mt-1.5 flex flex-wrap gap-1 pt-1.5 border-t border-slate-100">
+                            {/* Nested Places under State */}
+                            <div className="flex flex-wrap gap-1 pt-1.5 border-t border-slate-100">
                               {st.places.map((pl) => (
                                 <Link
                                   key={pl.slug}
                                   href={pl.url}
                                   onClick={() => setMobileMenuOpen(false)}
-                                  className="text-[10px] font-medium bg-slate-100 hover:bg-amber-100 text-slate-700 px-1.5 py-0.5 rounded"
+                                  className="text-[10.5px] font-medium bg-slate-100 hover:bg-amber-500 hover:text-slate-950 text-slate-700 px-2 py-0.5 rounded transition-colors"
                                 >
                                   {pl.name}
                                 </Link>
@@ -948,10 +971,10 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                     </div>
                   ))}
 
-                  {/* Islands & UTs on mobile */}
+                  {/* Islands & UTs */}
                   <div className="pt-2 border-t border-slate-200">
-                    <p className="text-[9.5px] font-black uppercase tracking-wider text-amber-700 py-1 px-1">
-                      🏝️ Islands &amp; Union Territory
+                    <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 py-1 px-1">
+                      🏝️ Islands &amp; Union Territories
                     </p>
                     <div className="grid grid-cols-2 gap-1.5 mt-0.5">
                       {islandsAndUTs.map((ut) => (
@@ -959,7 +982,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                           key={ut.name}
                           href={ut.url}
                           onClick={() => setMobileMenuOpen(false)}
-                          className="p-1.5 px-2 rounded-lg bg-white border border-slate-200 text-[10.5px] font-bold text-slate-800 hover:text-amber-600 flex items-center gap-1 truncate shadow-3xs"
+                          className="p-2 rounded-xl bg-white border border-slate-200 text-[11px] font-bold text-slate-800 hover:text-amber-600 flex items-center gap-1.5 truncate shadow-2xs"
                         >
                           <span>{ut.icon}</span>
                           <span className="truncate">{ut.name}</span>
@@ -975,14 +998,14 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             <div>
               <button
                 onClick={() => setMobileExpandedSection(mobileExpandedSection === "world" ? null : "world")}
-                className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-800 cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3.5 font-bold text-slate-800 cursor-pointer"
               >
-                <span className="flex items-center gap-1.5 text-[13.5px]">
-                  <span>🌍</span>
-                  <span>World Tours</span>
+                <span className="flex items-center gap-2 text-[14px]">
+                  <span className="text-base">🌍</span>
+                  <span>World &amp; International Tours</span>
                 </span>
                 <svg
-                  className={`w-4 h-4 text-slate-400 transition-transform ${
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
                     mobileExpandedSection === "world" ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -993,10 +1016,10 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 </svg>
               </button>
               {mobileExpandedSection === "world" && (
-                <div className="bg-slate-50/90 px-4 pb-3 space-y-3">
+                <div className="bg-slate-50/90 px-4 py-3 space-y-3">
                   {Object.entries(worldDestinations).map(([region, places]) => (
-                    <div key={region}>
-                      <p className="text-[9.5px] font-black uppercase tracking-wider text-amber-600 py-1">
+                    <div key={region} className="space-y-1.5">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-amber-600">
                         {region}
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">
@@ -1005,7 +1028,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                             key={p.slug + p.name}
                             href={`/packages?destination=${p.slug}`}
                             onClick={() => setMobileMenuOpen(false)}
-                            className="text-[11px] font-medium text-slate-700 p-1 rounded bg-white border border-slate-100 hover:text-amber-600 truncate"
+                            className="text-[11.5px] font-semibold text-slate-800 p-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 truncate shadow-2xs"
                           >
                             {p.name}
                           </Link>
@@ -1023,14 +1046,14 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 onClick={() =>
                   setMobileExpandedSection(mobileExpandedSection === "speciality" ? null : "speciality")
                 }
-                className="w-full flex items-center justify-between px-4 py-3 font-bold text-slate-800 cursor-pointer"
+                className="w-full flex items-center justify-between px-4 py-3.5 font-bold text-slate-800 cursor-pointer"
               >
-                <span className="flex items-center gap-1.5 text-[13.5px]">
-                  <span>💎</span>
-                  <span>Speciality Tours</span>
+                <span className="flex items-center gap-2 text-[14px]">
+                  <span className="text-base">💎</span>
+                  <span>Signature &amp; Speciality Tours</span>
                 </span>
                 <svg
-                  className={`w-4 h-4 text-slate-400 transition-transform ${
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
                     mobileExpandedSection === "speciality" ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -1041,40 +1064,64 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 </svg>
               </button>
               {mobileExpandedSection === "speciality" && (
-                <div className="bg-slate-50/90 px-4 pb-3 space-y-1.5">
+                <div className="bg-slate-50/90 px-4 py-3 space-y-1.5">
                   {specialityTours.map((t) => (
                     <Link
                       key={t.title}
                       href={t.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-100 text-[11.5px] font-medium text-slate-700 hover:text-amber-600"
+                      className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 hover:text-amber-600 shadow-2xs"
                     >
-                      <span>{t.icon}</span> {t.title}
+                      <span className="text-base">{t.icon}</span>
+                      <span>{t.title}</span>
                     </Link>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Other static mobile links */}
-            {[
-              { href: "/customize?type=CORPORATE", label: "Corporate Travel", icon: "🏢" },
-              { href: "/destinations", label: "All Destinations Directory", icon: "🗺️" },
-              { href: "/contact", label: "Contact Us", icon: "✉️" },
-              { href: "/about", label: "About Us", icon: "ℹ️" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-3 font-bold text-slate-800 hover:text-amber-600 hover:bg-slate-50 transition-colors text-[13px]"
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
+            {/* Direct Quick Links */}
+            <div className="py-2">
+              {[
+                { href: "/packages", label: "All Holiday Packages", icon: "🏖️" },
+                { href: "/destinations", label: "Destinations Directory", icon: "🗺️" },
+                { href: "/customize?type=CORPORATE", label: "Corporate & MICE Travel", icon: "🏢" },
+                { href: "/contact", label: "Contact & Branch Offices", icon: "📍" },
+                { href: "/about", label: "About Be My Traveller", icon: "ℹ️" },
+                { href: "/admin/login", label: "Admin Portal", icon: "🔒" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 font-semibold text-slate-800 hover:text-amber-600 hover:bg-slate-50 transition-colors text-[13px]"
+                >
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+
+          {/* Bottom Sticky Action Dock (Fixed at bottom for thumb reach) */}
+          <div className="border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center justify-between gap-3 shrink-0 shadow-lg">
+            <a
+              href={`tel:${cleanPhone}`}
+              className="flex-1 text-center py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <span>📞</span>
+              <span>{helplinePhone}</span>
+            </a>
+            <Link
+              href="/packages"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex-1 text-center py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors"
+            >
+              View Packages (100+) →
+            </Link>
+          </div>
+        </div>,
+        document.body
       )}
     </header>
   );
