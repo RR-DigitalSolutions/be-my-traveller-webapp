@@ -9,10 +9,13 @@ import mongoose, { type Document, type Model, Schema } from "mongoose";
 export type LeadStatus =
   | "NEW"
   | "CONTACTED"
+  | "CONNECTED"
+  | "FOLLOW_UP"
   | "QUALIFIED"
   | "QUOTE_SENT"
   | "NEGOTIATION"
   | "PAYMENT_PENDING"
+  | "CONFIRMED"
   | "BOOKED"
   | "TRAVEL_COMPLETED"
   | "LOST";
@@ -26,7 +29,30 @@ export type LeadSource =
   | "WHATSAPP"
   | "PHONE"
   | "CUSTOM_TRIP_FORM"
-  | "PACKAGE_ENQUIRY";
+  | "PACKAGE_ENQUIRY"
+  | "CAB_RENTAL"
+  | "TRANSPORTATION"
+  | "HOMEPAGE_WIDGET"
+  | "HOTEL_ENQUIRY";
+
+export type LeadType =
+  | "HOLIDAY_PACKAGE"
+  | "CUSTOM_ITINERARY"
+  | "TRANSPORTATION"
+  | "HOTEL_STAY"
+  | "GENERAL";
+
+export interface ITripDetails {
+  tripType?: "ONE_WAY" | "ROUND_TRIP" | "MULTICITY";
+  pickupCity?: string;
+  dropCity?: string;
+  multicityStops?: string[];
+  vehicleType?: string;
+  pickupDate?: string;
+  returnDate?: string;
+  pickupTime?: string;
+  passengers?: number;
+}
 
 export interface ILeadNote {
   _id: mongoose.Types.ObjectId;
@@ -58,6 +84,8 @@ export interface ILead extends Document {
   hotelCategory?: string;
   themes?: string[];
   specialRequirements?: string;
+  leadType?: LeadType;
+  tripDetails?: ITripDetails;
 
   status: LeadStatus;
   lostReason?: string;
@@ -134,16 +162,35 @@ const LeadSchema = new Schema<ILead>(
     hotelCategory: { type: String },
     themes: [{ type: String }],
     specialRequirements: { type: String },
+    leadType: {
+      type: String,
+      enum: ["HOLIDAY_PACKAGE", "CUSTOM_ITINERARY", "TRANSPORTATION", "HOTEL_STAY", "GENERAL"],
+      default: "HOLIDAY_PACKAGE",
+    },
+    tripDetails: {
+      tripType: { type: String, enum: ["ONE_WAY", "ROUND_TRIP", "MULTICITY"] },
+      pickupCity: { type: String },
+      dropCity: { type: String },
+      multicityStops: [{ type: String }],
+      vehicleType: { type: String },
+      pickupDate: { type: String },
+      returnDate: { type: String },
+      pickupTime: { type: String },
+      passengers: { type: Number },
+    },
 
     status: {
       type: String,
       enum: [
         "NEW",
         "CONTACTED",
+        "CONNECTED",
+        "FOLLOW_UP",
         "QUALIFIED",
         "QUOTE_SENT",
         "NEGOTIATION",
         "PAYMENT_PENDING",
+        "CONFIRMED",
         "BOOKED",
         "TRAVEL_COMPLETED",
         "LOST",
@@ -167,6 +214,10 @@ const LeadSchema = new Schema<ILead>(
         "PHONE",
         "CUSTOM_TRIP_FORM",
         "PACKAGE_ENQUIRY",
+        "CAB_RENTAL",
+        "TRANSPORTATION",
+        "HOMEPAGE_WIDGET",
+        "HOTEL_ENQUIRY",
       ] satisfies LeadSource[],
       required: true,
       default: "DIRECT",

@@ -6,10 +6,31 @@ import { apiSuccess, apiError } from "@/lib/errors/app-errors";
 
 const createLeadSchema = z.object({
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("Invalid email address"),
+  email: z
+    .string()
+    .email("Invalid email address")
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val && val.trim() ? val : "traveller@bemytraveller.com")),
   phone: z.string().min(8, "Phone number is required"),
   packageId: z.string().optional(),
   destinations: z.array(z.string()).optional(),
+  leadType: z
+    .enum(["HOLIDAY_PACKAGE", "CUSTOM_ITINERARY", "TRANSPORTATION", "HOTEL_STAY", "GENERAL"])
+    .optional(),
+  tripDetails: z
+    .object({
+      tripType: z.enum(["ONE_WAY", "ROUND_TRIP", "MULTICITY"]).optional(),
+      pickupCity: z.string().optional(),
+      dropCity: z.string().optional(),
+      multicityStops: z.array(z.string()).optional(),
+      vehicleType: z.string().optional(),
+      pickupDate: z.string().optional(),
+      returnDate: z.string().optional(),
+      pickupTime: z.string().optional(),
+      passengers: z.number().optional(),
+    })
+    .optional(),
   travelDates: z
     .object({
       from: z.string().optional(),

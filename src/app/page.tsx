@@ -2,13 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
 import ThemePackagesSection from "@/components/home/ThemePackagesSection";
 import SpecialOffersCarousel from "@/components/home/SpecialOffersCarousel";
 
 export default function HomePage() {
+  const router = useRouter();
+
   const [activeSearchTab, setActiveSearchTab] = useState<
-    "holidays" | "custom" | "hotels" | "activities" | "visa"
+    "holidays" | "custom" | "cabs" | "hotels" | "activities" | "visa"
   >("holidays");
 
   const [destinationTab, setDestinationTab] = useState<
@@ -22,6 +25,23 @@ export default function HomePage() {
   const [duration, setDuration] = useState("5 - 7 Nights");
   const [guests, setGuests] = useState("2 Adults, 1 Room");
 
+  // Cab & Transportation States
+  const [cabTripType, setCabTripType] = useState<"ONE_WAY" | "ROUND_TRIP" | "MULTICITY">("ONE_WAY");
+  const [cabPickupCity, setCabPickupCity] = useState("New Delhi / NCR");
+  const [cabDropCity, setCabDropCity] = useState("Manali / Himachal");
+  const [cabVehicleType, setCabVehicleType] = useState("Sedan (Dzire / Etios · 4 Seater)");
+  const [cabPickupDate, setCabPickupDate] = useState("2026-10-15");
+  const [cabReturnDate, setCabReturnDate] = useState("2026-10-20");
+  const [cabPickupTime, setCabPickupTime] = useState("06:00 AM");
+  const [cabPassengers, setCabPassengers] = useState(2);
+  const [isCabModalOpen, setIsCabModalOpen] = useState(false);
+  const [cabName, setCabName] = useState("");
+  const [cabPhone, setCabPhone] = useState("");
+  const [cabEmail, setCabEmail] = useState("");
+  const [cabSpecialReq, setCabSpecialReq] = useState("");
+  const [cabSubmitting, setCabSubmitting] = useState(false);
+  const [cabSuccess, setCabSuccess] = useState(false);
+
   // Enquiry modal state
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
   const [enquiryPackage, setEnquiryPackage] = useState("");
@@ -29,6 +49,66 @@ export default function HomePage() {
   const [enquiryPhone, setEnquiryPhone] = useState("");
   const [enquiryEmail, setEnquiryEmail] = useState("");
   const [enquirySuccess, setEnquirySuccess] = useState(false);
+
+  const handleSearchPackages = (overrideDestination?: string) => {
+    const dest = overrideDestination || toDestination;
+    const params = new URLSearchParams();
+    if (dest) params.set("destination", dest.trim());
+    if (fromCity) params.set("from", fromCity.trim());
+    if (travelMonth) params.set("month", travelMonth.trim());
+    if (duration) params.set("duration", duration.trim());
+    router.push(`/packages?${params.toString()}`);
+  };
+
+  const handleCabSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cabName.trim() || !cabPhone.trim()) {
+      alert("Please enter your name and contact phone number.");
+      return;
+    }
+    try {
+      setCabSubmitting(true);
+      const tripSummary = `Cab Booking (${cabTripType.replace("_", " ")}): Pickup from "${cabPickupCity}" to "${cabDropCity}" in ${cabVehicleType} on ${cabPickupDate}${cabTripType !== "ONE_WAY" ? ` returning ${cabReturnDate}` : ""} at ${cabPickupTime} for ${cabPassengers} pax. ${cabSpecialReq ? `Notes: ${cabSpecialReq}` : ""}`;
+
+      await fetch("/api/v1/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: cabName,
+          phone: cabPhone,
+          email: cabEmail || undefined,
+          leadType: "TRANSPORTATION",
+          source: "CAB_RENTAL",
+          tripDetails: {
+            tripType: cabTripType,
+            pickupCity: cabPickupCity,
+            dropCity: cabDropCity,
+            vehicleType: cabVehicleType,
+            pickupDate: cabPickupDate,
+            returnDate: cabTripType !== "ONE_WAY" ? cabReturnDate : undefined,
+            pickupTime: cabPickupTime,
+            passengers: cabPassengers,
+          },
+          specialRequirements: tripSummary,
+        }),
+      });
+
+      setCabSuccess(true);
+      setTimeout(() => {
+        setIsCabModalOpen(false);
+        setCabSuccess(false);
+        setCabName("");
+        setCabPhone("");
+        setCabEmail("");
+        setCabSpecialReq("");
+      }, 3000);
+    } catch {
+      alert("Enquiry received! Our cab desk will call you shortly.");
+      setIsCabModalOpen(false);
+    } finally {
+      setCabSubmitting(false);
+    }
+  };
 
   const handleEnquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +120,7 @@ export default function HomePage() {
           name: enquiryName,
           email: enquiryEmail,
           phone: enquiryPhone,
+          leadType: "HOLIDAY_PACKAGE",
           specialRequirements: `Interested in: ${enquiryPackage || toDestination}`,
           source: "HOMEPAGE_WIDGET",
         }),
@@ -265,6 +346,7 @@ export default function HomePage() {
               {[
                 { key: "holidays", icon: "🏖️", label: "Holiday Packages" },
                 { key: "custom", icon: "🧭", label: "Build Custom Itinerary" },
+                { key: "cabs", icon: "🚗", label: "Transportation & Cabs" },
                 { key: "hotels", icon: "🏨", label: "Luxury Stays & Resorts" },
               ].map((tab) => (
                 <button
@@ -339,7 +421,7 @@ export default function HomePage() {
 
                   <button
                     type="button"
-                    onClick={() => { setEnquiryPackage(`Holiday to ${toDestination} (${duration}, ${travelMonth})`); setIsEnquiryOpen(true); }}
+                    onClick={() => handleSearchPackages()}
                     className="col-span-2 lg:col-span-1 w-full py-3.5 sm:py-0 sm:min-h-[68px] rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wide flex flex-row lg:flex-col items-center justify-center gap-1.5 sm:gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -351,7 +433,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto scrollbar-none whitespace-nowrap">
                   <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">🔥 Trending:</span>
                   {["Manali Snow Tour","Kashmir Houseboat","Kerala Backwaters","Royal Rajasthan","Andaman Islands","Goa Beach"].map(item => (
-                    <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
+                    <button key={item} onClick={() => { setToDestination(item); handleSearchPackages(item); }} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
                   ))}
                 </div>
               </div>
@@ -425,6 +507,129 @@ export default function HomePage() {
                   <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">✨ Popular:</span>
                   {["Spiti Valley Circuit","South India Temple Route","Rajasthan Heritage Loop","Golden Triangle","North East Adventure"].map(item => (
                     <button key={item} onClick={() => setToDestination(item)} className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0">{item}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB 3: Transportation & Cabs ── */}
+            {activeSearchTab === "cabs" && (
+              <div className="space-y-3.5">
+                {/* Trip Type Selector Pills */}
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-fit overflow-x-auto scrollbar-none">
+                  {[
+                    { id: "ONE_WAY", label: "Single Trip (One Way)", icon: "➡️" },
+                    { id: "ROUND_TRIP", label: "Round Trip", icon: "🔁" },
+                    { id: "MULTICITY", label: "Multicity / Outstation", icon: "🗺️" },
+                  ].map((tt) => (
+                    <button
+                      key={tt.id}
+                      type="button"
+                      onClick={() => setCabTripType(tt.id as typeof cabTripType)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+                        cabTripType === tt.id
+                          ? "bg-amber-500 text-slate-950 shadow-sm"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>{tt.icon}</span> <span>{tt.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+                  {/* Pickup City */}
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Pickup Location</label>
+                    <input
+                      type="text"
+                      value={cabPickupCity}
+                      onChange={(e) => setCabPickupCity(e.target.value)}
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
+                      placeholder="e.g. Delhi / Airport"
+                    />
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">City, Airport or Station</span>
+                  </div>
+
+                  {/* Drop / Destination City */}
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      {cabTripType === "MULTICITY" ? "Outstation Route" : "Drop Destination"}
+                    </label>
+                    <input
+                      type="text"
+                      value={cabDropCity}
+                      onChange={(e) => setCabDropCity(e.target.value)}
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 truncate"
+                      placeholder={cabTripType === "MULTICITY" ? "e.g. Delhi → Agra → Jaipur" : "e.g. Manali / Shimla"}
+                    />
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Drop city or hotel</span>
+                  </div>
+
+                  {/* Vehicle Type Selection */}
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">Vehicle Type</label>
+                    <select
+                      value={cabVehicleType}
+                      onChange={(e) => setCabVehicleType(e.target.value)}
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none mt-0.5 cursor-pointer truncate"
+                    >
+                      <option value="Sedan (Dzire / Etios · 4 Seater)">Sedan (Dzire / Etios · 4 Seater)</option>
+                      <option value="SUV / MPV (Ertiga / Carens · 6 Seater)">SUV / MPV (Ertiga / Carens · 6 Seater)</option>
+                      <option value="Premium SUV (Innova Crysta · 7 Seater)">Premium SUV (Innova Crysta · 7 Seater)</option>
+                      <option value="Luxury (Fortuner / BMW / Audi)">Luxury (Fortuner / BMW / Audi)</option>
+                      <option value="Tempo Traveller (12 Seater Maharaja)">Tempo Traveller (12 Seater Maharaja)</option>
+                      <option value="Tempo Traveller (17 / 26 Seater)">Tempo Traveller (17 / 26 Seater)</option>
+                    </select>
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">AC & verified drivers</span>
+                  </div>
+
+                  {/* Travel Dates & Time */}
+                  <div className="col-span-1 p-2.5 sm:p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-400 focus-within:border-amber-500 focus-within:bg-white transition-all shadow-3xs">
+                    <label className="block text-[9px] sm:text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                      {cabTripType === "ONE_WAY" ? "Pickup Date" : "Pickup & Return"}
+                    </label>
+                    <input
+                      type="date"
+                      value={cabPickupDate}
+                      onChange={(e) => setCabPickupDate(e.target.value)}
+                      className="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-900 focus:outline-none cursor-pointer"
+                    />
+                    <span className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 hidden sm:block">Time: {cabPickupTime}</span>
+                  </div>
+
+                  {/* Action CTA Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCabModalOpen(true)}
+                    className="col-span-2 lg:col-span-1 w-full py-3.5 sm:py-0 sm:min-h-[68px] rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wide flex flex-row lg:flex-col items-center justify-center gap-1.5 sm:gap-1 shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                  >
+                    <span className="text-base sm:text-lg">🚗</span>
+                    <span>Get Cab Quote</span>
+                  </button>
+                </div>
+
+                {/* Popular Cab Routes */}
+                <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 overflow-x-auto scrollbar-none whitespace-nowrap">
+                  <span className="text-[10px] sm:text-[11px] text-slate-400 font-bold shrink-0">🚗 Popular Cabs:</span>
+                  {[
+                    { from: "Delhi", to: "Manali" },
+                    { from: "Delhi", to: "Agra" },
+                    { from: "Chandigarh", to: "Shimla" },
+                    { from: "Delhi", to: "Jaipur" },
+                    { from: "Dehradun", to: "Mussoorie" },
+                    { from: "Cochin", to: "Munnar" },
+                  ].map((route) => (
+                    <button
+                      key={`${route.from}-${route.to}`}
+                      onClick={() => {
+                        setCabPickupCity(route.from);
+                        setCabDropCity(route.to);
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer shrink-0"
+                    >
+                      {route.from} ⇄ {route.to}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -959,6 +1164,124 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* ── Cab Booking Lead Modal Dialog ── */}
+      {isCabModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 sm:p-7 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setIsCabModalOpen(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+
+            {cabSuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 text-3xl flex items-center justify-center mx-auto shadow-inner">
+                  ✓
+                </div>
+                <h3 className="text-xl font-black text-slate-900">Cab Request Received!</h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Thank you! Our dedicated cab desk has received your request for <strong>{cabPickupCity} → {cabDropCity}</strong> in <strong>{cabVehicleType}</strong>. We will call and WhatsApp you confirmed rates and vehicle photos shortly.
+                </p>
+                <div className="pt-2">
+                  <a
+                    href={`https://wa.me/918091638090?text=Hello%2C%20I%20just%20requested%20a%20cab%20from%20${encodeURIComponent(cabPickupCity)}%20to%20${encodeURIComponent(cabDropCity)}%20in%20${encodeURIComponent(cabVehicleType)}.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-colors"
+                  >
+                    <span>💬</span> Connect on WhatsApp for Priority
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleCabSubmit} className="space-y-4">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 flex items-center gap-1">
+                    <span>🚗</span> Instant Cab & Driver Quote
+                  </span>
+                  <h3 className="text-base font-black text-slate-900 mt-1">
+                    {cabTripType === "ONE_WAY" ? "One-Way Cab" : cabTripType === "ROUND_TRIP" ? "Round-Trip Cab" : "Multicity Tour"}
+                  </h3>
+                  <div className="mt-2 bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1">
+                    <p className="font-bold text-slate-800">
+                      📍 {cabPickupCity} → {cabDropCity}
+                    </p>
+                    <p className="text-slate-500 text-[11px]">
+                      Vehicle: <span className="font-semibold text-slate-700">{cabVehicleType}</span>
+                    </p>
+                    <p className="text-slate-500 text-[11px]">
+                      Travel Date: <span className="font-semibold text-slate-700">{cabPickupDate}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Your Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Aman Gupta"
+                      value={cabName}
+                      onChange={(e) => setCabName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">WhatsApp / Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. +91 98765 43210"
+                      value={cabPhone}
+                      onChange={(e) => setCabPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Email Address (Optional)</label>
+                    <input
+                      type="email"
+                      placeholder="e.g. aman@example.com"
+                      value={cabEmail}
+                      onChange={(e) => setCabEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Special Notes / Luggage / Pickup Point</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Terminal 3 Airport pickup, 4 large bags"
+                      value={cabSpecialReq}
+                      onChange={(e) => setCabSpecialReq(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={cabSubmitting}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/25 transition-all cursor-pointer hover:scale-[1.01]"
+                >
+                  {cabSubmitting ? "Submitting Request..." : "Confirm & Get Instant Cab Quote"}
+                </button>
+
+                <p className="text-[10.5px] text-center text-slate-400">
+                  🚗 AC Clean Fleet · Commercial Taxi Permit · Verified Drivers
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Quick Enquiry Modal Dialog ── */}
       {isEnquiryOpen && (
