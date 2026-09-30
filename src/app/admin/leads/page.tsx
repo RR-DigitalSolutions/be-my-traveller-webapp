@@ -96,21 +96,75 @@ function normalizeStatus(st: string): LeadPipelineStatus {
   return "NEW";
 }
 
-function getLeadCategory(lead: ILeadItem): { label: string; icon: string; bg: string } {
+function getLeadCategory(lead: ILeadItem): { category: LeadCategory; label: string; icon: string; bg: string } {
   const req = (lead.specialRequirements || "").toLowerCase();
   const source = (lead.source || "").toUpperCase();
-  const type = lead.leadType || "";
+  const type = (lead.leadType || "").toUpperCase();
 
-  if (type === "TRANSPORTATION" || source === "CAB_RENTAL" || req.includes("cab") || req.includes("transfer") || lead.tripDetails?.vehicleType) {
-    return { label: "Cab / Transfer", icon: "🚗", bg: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" };
+  // Cab & Transportation
+  if (
+    type === "TRANSPORTATION" ||
+    source === "CAB_RENTAL" ||
+    source === "TRANSPORTATION" ||
+    req.includes("cab") ||
+    req.includes("transfer") ||
+    req.includes("sedan") ||
+    req.includes("suv") ||
+    req.includes("innova") ||
+    req.includes("ertiga") ||
+    req.includes("tempo traveller") ||
+    Boolean(lead.tripDetails?.vehicleType)
+  ) {
+    return {
+      category: "TRANSPORTATION",
+      label: "Cab & Transfers",
+      icon: "🚗",
+      bg: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    };
   }
-  if (type === "CUSTOM_ITINERARY" || source === "CUSTOM_TRIP_FORM" || req.includes("custom itinerary")) {
-    return { label: "Custom Trip", icon: "🧭", bg: "bg-amber-500/15 text-amber-400 border-amber-500/30" };
+
+  // Custom Itinerary
+  if (
+    type === "CUSTOM_ITINERARY" ||
+    source === "CUSTOM_TRIP_FORM" ||
+    source === "CUSTOM_TRIP_BUILDER" ||
+    req.includes("custom") ||
+    req.includes("itinerary") ||
+    req.includes("builder")
+  ) {
+    return {
+      category: "CUSTOM_ITINERARY",
+      label: "Custom Itinerary",
+      icon: "🧭",
+      bg: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    };
   }
-  if (type === "HOTEL_STAY" || source === "HOTEL_ENQUIRY" || lead.hotelCategory) {
-    return { label: "Luxury Stay", icon: "🏨", bg: "bg-purple-500/15 text-purple-400 border-purple-500/30" };
+
+  // Luxury Stays & Resorts
+  if (
+    type === "HOTEL_STAY" ||
+    source === "HOTEL_ENQUIRY" ||
+    Boolean(lead.hotelCategory) ||
+    req.includes("villa") ||
+    req.includes("resort") ||
+    req.includes("hotel") ||
+    req.includes("stay")
+  ) {
+    return {
+      category: "HOTEL_STAY",
+      label: "Luxury Stay",
+      icon: "🏨",
+      bg: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+    };
   }
-  return { label: "Tour Package", icon: "🏖️", bg: "bg-blue-500/15 text-blue-400 border-blue-500/30" };
+
+  // Default: Holiday Packages
+  return {
+    category: "HOLIDAY_PACKAGE",
+    label: "Tour Package",
+    icon: "🏖️",
+    bg: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  };
 }
 
 function formatRelativeTime(isoString: string) {
@@ -131,7 +185,7 @@ function formatRelativeTime(isoString: string) {
 }
 
 export default function AdminLeadsPage() {
-  const [leads, setLeads] = useState<ILeadItem[]>([]);
+  const [rawLeads, setRawLeads] = useState<ILeadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -142,40 +196,117 @@ export default function AdminLeadsPage() {
   const [newNoteText, setNewNoteText] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
+  // Fetch all leads once from database (or on refresh)
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (statusFilter !== "ALL") params.set("status", statusFilter);
-      if (categoryFilter !== "ALL") params.set("leadType", categoryFilter);
-      if (search.trim()) params.set("search", search.trim());
-
-      const res = await fetch(`/api/v1/admin/leads?${params.toString()}`);
+      const res = await fetch("/api/v1/admin/leads");
       const data = await res.json();
-      if (data.success && data.leads) {
-        setLeads(data.leads);
+      if (data.success && Array.isArray(data.leads)) {
+        setRawLeads(data.leads);
       }
     } catch (err) {
       console.error("Failed to fetch leads:", err);
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, categoryFilter]);
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchLeads();
-    }, 250);
-    return () => clearTimeout(timer);
+    fetchLeads();
   }, [fetchLeads]);
 
-  // Keep selected lead synced with current leads data
+  // Keep selected lead synced with current master leads data
   useEffect(() => {
     if (selectedLead) {
-      const found = leads.find((l) => l._id === selectedLead._id);
+      const found = rawLeads.find((l) => l._id === selectedLead._id);
       if (found) setSelectedLead(found);
     }
-  }, [leads]);
+  }, [rawLeads]);
+
+  // Category counts computed on master dataset — NEVER resets to zero on tab switch!
+  const categoryCounts = useMemo(() => {
+    const counts: Record<LeadCategory, number> = {
+      ALL: rawLeads.length,
+      TRANSPORTATION: 0,
+      HOLIDAY_PACKAGE: 0,
+      CUSTOM_ITINERARY: 0,
+      HOTEL_STAY: 0,
+    };
+
+    rawLeads.forEach((l) => {
+      const cat = getLeadCategory(l);
+      if (cat.category === "TRANSPORTATION") counts.TRANSPORTATION++;
+      else if (cat.category === "CUSTOM_ITINERARY") counts.CUSTOM_ITINERARY++;
+      else if (cat.category === "HOTEL_STAY") counts.HOTEL_STAY++;
+      else counts.HOLIDAY_PACKAGE++;
+    });
+
+    return counts;
+  }, [rawLeads]);
+
+  // Client-side Instant Filter: 0ms lag, zero database load!
+  const filteredLeads = useMemo(() => {
+    return rawLeads.filter((lead) => {
+      // 1. Category Filter
+      if (categoryFilter !== "ALL") {
+        const cat = getLeadCategory(lead);
+        if (cat.category !== categoryFilter) return false;
+      }
+
+      // 2. Status Filter
+      if (statusFilter !== "ALL") {
+        if (normalizeStatus(lead.status) !== statusFilter) return false;
+      }
+
+      // 3. Search Filter
+      if (search.trim()) {
+        const q = search.toLowerCase().trim();
+        const textToSearch = [
+          lead.name,
+          lead.phone,
+          lead.email,
+          lead.specialRequirements,
+          lead.source,
+          lead.tripDetails?.pickupCity,
+          lead.tripDetails?.dropCity,
+          lead.tripDetails?.vehicleType,
+          ...(lead.destinations || []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!textToSearch.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [rawLeads, categoryFilter, statusFilter, search]);
+
+  // Stage counts for the current category context
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      NEW: 0,
+      CONTACTED: 0,
+      FOLLOW_UP: 0,
+      QUOTE_SENT: 0,
+      CONFIRMED: 0,
+      LOST: 0,
+    };
+
+    // Filter by category first so stage badges reflect category selection accurately
+    const categoryScoped = categoryFilter === "ALL"
+      ? rawLeads
+      : rawLeads.filter((l) => getLeadCategory(l).category === categoryFilter);
+
+    categoryScoped.forEach((l) => {
+      const st = normalizeStatus(l.status);
+      counts[st] = (counts[st] || 0) + 1;
+    });
+
+    return counts;
+  }, [rawLeads, categoryFilter]);
 
   const handleUpdateStatus = async (id: string, newStatus: LeadPipelineStatus) => {
     try {
@@ -187,14 +318,14 @@ export default function AdminLeadsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setLeads((prev) =>
+        setRawLeads((prev) =>
           prev.map((l) => (l._id === id ? { ...l, status: newStatus } : l))
         );
         if (selectedLead?._id === id) {
           setSelectedLead((prev) => (prev ? { ...prev, status: newStatus } : null));
         }
       }
-    } catch (err) {
+    } catch {
       alert("Failed to update status. Please try again.");
     } finally {
       setUpdatingStatus(false);
@@ -216,56 +347,19 @@ export default function AdminLeadsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setLeads((prev) =>
+        setRawLeads((prev) =>
           prev.map((l) => (l._id === id ? { ...l, notes: updatedNotes } : l))
         );
         setSelectedLead((prev) => (prev ? { ...prev, notes: updatedNotes } : null));
         setNewNoteText("");
       }
-    } catch (err) {
+    } catch {
       alert("Failed to save note");
     } finally {
       setIsSubmittingNote(false);
     }
   };
 
-  // Pipeline stage counts
-  const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      NEW: 0,
-      CONTACTED: 0,
-      FOLLOW_UP: 0,
-      QUOTE_SENT: 0,
-      CONFIRMED: 0,
-      LOST: 0,
-    };
-    leads.forEach((l) => {
-      const st = normalizeStatus(l.status);
-      counts[st] = (counts[st] || 0) + 1;
-    });
-    return counts;
-  }, [leads]);
-
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<LeadCategory, number> = {
-      ALL: leads.length,
-      TRANSPORTATION: 0,
-      HOLIDAY_PACKAGE: 0,
-      CUSTOM_ITINERARY: 0,
-      HOTEL_STAY: 0,
-    };
-    leads.forEach((l) => {
-      const cat = getLeadCategory(l);
-      if (cat.label.includes("Cab")) counts.TRANSPORTATION++;
-      else if (cat.label.includes("Custom")) counts.CUSTOM_ITINERARY++;
-      else if (cat.label.includes("Stay")) counts.HOTEL_STAY++;
-      else counts.HOLIDAY_PACKAGE++;
-    });
-    return counts;
-  }, [leads]);
-
-  // Clean phone for WhatsApp & Calls
   const cleanPhone = selectedLead?.phone ? selectedLead.phone.replace(/[^0-9]/g, "") : "";
 
   return (
@@ -291,7 +385,7 @@ export default function AdminLeadsPage() {
               onClick={() => setViewMode("pipeline")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "pipeline"
-                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  ? "bg-amber-500 text-slate-950 shadow-sm font-black"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -301,7 +395,7 @@ export default function AdminLeadsPage() {
               onClick={() => setViewMode("table")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 viewMode === "table"
-                  ? "bg-amber-500 text-slate-950 shadow-sm"
+                  ? "bg-amber-500 text-slate-950 shadow-sm font-black"
                   : "text-slate-400 hover:text-white"
               }`}
             >
@@ -342,10 +436,10 @@ export default function AdminLeadsPage() {
         ))}
       </div>
 
-      {/* ── Inbound Service Category Tabs ── */}
+      {/* ── Inbound Service Category Tabs (Accurate, Never Resets!) ── */}
       <div className="flex items-center gap-2 border-b border-slate-700/60 pb-1 overflow-x-auto scrollbar-none">
         {[
-          { key: "ALL", label: "All Inquiries", icon: "🌐", count: leads.length },
+          { key: "ALL", label: "All Inquiries", icon: "🌐", count: categoryCounts.ALL },
           { key: "TRANSPORTATION", label: "Cab & Transfers", icon: "🚗", count: categoryCounts.TRANSPORTATION },
           { key: "HOLIDAY_PACKAGE", label: "Holiday Packages", icon: "🏖️", count: categoryCounts.HOLIDAY_PACKAGE },
           { key: "CUSTOM_ITINERARY", label: "Custom Itineraries", icon: "🧭", count: categoryCounts.CUSTOM_ITINERARY },
@@ -362,9 +456,13 @@ export default function AdminLeadsPage() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-              categoryFilter === tab.key ? "bg-amber-500/20 text-amber-300" : "bg-slate-700/60 text-slate-400"
-            }`}>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10.5px] font-mono font-bold ${
+                categoryFilter === tab.key
+                  ? "bg-amber-500/25 text-amber-300 border border-amber-500/30"
+                  : "bg-slate-700/70 text-slate-300"
+              }`}
+            >
               {tab.count}
             </span>
           </button>
@@ -379,7 +477,7 @@ export default function AdminLeadsPage() {
             placeholder="Search traveller, phone, pickup, drop city, car type..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
           />
           <span className="absolute left-3 top-2.5 text-slate-500 text-sm">🔍</span>
           {search && (
@@ -411,7 +509,7 @@ export default function AdminLeadsPage() {
       {viewMode === "pipeline" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 items-start overflow-x-auto pb-4">
           {PIPELINE_STAGES.map((stage) => {
-            const stageLeads = leads.filter((l) => normalizeStatus(l.status) === stage.id);
+            const stageLeads = filteredLeads.filter((l) => normalizeStatus(l.status) === stage.id);
             return (
               <div
                 key={stage.id}
@@ -527,7 +625,7 @@ export default function AdminLeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {loading && leads.length === 0 ? (
+                {loading && rawLeads.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-slate-400">
                       <div className="flex items-center justify-center gap-2">
@@ -536,7 +634,7 @@ export default function AdminLeadsPage() {
                       </div>
                     </td>
                   </tr>
-                ) : leads.map((lead) => {
+                ) : filteredLeads.map((lead) => {
                   const category = getLeadCategory(lead);
                   const statusObj = PIPELINE_STAGES.find((s) => s.id === normalizeStatus(lead.status)) || PIPELINE_STAGES[0];
                   const isSelected = selectedLead?._id === lead._id;
@@ -598,9 +696,9 @@ export default function AdminLeadsPage() {
             </table>
           </div>
 
-          {!loading && leads.length === 0 && (
+          {!loading && filteredLeads.length === 0 && (
             <div className="py-16 text-center">
-              <p className="text-slate-400 text-sm font-semibold">No lead inquiries found for this filter.</p>
+              <p className="text-slate-400 text-sm font-semibold">No lead inquiries found for this category or filter.</p>
             </div>
           )}
         </div>
@@ -733,7 +831,7 @@ export default function AdminLeadsPage() {
 
                 {/* Special Requirements / Package Info */}
                 <div>
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase mb-1">Traveller Notes / Notes</span>
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase mb-1">Traveller Notes / Requirements</span>
                   <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-700/40 text-slate-200 leading-relaxed">
                     {selectedLead.specialRequirements || "No special requests mentioned."}
                   </div>

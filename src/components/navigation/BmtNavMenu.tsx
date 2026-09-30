@@ -322,15 +322,9 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 <span>✓</span> 100% Customized · Zero Hidden Charges
               </span>
             </div>
-            {/* Right: currency + admin */}
+            {/* Right: currency */}
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-slate-300 hidden sm:block">🇮🇳 INR (₹)</span>
-              <Link
-                href="/admin/login"
-                className="text-slate-300 hover:text-amber-400 transition-colors hidden sm:block"
-              >
-                🔒 Admin
-              </Link>
             </div>
           </div>
         </div>
@@ -1088,7 +1082,6 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 { href: "/customize?type=CORPORATE", label: "Corporate & MICE Travel", icon: "🏢" },
                 { href: "/contact", label: "Contact & Branch Offices", icon: "📍" },
                 { href: "/about", label: "About Be My Traveller", icon: "ℹ️" },
-                { href: "/admin/login", label: "Admin Portal", icon: "🔒" },
               ].map((item) => (
                 <Link
                   key={item.href}
