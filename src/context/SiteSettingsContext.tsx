@@ -70,26 +70,29 @@ export function SiteSettingsProvider({
   const value = useMemo(() => {
     const cleanPhone = (settings.primaryPhone || "").replace(/\D/g, "");
     const cleanWhatsApp = (settings.whatsappNumber || "").replace(/\D/g, "");
-    const addressRawParts = [
-      settings.registeredOffice?.addressLine1,
-      settings.registeredOffice?.addressLine2,
-      settings.registeredOffice?.city,
-      settings.registeredOffice?.state,
-      settings.registeredOffice?.pincode,
-      settings.registeredOffice?.country,
-    ];
+    const rawLine1 = (settings.registeredOffice?.addressLine1 || "").trim();
+    const rawLine2 = (settings.registeredOffice?.addressLine2 || "").trim();
+    const city = (settings.registeredOffice?.city || "").trim();
+    const state = (settings.registeredOffice?.state || "").trim();
+    const pincode = (settings.registeredOffice?.pincode || "").trim();
+    const country = (settings.registeredOffice?.country || "").trim();
 
-    const uniqueAddressParts: string[] = [];
-    for (const raw of addressRawParts) {
-      if (typeof raw !== "string") continue;
-      const part = raw.trim();
-      if (!part) continue;
-      if (part.toLowerCase() === "central delhi") continue;
-      if (!uniqueAddressParts.some((p) => p.toLowerCase() === part.toLowerCase())) {
-        uniqueAddressParts.push(part);
+    const parts: string[] = [];
+    if (rawLine1) parts.push(rawLine1);
+    if (rawLine2 && rawLine2.toLowerCase() !== "central delhi") {
+      parts.push(rawLine2);
+    }
+    if (city) {
+      const alreadyHasCity = rawLine1.toLowerCase().endsWith(city.toLowerCase()) || rawLine1.toLowerCase().includes(city.toLowerCase());
+      if (!alreadyHasCity) {
+        parts.push(city);
       }
     }
-    const fullAddress = uniqueAddressParts.join(", ");
+    if (state) parts.push(state);
+    if (pincode) parts.push(pincode);
+    if (country) parts.push(country);
+
+    const fullAddress = parts.join(", ");
 
     return {
       settings,

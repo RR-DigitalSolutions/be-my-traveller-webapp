@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { buildThemeHref } from "@/lib/site-themes";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
@@ -16,7 +17,7 @@ const defaultThemes = [
 
 export default function SiteFooter() {
   const [themes, setThemes] = useState(defaultThemes);
-  const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail, fullAddress } = useSiteSettings();
+  const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail, bookingsEmail, fullAddress } = useSiteSettings();
 
   useEffect(() => {
     let isMounted = true;
@@ -54,14 +55,11 @@ export default function SiteFooter() {
   const hasPhone = Boolean(helplinePhone && helplinePhone.trim());
   const whatsappNum = settings.whatsappNumber || helplinePhone;
   const hasWhatsApp = Boolean(whatsappNum && whatsappNum.trim());
-  const hasEmail = Boolean(supportEmail && supportEmail.trim());
+  
+  const bookingsMail = bookingsEmail || settings.bookingsEmail || "bookings@bemytraveller.com";
+  const hasBookingsEmail = Boolean(bookingsMail && bookingsMail.trim());
+  const hasSupportEmail = Boolean(supportEmail && supportEmail.trim());
   const hasAddress = Boolean(fullAddress && fullAddress.trim());
-
-  const hasGstin = Boolean(settings.gstin && settings.gstin.trim());
-  const hasCin = Boolean(settings.cin && settings.cin.trim());
-  const hasIata = Boolean(settings.iataNumber && settings.iataNumber.trim());
-  const hasTourismLicense = Boolean(settings.tourismLicenseNo && settings.tourismLicenseNo.trim());
-  const hasAnyLicense = hasGstin || hasCin || hasIata || hasTourismLicense;
 
   const hasInstagram = Boolean(settings.socialLinks?.instagram && settings.socialLinks.instagram.trim());
   const hasFacebook = Boolean(settings.socialLinks?.facebook && settings.socialLinks.facebook.trim());
@@ -69,149 +67,188 @@ export default function SiteFooter() {
   const hasAnySocial = hasInstagram || hasFacebook || hasYouTube;
 
   return (
-    <footer className="bg-slate-950 text-slate-400 text-xs pt-10 pb-8 px-4 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto space-y-10">
-        {/* ── TOP SECTION: Official Contact, Head Office & Instant Callback Bar ── */}
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] text-[11.5px] text-slate-300">
-          {/* Left Column: Official Contact & Registered Office */}
-          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 sm:p-5 shadow-lg backdrop-blur-xs space-y-4">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-xs shadow-emerald-500/50" />
-                <h4 className="font-bold text-white text-xs sm:text-sm uppercase tracking-wider">
-                  Official Contact &amp; Registered Office
+    <footer className="bg-slate-950 text-slate-400 text-xs pt-4 pb-8 px-4 border-t border-slate-800">
+      <div className="max-w-7xl mx-auto space-y-4">
+        
+        {/* ── BRAND LOGO (Ultra-Compact & Centered without extra padding, overlay, or tagline) ── */}
+        <div className="flex items-center justify-center pt-0.5">
+          <Link href="/" className="inline-flex items-center justify-center" aria-label="Be My Traveller — Home">
+            <div className="relative w-[140px] h-[28px] sm:w-[160px] sm:h-[32px] rounded-md bg-white overflow-hidden shadow-none border-0">
+              <Image
+                src="/Logo for website PNG.webp"
+                alt={settings.tradeName || "Be My Traveller"}
+                fill
+                className="object-contain"
+                sizes="160px"
+                priority
+              />
+            </div>
+          </Link>
+        </div>
+
+        {/* ── TOP SECTION: Balanced 2-Card Equal-Height Compact Layout ── */}
+        <div className="grid gap-4 lg:grid-cols-2 text-[11px] text-slate-300 items-stretch">
+          
+          {/* Card 1: Registered Head Office & Corporate Desks */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-3.5 sm:p-4 shadow-lg backdrop-blur-xs flex flex-col justify-between space-y-2.5 h-full">
+            <div className="space-y-2">
+              {/* Header without 'Verified Desk' */}
+              <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-xs shadow-emerald-500/50" />
+                <h4 className="font-bold text-white text-xs uppercase tracking-wider">
+                  Registered Head Office &amp; Desks
                 </h4>
               </div>
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider bg-slate-800/80 px-2 py-0.5 rounded-md">
-                Verified Desk
-              </span>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
-              {hasPhone && (
-                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">24/7 Primary Helpline</p>
-                  <a
-                    href={`tel:${cleanPhone}`}
-                    className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5 mt-1 text-xs sm:text-[13px]"
-                  >
-                    <span className="text-amber-400">📞</span> {helplinePhone}
-                  </a>
-                </div>
-              )}
-
-              {hasWhatsApp && (
-                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-emerald-500/40 transition-colors">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Official WhatsApp</p>
-                  <a
-                    href={`https://wa.me/${cleanWhatsApp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 mt-1 text-xs sm:text-[13px]"
-                  >
-                    <span>💬</span> {whatsappNum}
-                  </a>
-                </div>
-              )}
-
-              {hasEmail && (
-                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Support &amp; Inquiries</p>
-                  <a
-                    href={`mailto:${supportEmail}`}
-                    className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5 mt-1 break-all text-xs"
-                  >
-                    <span className="text-amber-400">✉</span> {supportEmail}
-                  </a>
-                </div>
-              )}
-
+              {/* Office Address Tile */}
               {hasAddress && (
-                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Registered Head Office</p>
-                  <p className="font-medium text-slate-300 leading-snug mt-1 text-xs flex items-start gap-1.5">
+                <div className="rounded-xl bg-slate-950/80 border border-slate-800/80 px-3 py-1.5 hover:border-amber-500/40 transition-colors">
+                  <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Registered Head Office</p>
+                  <p className="font-medium text-slate-200 leading-snug mt-0.5 text-[11.5px] flex items-start gap-1.5">
                     <span className="text-red-400 shrink-0">📍</span>
                     <span>{fullAddress}</span>
                   </p>
                 </div>
               )}
+
+              {/* Corporate Inboxes: Bookings Email & Support Email */}
+              {(hasBookingsEmail || hasSupportEmail) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {hasBookingsEmail && (
+                    <div className="rounded-xl bg-slate-950/80 border border-slate-800/80 px-3 py-1.5 hover:border-amber-500/40 transition-colors">
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Bookings &amp; Quotes</p>
+                      <a
+                        href={`mailto:${bookingsMail}`}
+                        className="font-bold text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1.5 mt-0.5 text-[11.5px] break-all"
+                      >
+                        <span>✉</span> {bookingsMail}
+                      </a>
+                    </div>
+                  )}
+
+                  {hasSupportEmail && (
+                    <div className="rounded-xl bg-slate-950/80 border border-slate-800/80 px-3 py-1.5 hover:border-amber-500/40 transition-colors">
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Customer Support</p>
+                      <a
+                        href={`mailto:${supportEmail}`}
+                        className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5 mt-0.5 text-[11.5px] break-all"
+                      >
+                        <span className="text-amber-400">✉</span> {supportEmail}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Government Licenses Badges (Only shown if admin populated) */}
-            {hasAnyLicense && (
-              <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-                {hasGstin && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
-                    GSTIN: <strong className="text-amber-400 font-mono">{settings.gstin}</strong>
-                  </span>
-                )}
-                {hasCin && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
-                    CIN: <strong className="text-slate-300 font-mono">{settings.cin}</strong>
-                  </span>
-                )}
-                {hasIata && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
-                    IATA: <strong className="text-slate-300 font-mono">{settings.iataNumber}</strong>
-                  </span>
-                )}
-                {hasTourismLicense && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
-                    MOT: <strong className="text-slate-300 font-mono">{settings.tourismLicenseNo}</strong>
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Bottom Subtext Row matching right card */}
+            <div className="pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[9.5px] text-slate-500">
+              <span className="flex items-center gap-1">
+                <span>🏢</span> Operational Ground Office
+              </span>
+              <span className="text-slate-400">Verified OTA Travel Agency</span>
+            </div>
           </div>
 
-          {/* Right Column: Quick Callback Form */}
-          <form
-            action="/contact"
-            method="get"
-            className="space-y-3 rounded-2xl border border-slate-800/90 bg-gradient-to-br from-slate-900/90 to-slate-950 p-4 sm:p-5 shadow-xl flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <h4 className="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="text-amber-400">⚡</span> Request Instant Callback
-                </h4>
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+          {/* Card 2: 24/7 Helplines & Compact Instant Callback */}
+          <div className="rounded-2xl border border-slate-800/90 bg-gradient-to-br from-slate-900/90 to-slate-950 p-3.5 sm:p-4 shadow-xl flex flex-col justify-between space-y-2.5 h-full">
+            <div className="space-y-2">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-amber-400 text-xs">⚡</span>
+                  <h4 className="font-bold text-white text-xs uppercase tracking-wider">
+                    Quick Help &amp; Instant Callback
+                  </h4>
+                </div>
+                <span className="text-[9.5px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
                   Under 15 Mins
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Enter your mobile number and our verified holiday specialist will call you back with customized quotes.
-              </p>
+
+              {/* Direct Calling & WhatsApp Contact Tiles */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {hasPhone && (
+                  <a
+                    href={`tel:${cleanPhone}`}
+                    className="rounded-xl bg-slate-950/80 border border-slate-800/80 px-3 py-1.5 hover:border-amber-500/50 hover:bg-slate-900 transition-all flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">24/7 Helpline</p>
+                      <p className="font-bold text-white group-hover:text-amber-400 transition-colors text-[11.5px] sm:text-xs flex items-center gap-1.5 mt-0.5">
+                        <span className="text-amber-400 text-xs">📞</span> {helplinePhone}
+                      </p>
+                    </div>
+                    <span className="text-[9.5px] font-bold text-slate-300 bg-slate-900 group-hover:bg-amber-500 group-hover:text-slate-950 px-2 py-0.5 rounded-md transition-colors border border-slate-800 shadow-xs">
+                      Call
+                    </span>
+                  </a>
+                )}
+
+                {hasWhatsApp && (
+                  <a
+                    href={`https://wa.me/${cleanWhatsApp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl bg-slate-950/80 border border-slate-800/80 px-3 py-1.5 hover:border-emerald-500/50 hover:bg-slate-900 transition-all flex items-center justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Official WhatsApp</p>
+                      <p className="font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors text-[11.5px] sm:text-xs flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs">💬</span> {whatsappNum}
+                      </p>
+                    </div>
+                    <span className="text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 group-hover:bg-emerald-500 group-hover:text-slate-950 px-2 py-0.5 rounded-md transition-colors border border-emerald-500/30 shadow-xs">
+                      Chat
+                    </span>
+                  </a>
+                )}
+              </div>
+
+              {/* Compact Callback Form with Phone + Preferred Calling Time */}
+              <form action="/contact" method="get" className="space-y-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-[1.1fr_1.1fr_auto] gap-1.5 items-center">
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="10-digit mobile number"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                    required
+                  />
+                  <select
+                    name="preferredTime"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-2 py-1.5 text-[11px] text-slate-300 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors cursor-pointer"
+                  >
+                    <option value="immediate">Call: Immediate (Now)</option>
+                    <option value="morning">Morning (9 AM - 12 PM)</option>
+                    <option value="afternoon">Afternoon (12 PM - 4 PM)</option>
+                    <option value="evening">Evening (4 PM - 8 PM)</option>
+                  </select>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-3.5 py-1.5 text-xs font-black text-slate-950 hover:from-amber-400 hover:to-amber-500 transition-all shrink-0 shadow-md shadow-amber-500/20 cursor-pointer active:scale-98 text-center whitespace-nowrap"
+                  >
+                    Call Me
+                  </button>
+                </div>
+              </form>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="Your 10-digit mobile number"
-                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-xs font-black text-slate-950 hover:from-amber-400 hover:to-amber-500 transition-all shrink-0 shadow-md shadow-amber-500/20 cursor-pointer active:scale-98"
-                >
-                  Call Me
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-500 text-center sm:text-left flex items-center gap-1">
-                <span>🔒</span> 100% Privacy Guaranteed · Zero Spam Calls
-              </p>
+            {/* Bottom Subtext Row */}
+            <div className="pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[9.5px] text-slate-500">
+              <span className="flex items-center gap-1">
+                <span>🔒</span> 100% Privacy Guaranteed
+              </span>
+              <span className="text-slate-400">Free Vacation Consultation</span>
             </div>
-          </form>
+          </div>
         </div>
 
         {/* ── MIDDLE SECTION: Main 5-Column Navigation Grid ── */}
-        <div className="pt-8 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
-          <div className="space-y-3">
+        <div className="pt-7 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-7">
+          <div className="space-y-2.5">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Domestic Holidays</h4>
-            <ul className="space-y-2 text-[11px]">
+            <ul className="space-y-1.5 text-[11px]">
               <li><Link href="/destination/india/himachal-tour-packages" className="hover:text-amber-400 transition-colors">Himachal Tour Packages</Link></li>
               <li><Link href="/destination/india/kashmir-tour-packages" className="hover:text-amber-400 transition-colors">Kashmir Holiday Packages</Link></li>
               <li><Link href="/destination/india/kerala-tour-packages" className="hover:text-amber-400 transition-colors">Kerala Backwaters Tours</Link></li>
@@ -223,9 +260,9 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">International Tours</h4>
-            <ul className="space-y-2 text-[11px]">
+            <ul className="space-y-1.5 text-[11px]">
               <li><Link href="/destination/dubai-tour-packages" className="hover:text-amber-400 transition-colors">Dubai Tour Packages</Link></li>
               <li><Link href="/destination/bali-tour-packages" className="hover:text-amber-400 transition-colors">Bali Honeymoon Packages</Link></li>
               <li><Link href="/destination/thailand-tour-packages" className="hover:text-amber-400 transition-colors">Thailand Beach Holidays</Link></li>
@@ -236,9 +273,9 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Holiday Themes</h4>
-            <ul className="space-y-2 text-[11px]">
+            <ul className="space-y-1.5 text-[11px]">
               {themes.slice(0, 6).map((theme) => (
                 <li key={theme.slug}>
                   <Link href={buildThemeHref(theme.name)} className="hover:text-amber-400 transition-colors">
@@ -249,9 +286,9 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Company &amp; Legal</h4>
-            <ul className="space-y-2 text-[11px]">
+            <ul className="space-y-1.5 text-[11px]">
               <li><Link href="/about" className="hover:text-amber-400 transition-colors">About {settings.tradeName || "Be My Traveller"}</Link></li>
               <li><Link href="/contact" className="hover:text-amber-400 transition-colors">Contact &amp; Branch Desks</Link></li>
               <li><Link href="/terms" className="hover:text-amber-400 transition-colors">Terms &amp; Conditions</Link></li>
@@ -260,22 +297,22 @@ export default function SiteFooter() {
             </ul>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Secure Booking</h4>
             <p className="text-[11px] text-slate-400 leading-relaxed">
               256-Bit SSL Encrypted checkout. Authorized payments through Razorpay, UPI, Visa, Mastercard, and Net Banking.
             </p>
-            <div className="pt-2 flex flex-wrap gap-2 text-slate-300 font-bold text-[10px]">
-              <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">VISA</span>
-              <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">Mastercard</span>
-              <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">UPI</span>
-              <span className="px-2 py-1 bg-slate-900 border border-slate-800 rounded">Net Banking</span>
+            <div className="pt-1.5 flex flex-wrap gap-2 text-slate-300 font-bold text-[10px]">
+              <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded">VISA</span>
+              <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded">Mastercard</span>
+              <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded">UPI</span>
+              <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 rounded">Net Banking</span>
             </div>
           </div>
         </div>
 
         {/* ── BOTTOM STRIP: Copyright, Socials & Watermark ── */}
-        <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div className="pt-7 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
               B
