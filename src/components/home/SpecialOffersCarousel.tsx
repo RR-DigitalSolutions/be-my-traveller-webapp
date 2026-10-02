@@ -127,16 +127,32 @@ const OFFERS: OfferItem[] = [
 
 interface SpecialOffersCarouselProps {
   onClaimOffer: (enquiryName: string) => void;
+  initialOffers?: OfferItem[];
 }
 
 export default function SpecialOffersCarousel({
   onClaimOffer,
+  initialOffers,
 }: SpecialOffersCarouselProps) {
+  const [offersList, setOffersList] = useState<OfferItem[]>(initialOffers || OFFERS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(3);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch dynamic offers from admin content
+  useEffect(() => {
+    fetch("/api/v1/admin/homepage-content")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.content?.specialOffers) && data.content.specialOffers.length > 0) {
+          const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
+          if (active.length > 0) setOffersList(active);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Responsive items count
   useEffect(() => {
@@ -155,7 +171,7 @@ export default function SpecialOffersCarousel({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const maxIndex = Math.max(0, OFFERS.length - visibleCount);
+  const maxIndex = Math.max(0, offersList.length - visibleCount);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
@@ -248,7 +264,7 @@ export default function SpecialOffersCarousel({
             transform: `translateX(-${currentIndex * (100 / visibleCount)}%)`,
           }}
         >
-          {OFFERS.map((offer) => (
+          {offersList.map((offer) => (
             <div
               key={offer.id}
               className="px-2.5 shrink-0"

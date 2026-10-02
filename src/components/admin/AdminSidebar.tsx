@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
       </svg>
     ),
     children: [
+      { label: "Homepage Content", href: "/admin/content/homepage" },
       { label: "Destinations", href: "/admin/content/destinations" },
       { label: "Attractions", href: "/admin/content/attractions" },
       { label: "Activities", href: "/admin/content/activities" },
@@ -342,7 +343,7 @@ export default function AdminSidebar({
 
         {/* Bottom: app version */}
         <div className="p-4 border-t border-slate-800 shrink-0">
-          <p className="text-xs text-slate-600">BMT Admin v1.0.0 · RBAC Active</p>
+          <p className="text-xs text-slate-600">RRDS Travel Engine 3.1.1</p>
         </div>
       </aside>
     </>

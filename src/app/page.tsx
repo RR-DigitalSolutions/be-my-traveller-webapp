@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
 import ThemePackagesSection from "@/components/home/ThemePackagesSection";
 import SpecialOffersCarousel from "@/components/home/SpecialOffersCarousel";
+import BestPackagesCarousel from "@/components/home/BestPackagesCarousel";
+import ReviewsCarousel from "@/components/home/ReviewsCarousel";
+import WhyBookSection from "@/components/home/WhyBookSection";
 import SiteFooter from "@/components/common/SiteFooter";
 
 export default function HomePage() {
@@ -244,68 +247,27 @@ export default function HomePage() {
       ? `/destination/india/${slug}-tour-packages`
       : `/destination/${slug}-tour-packages`;
 
-  const bestSellerPackages = [
-    {
-      id: "pkg-1",
-      slug: "6-nights-himachal-manali-tour",
-      title: "6 Nights 7 Days Majestic Himachal & Rohtang Pass Tour",
-      destination: "Shimla (2N) · Manali (3N) · Chandigarh (1N)",
-      nights: "6 Nights / 7 Days",
-      originalPrice: "₹38,000",
-      price: "₹29,999",
-      discount: "21% OFF",
-      rating: 4.9,
-      reviews: 184,
-      inclusions: ["4★ Hotel Stay", "Private AC Cab", "Daily Breakfast & Dinner", "Solang Valley Sightseeing"],
-      img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&auto=format&fit=crop&q=80",
-      tag: "Bestseller",
-    },
-    {
-      id: "pkg-2",
-      slug: "5-nights-kashmir-gulmarg-tour",
-      title: "5 Nights 6 Days Heavenly Kashmir with Gulmarg Gondola",
-      destination: "Srinagar (2N) · Gulmarg (1N) · Pahalgam (2N)",
-      nights: "5 Nights / 6 Days",
-      originalPrice: "₹42,000",
-      price: "₹33,500",
-      discount: "20% OFF",
-      rating: 4.9,
-      reviews: 210,
-      inclusions: ["Dal Lake Houseboat", "Gulmarg Gondola Ride", "Pahalgam Valley Tour", "Shikara Ride"],
-      img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
-      tag: "Snow Favorite",
-    },
-    {
-      id: "pkg-3",
-      slug: "5-nights-kerala-backwaters-luxury",
-      title: "5 Nights 6 Days Kerala Romance & Backwaters Luxury",
-      destination: "Cochin · Munnar (2N) · Thekkady (1N) · Alleppey (1N)",
-      nights: "5 Nights / 6 Days",
-      originalPrice: "₹36,000",
-      price: "₹27,999",
-      discount: "22% OFF",
-      rating: 4.8,
-      reviews: 156,
-      inclusions: ["Private Houseboat", "Tea Estate Resort", "Kathakali Show", "Periyar Boat Safari"],
-      img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&auto=format&fit=crop&q=80",
-      tag: "Couple Special",
-    },
-    {
-      id: "pkg-4",
-      slug: "5-nights-royal-rajasthan-heritage",
-      title: "5 Nights 6 Days Royal Forts & Palaces of Rajasthan",
-      destination: "Jaipur (2N) · Jodhpur (1N) · Udaipur (2N)",
-      nights: "5 Nights / 6 Days",
-      originalPrice: "₹35,000",
-      price: "₹26,500",
-      discount: "24% OFF",
-      rating: 4.8,
-      reviews: 132,
-      inclusions: ["Heritage Haveli Stay", "Lake Pichola Boat", "Desert Camel Safari", "Chokhi Dhani Dinner"],
-      img: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&auto=format&fit=crop&q=80",
-      tag: "Heritage",
-    },
-  ];
+  // Dynamic homepage destinations loaded from admin panel via API
+  const [domesticList, setDomesticList] = useState(domesticDestinations);
+  const [intlList, setIntlList] = useState(internationalDestinations);
+
+  useEffect(() => {
+    fetch("/api/v1/admin/homepage-content")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.content?.popularDestinations) {
+          if (Array.isArray(data.content.popularDestinations.domestic) && data.content.popularDestinations.domestic.length > 0) {
+            const active = data.content.popularDestinations.domestic.filter((d: any) => d.isActive !== false);
+            if (active.length > 0) setDomesticList(active);
+          }
+          if (Array.isArray(data.content.popularDestinations.international) && data.content.popularDestinations.international.length > 0) {
+            const active = data.content.popularDestinations.international.filter((d: any) => d.isActive !== false);
+            if (active.length > 0) setIntlList(active);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
@@ -749,7 +711,7 @@ export default function HomePage() {
 
         {/* Destinations Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(destinationTab === "domestic" ? domesticDestinations : internationalDestinations).map((dest) => (
+          {(destinationTab === "domestic" ? domesticList : intlList).map((dest) => (
             <Link
               key={dest.name}
               href={getCanonicalDestinationUrl(dest.slug, destinationTab)}
@@ -798,112 +760,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Best Selling Tour Packages (Rich Cards) ── */}
-      <section className="py-8 px-4 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-4">
-            <div>
-              <span className="text-xs uppercase font-bold text-amber-600 tracking-wider">Verified Itineraries</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-                Best-Selling Holiday Packages
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Complete dynamic packages with confirmed hotels, private transfers, meals, and activities.
-              </p>
-            </div>
-
-            <Link
-              href="/packages"
-              className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1"
-            >
-              View All 100+ Packages →
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {bestSellerPackages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all flex flex-col justify-between group"
-              >
-                {/* Photo & Duration */}
-                <Link href={`/packages/${pkg.slug}`} className="block">
-                  <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-100">
-                    <img
-                      src={pkg.img}
-                      alt={pkg.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500 text-slate-950 shadow-sm">
-                        {pkg.tag}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-600 text-white shadow-sm">
-                        {pkg.discount}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between bg-slate-950/75 backdrop-blur-md rounded-lg px-2.5 py-1 text-white text-xs">
-                      <span>🕒 {pkg.nights}</span>
-                      <span className="text-amber-400 font-bold">★ {pkg.rating}</span>
-                    </div>
-                  </div>
-                </Link>
-
-                {/* Details */}
-                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                  <div>
-                    <Link href={`/packages/${pkg.slug}`}>
-                      <h3 className="font-bold text-sm text-slate-900 group-hover:text-amber-600 transition-colors leading-snug line-clamp-2">
-                        {pkg.title}
-                      </h3>
-                    </Link>
-                    <p className="text-[11px] text-slate-500 mt-1 font-medium">{pkg.destination}</p>
-
-                    {/* Inclusions Chips */}
-                    <div className="mt-2.5 space-y-1">
-                      {pkg.inclusions.slice(0, 3).map((inc) => (
-                        <div key={inc} className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                          <span className="text-emerald-500 font-bold">✓</span> {inc}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Pricing Box & CTAs */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-slate-400 line-through block">{pkg.originalPrice}</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-black text-slate-900">{pkg.price}</span>
-                        <span className="text-[10px] text-slate-500">/ person</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <Link
-                        href={`/packages/${pkg.slug}`}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all"
-                      >
-                        Details
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEnquiryPackage(pkg.title);
-                          setIsEnquiryOpen(true);
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
-                      >
-                        Quote
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ── Best-Selling Holiday Packages Carousel ── */}
+      <BestPackagesCarousel
+        onEnquire={(packageTitle) => {
+          setEnquiryPackage(packageTitle);
+          setIsEnquiryOpen(true);
+        }}
+      />
 
       {/* ── Speciality Theme Packages (BMT Curated Collections) ── */}
       <ThemePackagesSection />
@@ -967,120 +830,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Why Choose Be My Traveller (Trust Indicators) ── */}
-      <section className="py-8 px-4 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
-          <span className="text-xs uppercase font-bold text-amber-600 tracking-wider">Trusted by 25,000+ Travellers</span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Why Book with Be My Traveller?
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500">
-            We combine high-tech server-authoritative pricing with personalized high-touch destination expertise.
-          </p>
-        </div>
+      {/* ── Why Choose Be My Traveller (Dynamic Two-Column) ── */}
+      <WhyBookSection />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 font-bold text-xl flex items-center justify-center">
-              ⚡
-            </div>
-            <h3 className="font-bold text-sm text-slate-900">Authoritative Pricing</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Real-time calculations for season surcharges, room upgrades, and taxes. No hidden surcharges at checkout.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 font-bold text-xl flex items-center justify-center">
-              🏨
-            </div>
-            <h3 className="font-bold text-sm text-slate-900">Verified 4★ &amp; 5★ Stays</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Every hotel, resort, and houseboat is physically vetted for hygiene, scenic views, and hospitality standards.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 font-bold text-xl flex items-center justify-center">
-              🛡️
-            </div>
-            <h3 className="font-bold text-sm text-slate-900">24/7 On-Trip Concierge</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Dedicated trip managers support you through arrival, hotel check-in, permits, and sightseeing at every step.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 font-bold text-xl flex items-center justify-center">
-              🎯
-            </div>
-            <h3 className="font-bold text-sm text-slate-900">100% Customized Trips</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Swap hotels, add private transfers, change meal plans, and include adventure sports according to your schedule.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Verified Customer Reviews ── */}
-      <section className="py-8 px-4 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-8 space-y-2">
-            <span className="text-xs uppercase font-bold text-amber-600 tracking-wider">Real Traveller Stories</span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Loved by Explorers Worldwide
-            </h2>
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <div className="flex text-amber-500 text-sm">★★★★★</div>
-              <span className="text-xs font-bold text-slate-700">4.9 / 5.0 Rating (4,500+ Verified Bookings)</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2.5">
-              <div className="flex text-amber-500 text-sm">★★★★★</div>
-              <p className="text-xs text-slate-700 leading-relaxed italic">
-                &ldquo;Our Himachal trip with Be My Traveller was magical. The cab driver in Manali was polite, the river-facing resort was breathtaking, and the Rohtang Pass permits were arranged smoothly.&rdquo;
-              </p>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Ananya Sharma</p>
-                  <p className="text-[10px] text-slate-500">Mumbai · Travelled to Himachal</p>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">✓ Verified</span>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2.5">
-              <div className="flex text-amber-500 text-sm">★★★★★</div>
-              <p className="text-xs text-slate-700 leading-relaxed italic">
-                &ldquo;We booked our honeymoon to Kerala through Be My Traveller. The Alleppey luxury houseboat chef prepared amazing authentic meals. Will definitely book Kashmir next winter!&rdquo;
-              </p>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Rohan &amp; Priya Mehta</p>
-                  <p className="text-[10px] text-slate-500">Bengaluru · Travelled to Kerala</p>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">✓ Verified</span>
-              </div>
-            </div>
-
-            <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2.5">
-              <div className="flex text-amber-500 text-sm">★★★★★</div>
-              <p className="text-xs text-slate-700 leading-relaxed italic">
-                &ldquo;Exceptional service. When our flight from Delhi was delayed, their support team immediately rescheduled our airport cab without extra charges. Highly recommended!&rdquo;
-              </p>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Vikramaditya Rao</p>
-                  <p className="text-[10px] text-slate-500">Hyderabad · Travelled to Rajasthan</p>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">✓ Verified</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── Verified Customer Reviews Carousel ── */}
+      <ReviewsCarousel />
 
       {/* ── Universal Site Footer (BMT Travel Portal) ── */}
       <SiteFooter />

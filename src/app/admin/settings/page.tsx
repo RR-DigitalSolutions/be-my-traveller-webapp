@@ -502,16 +502,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Hidden Watermark Text</label>
-                <input
-                  type="text"
-                  value={formData.watermarkText}
-                  onChange={(e) => setFormData({ ...formData, watermarkText: e.target.value })}
-                  placeholder="RRDS"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-amber-300 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+              
 
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Brand Tagline / Slogan</label>
