@@ -51,11 +51,164 @@ export default function SiteFooter() {
     };
   }, []);
 
+  const hasPhone = Boolean(helplinePhone && helplinePhone.trim());
+  const whatsappNum = settings.whatsappNumber || helplinePhone;
+  const hasWhatsApp = Boolean(whatsappNum && whatsappNum.trim());
+  const hasEmail = Boolean(supportEmail && supportEmail.trim());
+  const hasAddress = Boolean(fullAddress && fullAddress.trim());
+
+  const hasGstin = Boolean(settings.gstin && settings.gstin.trim());
+  const hasCin = Boolean(settings.cin && settings.cin.trim());
+  const hasIata = Boolean(settings.iataNumber && settings.iataNumber.trim());
+  const hasTourismLicense = Boolean(settings.tourismLicenseNo && settings.tourismLicenseNo.trim());
+  const hasAnyLicense = hasGstin || hasCin || hasIata || hasTourismLicense;
+
+  const hasInstagram = Boolean(settings.socialLinks?.instagram && settings.socialLinks.instagram.trim());
+  const hasFacebook = Boolean(settings.socialLinks?.facebook && settings.socialLinks.facebook.trim());
+  const hasYouTube = Boolean(settings.socialLinks?.youtube && settings.socialLinks.youtube.trim());
+  const hasAnySocial = hasInstagram || hasFacebook || hasYouTube;
+
   return (
-    <footer className="bg-slate-950 text-slate-400 text-xs pt-12 pb-8 px-4 border-t border-slate-800">
+    <footer className="bg-slate-950 text-slate-400 text-xs pt-10 pb-8 px-4 border-t border-slate-800">
       <div className="max-w-7xl mx-auto space-y-10">
-        {/* Main 5-Column Navigation Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
+        {/* ── TOP SECTION: Official Contact, Head Office & Instant Callback Bar ── */}
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] text-[11.5px] text-slate-300">
+          {/* Left Column: Official Contact & Registered Office */}
+          <div className="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 sm:p-5 shadow-lg backdrop-blur-xs space-y-4">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-xs shadow-emerald-500/50" />
+                <h4 className="font-bold text-white text-xs sm:text-sm uppercase tracking-wider">
+                  Official Contact &amp; Registered Office
+                </h4>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider bg-slate-800/80 px-2 py-0.5 rounded-md">
+                Verified Desk
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
+              {hasPhone && (
+                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">24/7 Primary Helpline</p>
+                  <a
+                    href={`tel:${cleanPhone}`}
+                    className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5 mt-1 text-xs sm:text-[13px]"
+                  >
+                    <span className="text-amber-400">📞</span> {helplinePhone}
+                  </a>
+                </div>
+              )}
+
+              {hasWhatsApp && (
+                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-emerald-500/40 transition-colors">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Official WhatsApp</p>
+                  <a
+                    href={`https://wa.me/${cleanWhatsApp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 mt-1 text-xs sm:text-[13px]"
+                  >
+                    <span>💬</span> {whatsappNum}
+                  </a>
+                </div>
+              )}
+
+              {hasEmail && (
+                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Support &amp; Inquiries</p>
+                  <a
+                    href={`mailto:${supportEmail}`}
+                    className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5 mt-1 break-all text-xs"
+                  >
+                    <span className="text-amber-400">✉</span> {supportEmail}
+                  </a>
+                </div>
+              )}
+
+              {hasAddress && (
+                <div className="rounded-xl bg-slate-950/70 border border-slate-800/60 p-3 hover:border-amber-500/40 transition-colors">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Registered Head Office</p>
+                  <p className="font-medium text-slate-300 leading-snug mt-1 text-xs flex items-start gap-1.5">
+                    <span className="text-red-400 shrink-0">📍</span>
+                    <span>{fullAddress}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Government Licenses Badges (Only shown if admin populated) */}
+            {hasAnyLicense && (
+              <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                {hasGstin && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
+                    GSTIN: <strong className="text-amber-400 font-mono">{settings.gstin}</strong>
+                  </span>
+                )}
+                {hasCin && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
+                    CIN: <strong className="text-slate-300 font-mono">{settings.cin}</strong>
+                  </span>
+                )}
+                {hasIata && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
+                    IATA: <strong className="text-slate-300 font-mono">{settings.iataNumber}</strong>
+                  </span>
+                )}
+                {hasTourismLicense && (
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800">
+                    MOT: <strong className="text-slate-300 font-mono">{settings.tourismLicenseNo}</strong>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Quick Callback Form */}
+          <form
+            action="/contact"
+            method="get"
+            className="space-y-3 rounded-2xl border border-slate-800/90 bg-gradient-to-br from-slate-900/90 to-slate-950 p-4 sm:p-5 shadow-xl flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <h4 className="font-bold text-white text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-amber-400">⚡</span> Request Instant Callback
+                </h4>
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                  Under 15 Mins
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Enter your mobile number and our verified holiday specialist will call you back with customized quotes.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="Your 10-digit mobile number"
+                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-xs font-black text-slate-950 hover:from-amber-400 hover:to-amber-500 transition-all shrink-0 shadow-md shadow-amber-500/20 cursor-pointer active:scale-98"
+                >
+                  Call Me
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 text-center sm:text-left flex items-center gap-1">
+                <span>🔒</span> 100% Privacy Guaranteed · Zero Spam Calls
+              </p>
+            </div>
+          </form>
+        </div>
+
+        {/* ── MIDDLE SECTION: Main 5-Column Navigation Grid ── */}
+        <div className="pt-8 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
           <div className="space-y-3">
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Domestic Holidays</h4>
             <ul className="space-y-2 text-[11px]">
@@ -101,7 +254,6 @@ export default function SiteFooter() {
             <ul className="space-y-2 text-[11px]">
               <li><Link href="/about" className="hover:text-amber-400 transition-colors">About {settings.tradeName || "Be My Traveller"}</Link></li>
               <li><Link href="/contact" className="hover:text-amber-400 transition-colors">Contact &amp; Branch Desks</Link></li>
-              <li><Link href="/admin/login" className="hover:text-amber-400 transition-colors">Admin Portal Login</Link></li>
               <li><Link href="/terms" className="hover:text-amber-400 transition-colors">Terms &amp; Conditions</Link></li>
               <li><Link href="/privacy" className="hover:text-amber-400 transition-colors">Privacy Policy</Link></li>
               <li><Link href="/cancellation-policy" className="hover:text-amber-400 transition-colors">Cancellation &amp; Refund</Link></li>
@@ -122,95 +274,8 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        {/* Dynamic Contact Details & Callback Bar */}
-        <div className="pt-8 border-t border-slate-800 grid gap-6 md:grid-cols-[1.2fr_0.8fr] text-[11.5px] text-slate-300">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <h4 className="font-bold text-white text-xs uppercase tracking-wider">Official Contact &amp; Registered Office</h4>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-300">
-              <div>
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">24/7 Primary Helpline</p>
-                <a href={`tel:${cleanPhone}`} className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5">
-                  <span>📞</span> {helplinePhone}
-                </a>
-              </div>
-
-              <div>
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Official WhatsApp</p>
-                <a
-                  href={`https://wa.me/${cleanWhatsApp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5"
-                >
-                  <span>💬</span> {settings.whatsappNumber || helplinePhone}
-                </a>
-              </div>
-
-              <div>
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Support &amp; Inquiries</p>
-                <a href={`mailto:${supportEmail}`} className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1.5">
-                  <span>✉</span> {supportEmail}
-                </a>
-              </div>
-
-              <div>
-                <p className="text-[10px] text-slate-500 uppercase font-semibold">Registered Head Office</p>
-                <p className="font-medium text-slate-300 leading-snug">
-                  📍 {fullAddress}
-                </p>
-              </div>
-            </div>
-
-            {/* Government Licenses Badges */}
-            <div className="pt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
-              {settings.gstin && (
-                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
-                  GSTIN: <strong className="text-amber-400">{settings.gstin}</strong>
-                </span>
-              )}
-              {settings.cin && (
-                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
-                  CIN: <strong className="text-slate-300">{settings.cin}</strong>
-                </span>
-              )}
-              {settings.iataNumber && (
-                <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
-                  IATA: <strong className="text-slate-300">{settings.iataNumber}</strong>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Callback Form */}
-          <form action="/contact" method="get" className="space-y-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
-            <h4 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <span>⚡</span> Request Instant Callback
-            </h4>
-            <p className="text-[11px] text-slate-400">Enter your number and our holiday specialist will call back.</p>
-            <div className="flex gap-2">
-              <input
-                type="tel"
-                name="phone"
-                placeholder="Your 10-digit mobile number"
-                className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-amber-500 transition-colors"
-                required
-              />
-              <button
-                type="submit"
-                className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-colors shrink-0 shadow-sm shadow-amber-500/20 cursor-pointer"
-              >
-                Call Me
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Footer Bottom Strip */}
-        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        {/* ── BOTTOM STRIP: Copyright, Socials & Watermark ── */}
+        <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
           <div className="flex items-center gap-2">
             <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
               B
@@ -220,23 +285,23 @@ export default function SiteFooter() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            {settings.socialLinks?.instagram && (
-              <a href={settings.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+          <div className="flex flex-wrap items-center gap-4">
+            {hasInstagram && (
+              <a href={settings.socialLinks!.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
                 Instagram
               </a>
             )}
-            {settings.socialLinks?.facebook && (
-              <a href={settings.socialLinks.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+            {hasFacebook && (
+              <a href={settings.socialLinks!.facebook} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
                 Facebook
               </a>
             )}
-            {settings.socialLinks?.youtube && (
-              <a href={settings.socialLinks.youtube} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
+            {hasYouTube && (
+              <a href={settings.socialLinks!.youtube} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
                 YouTube
               </a>
             )}
-            <span className="text-slate-600">|</span>
+            {hasAnySocial && <span className="text-slate-700">|</span>}
             <span>Technology Partner {settings.watermarkText || "RRDS"}</span>
           </div>
         </div>

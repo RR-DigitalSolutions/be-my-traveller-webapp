@@ -56,7 +56,7 @@ export default function AdminSettingsPage() {
     // Registered Office
     registeredOffice: {
       addressLine1: "Level 4, Connaught Place Business Tower, Barakhamba Road",
-      addressLine2: "Central Delhi",
+      addressLine2: "",
       city: "New Delhi",
       state: "Delhi",
       pincode: "110001",
@@ -614,6 +614,21 @@ export default function AdminSettingsPage() {
                         setFormData({
                           ...formData,
                           registeredOffice: { ...formData.registeredOffice, addressLine1: e.target.value },
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Address Line 2 (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="Floor, landmark, suite (leave empty if not applicable)"
+                      value={formData.registeredOffice.addressLine2 || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          registeredOffice: { ...formData.registeredOffice, addressLine2: e.target.value },
                         })
                       }
                       className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-amber-500"

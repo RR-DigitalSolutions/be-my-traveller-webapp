@@ -38,12 +38,34 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
       needsUpdate = true;
     }
 
+    let addressLine2 = doc.registeredOffice?.addressLine2 || "";
+    let cleanAddress = false;
+    if (addressLine2 === "Central Delhi" || addressLine2.toLowerCase().includes("central delhi")) {
+      addressLine2 = "";
+      cleanAddress = true;
+      needsUpdate = true;
+    }
+
     if (needsUpdate && doc._id) {
+      const updatePayload: Record<string, any> = {
+        primaryPhone: newPhone,
+        emergencyHelpline: newEmergency,
+        whatsappNumber: newWhatsApp,
+      };
+      if (cleanAddress) {
+        updatePayload["registeredOffice.addressLine2"] = "";
+      }
       SiteSettingsModel.updateOne(
         { _id: doc._id },
-        { $set: { primaryPhone: newPhone, emergencyHelpline: newEmergency, whatsappNumber: newWhatsApp } }
+        { $set: updatePayload }
       ).catch(() => {});
     }
+
+    const regOffice = doc.registeredOffice || {};
+    const safeAddressLine2 =
+      regOffice.addressLine2 && !regOffice.addressLine2.toLowerCase().includes("central delhi")
+        ? regOffice.addressLine2
+        : "";
 
     return {
       companyLegalName: doc.companyLegalName || DEFAULT_PUBLIC_SETTINGS.companyLegalName,
@@ -62,8 +84,12 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
       dotPermitNo: doc.dotPermitNo || DEFAULT_PUBLIC_SETTINGS.dotPermitNo,
 
       registeredOffice: {
-        ...DEFAULT_PUBLIC_SETTINGS.registeredOffice,
-        ...(doc.registeredOffice || {}),
+        addressLine1: regOffice.addressLine1 || DEFAULT_PUBLIC_SETTINGS.registeredOffice.addressLine1,
+        addressLine2: safeAddressLine2,
+        city: regOffice.city || DEFAULT_PUBLIC_SETTINGS.registeredOffice.city,
+        state: regOffice.state || DEFAULT_PUBLIC_SETTINGS.registeredOffice.state,
+        pincode: regOffice.pincode || DEFAULT_PUBLIC_SETTINGS.registeredOffice.pincode,
+        country: regOffice.country || DEFAULT_PUBLIC_SETTINGS.registeredOffice.country,
       },
       branchOffices: Array.isArray(doc.branchOffices) && doc.branchOffices.length > 0
         ? doc.branchOffices

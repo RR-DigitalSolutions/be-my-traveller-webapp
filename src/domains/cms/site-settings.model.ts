@@ -164,12 +164,12 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
     registeredOffice: {
       addressLine1: {
         type: String,
-        default: "Level 4, Connaught Place Business Tower, Barakhamba Road",
+        default: "Be My Traveller, Model Town Road, Near Mall Road Manali",
       },
-      addressLine2: { type: String, default: "Central Delhi" },
-      city: { type: String, default: "New Delhi" },
-      state: { type: String, default: "Delhi" },
-      pincode: { type: String, default: "110001" },
+      addressLine2: { type: String, default: "" },
+      city: { type: String, default: "Manali" },
+      state: { type: String, default: "Himachal Pradesh" },
+      pincode: { type: String, default: "175131" },
       country: { type: String, default: "India" },
     },
     branchOffices: [

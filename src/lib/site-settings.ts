@@ -86,11 +86,11 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSiteSettings = {
   dotPermitNo: "HP-DOT-9921-EXP",
 
   registeredOffice: {
-    addressLine1: "Level 4, Connaught Place Business Tower, Barakhamba Road",
-    addressLine2: "Central Delhi",
-    city: "New Delhi",
-    state: "Delhi",
-    pincode: "110001",
+    addressLine1: "Be My Traveller, Model Town Road, Near Mall Road Manali",
+    addressLine2: "",
+    city: "Manali",
+    state: "Himachal Pradesh",
+    pincode: "175131",
     country: "India",
   },
 

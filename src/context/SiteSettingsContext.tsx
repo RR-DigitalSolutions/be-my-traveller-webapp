@@ -70,16 +70,26 @@ export function SiteSettingsProvider({
   const value = useMemo(() => {
     const cleanPhone = (settings.primaryPhone || "").replace(/\D/g, "");
     const cleanWhatsApp = (settings.whatsappNumber || "").replace(/\D/g, "");
-    const fullAddress = [
+    const addressRawParts = [
       settings.registeredOffice?.addressLine1,
       settings.registeredOffice?.addressLine2,
       settings.registeredOffice?.city,
       settings.registeredOffice?.state,
       settings.registeredOffice?.pincode,
       settings.registeredOffice?.country,
-    ]
-      .filter(Boolean)
-      .join(", ");
+    ];
+
+    const uniqueAddressParts: string[] = [];
+    for (const raw of addressRawParts) {
+      if (typeof raw !== "string") continue;
+      const part = raw.trim();
+      if (!part) continue;
+      if (part.toLowerCase() === "central delhi") continue;
+      if (!uniqueAddressParts.some((p) => p.toLowerCase() === part.toLowerCase())) {
+        uniqueAddressParts.push(part);
+      }
+    }
+    const fullAddress = uniqueAddressParts.join(", ");
 
     return {
       settings,
