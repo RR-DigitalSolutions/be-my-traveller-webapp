@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 import { normalizeThemeValue } from "@/lib/site-themes";
 
 interface ThemeOption {
@@ -751,6 +752,9 @@ function PackagesContent() {
           </div>
         </div>
       )}
+
+      {/* ── Universal Site Footer ── */}
+      <SiteFooter />
     </div>
   );
 }

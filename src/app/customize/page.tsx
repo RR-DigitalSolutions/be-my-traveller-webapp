@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 import { formatINR } from "@/lib/utils";
 
 export default function CustomTripBuilderPage() {
@@ -328,6 +329,7 @@ export default function CustomTripBuilderPage() {
           </div>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

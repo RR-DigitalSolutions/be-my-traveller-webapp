@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import BmtNavMenu from "@/components/navigation/BmtNavMenu";
+import SiteFooter from "@/components/common/SiteFooter";
 
 export default function DestinationsDirectoryPage() {
   const [selectedRegion, setSelectedRegion] = useState("ALL");
@@ -330,6 +331,7 @@ export default function DestinationsDirectoryPage() {
           ))}
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

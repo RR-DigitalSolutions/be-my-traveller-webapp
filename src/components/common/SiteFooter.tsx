@@ -190,7 +190,7 @@ export default function SiteFooter() {
             <h4 className="font-bold text-white text-xs uppercase tracking-wider flex items-center gap-1.5">
               <span>⚡</span> Request Instant Callback
             </h4>
-            <p className="text-[11px] text-slate-400">Enter your number and our mountain destination specialist will call back.</p>
+            <p className="text-[11px] text-slate-400">Enter your number and our holiday specialist will call back.</p>
             <div className="flex gap-2">
               <input
                 type="tel"
@@ -201,7 +201,7 @@ export default function SiteFooter() {
               />
               <button
                 type="submit"
-                className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-colors shrink-0 shadow-sm shadow-amber-500/20"
+                className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-colors shrink-0 shadow-sm shadow-amber-500/20 cursor-pointer"
               >
                 Call Me
               </button>
