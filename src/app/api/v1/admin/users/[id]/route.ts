@@ -22,9 +22,10 @@ export async function GET(
     }
 
     await connectDB();
+    const rootAdminEmail = (process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com").trim().toLowerCase();
     const user = await UserModel.findById(id).lean();
 
-    if (!user) {
+    if (!user || user.email.toLowerCase() === rootAdminEmail) {
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
     }
 
@@ -35,7 +36,7 @@ export async function GET(
         name: user.name,
         email: user.email,
         role: user.role,
-        department: user.department || (user.role === "SUPER_ADMIN" ? "ADMIN" : "SUPPORT_CONTENT"),
+        department: user.department || "SUPPORT_CONTENT",
         designation: user.designation || "",
         phone: user.phone || "",
         status: user.status || (user.isActive ? "ACTIVE" : "INACTIVE"),
@@ -72,10 +73,19 @@ export async function PATCH(
     }
 
     await connectDB();
+    const rootAdminEmail = (process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com").trim().toLowerCase();
     const user = await UserModel.findById(id);
 
     if (!user) {
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
+    }
+
+    // Security check: Root Super Admin account cannot be modified via staff management
+    if (user.email.toLowerCase() === rootAdminEmail) {
+      return NextResponse.json(
+        { error: "Root Super Administrator account is protected and cannot be modified here" },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -92,13 +102,16 @@ export async function PATCH(
       avatar,
     } = body;
 
-    const isPrimarySuperAdmin =
-      user.email === "admin@bemytraveller.com" || user.role === Role.SUPER_ADMIN;
-
     if (name && name.trim()) user.name = name.trim();
 
     if (email && email.trim() && email.includes("@")) {
       const cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail === rootAdminEmail) {
+        return NextResponse.json(
+          { error: "Cannot assign protected root admin email" },
+          { status: 403 }
+        );
+      }
       if (cleanEmail !== user.email) {
         const existing = await UserModel.findOne({ email: cleanEmail });
         if (existing) {
@@ -107,9 +120,7 @@ export async function PATCH(
             { status: 409 }
           );
         }
-        if (!isPrimarySuperAdmin) {
-          user.email = cleanEmail;
-        }
+        user.email = cleanEmail;
       }
     }
 
@@ -117,7 +128,7 @@ export async function PATCH(
       user.department = department;
     }
 
-    if (role && (!isPrimarySuperAdmin || role === Role.SUPER_ADMIN)) {
+    if (role) {
       user.role = role;
     }
 
@@ -125,17 +136,17 @@ export async function PATCH(
     if (phone !== undefined) user.phone = phone.trim();
     if (avatar !== undefined) user.avatar = avatar.trim();
 
-    if (status && !isPrimarySuperAdmin) {
+    if (status) {
       user.status = status;
       user.isActive = status === "ACTIVE";
     }
 
     if (Array.isArray(permissions)) {
-      if (isPrimarySuperAdmin || user.department === "ADMIN") {
-        user.permissions = permissions.includes("*") ? permissions : ["*", ...permissions];
-      } else {
-        user.permissions = permissions;
+      let finalPerms = [...permissions];
+      if (user.department === "ADMIN" || user.role === Role.SUPER_ADMIN || finalPerms.length >= 12) {
+        if (!finalPerms.includes("*")) finalPerms.push("*");
       }
+      user.permissions = finalPerms;
     }
 
     // Password Reset
@@ -194,8 +205,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
     }
 
-    // Safety guard against deleting primary admin or active session user
-    if (user.email === "admin@bemytraveller.com" || user.role === Role.SUPER_ADMIN) {
+    const rootAdminEmail = (process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com").trim().toLowerCase();
+    // Safety guard against deleting primary root admin or active session user
+    if (user.email.toLowerCase() === rootAdminEmail) {
       return NextResponse.json(
         { error: "Master Super Admin account cannot be deleted" },
         { status: 403 }

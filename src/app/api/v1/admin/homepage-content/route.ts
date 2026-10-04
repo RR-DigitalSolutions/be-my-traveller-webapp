@@ -36,6 +36,9 @@ export async function PATCH(req: NextRequest) {
     if (body.themePackages !== undefined) updateData.themePackages = body.themePackages;
     if (body.whyBook !== undefined) updateData.whyBook = body.whyBook;
     if (body.reviews !== undefined) updateData.reviews = body.reviews;
+    if (body.aboutUs !== undefined) updateData.aboutUs = body.aboutUs;
+    if (body.faqs !== undefined) updateData.faqs = body.faqs;
+    if (body.seoContent !== undefined) updateData.seoContent = body.seoContent;
 
     const content = await HomepageContentModel.findOneAndUpdate(
       {},

@@ -27,7 +27,7 @@ interface BmtNavMenuProps {
   variant?: "transparent" | "solid";
 }
 
-export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps) {
+export default function BmtNavMenu({ variant = "solid" }: BmtNavMenuProps) {
   const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail } = useSiteSettings();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -289,33 +289,37 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
       ref={menuRef}
       className={`w-full sticky top-0 z-50 transition-all duration-300 ${
         isSolid
-          ? "bg-white/95 backdrop-blur-md shadow-md"
+          ? "bg-white/98 backdrop-blur-md shadow-xs"
           : activeMenu !== null || mobileMenuOpen
           ? "bg-slate-950/95 backdrop-blur-md shadow-xl"
-          : "bg-gradient-to-b from-slate-950/80 via-slate-950/35 to-transparent"
+          : "bg-gradient-to-b from-slate-950/70 via-slate-950/20 to-transparent"
       }`}
     >
-      {/* ── BAR 1: Top info strip ── */}
+      {/* ── BAR 1: Top info strip (Compact) ── */}
       <div
-        className={`transition-colors duration-300 border-b ${
+        className={`transition-colors duration-200 border-b ${
           isSolid
             ? "bg-[#0b1b36] border-slate-800 text-white"
-            : "bg-slate-950/40 backdrop-blur-xs border-white/10 text-white/90"
+            : "bg-slate-950/30 backdrop-blur-xs border-white/10 text-white/90"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-8 text-[11px]">
+          <div className="flex items-center justify-between h-7 text-[10.5px] sm:text-[11px]">
             {/* Left: info */}
-            <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-none whitespace-nowrap">
+            <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto scrollbar-none whitespace-nowrap">
               <a
-                href={`tel:${cleanPhone}`} className="flex items-center gap-1.5 text-amber-400 font-bold hover:text-amber-300 transition-colors shrink-0">
+                href={`tel:${cleanPhone}`}
+                className="flex items-center gap-1.5 text-amber-400 font-bold hover:text-amber-300 transition-colors shrink-0"
+              >
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
                 24/7: {helplinePhone}
               </a>
               <a
-                href={`mailto:${supportEmail}`} className="text-slate-300 hover:text-white transition-colors hidden sm:block shrink-0">
+                href={`mailto:${supportEmail}`}
+                className="text-slate-300 hover:text-white transition-colors hidden sm:block shrink-0"
+              >
                 ✉ {supportEmail}
               </a>
               <span className="text-emerald-400 font-semibold hidden md:flex items-center gap-1 shrink-0">
@@ -330,23 +334,23 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         </div>
       </div>
 
-      {/* ── BAR 2: Main Nav with Logo + Mega Menu ── */}
+      {/* ── BAR 2: Main Nav with Logo + Mega Menu (Compact Height, Clean Logo) ── */}
       <div
-        className={`transition-all duration-300 border-b ${
+        className={`transition-all duration-200 ${
           isSolid
-            ? "bg-white/95 border-slate-200"
+            ? "bg-white/98 border-b border-slate-200/90 shadow-2xs"
             : activeMenu !== null || mobileMenuOpen
-            ? "bg-slate-900/90 border-slate-700/80"
-            : "bg-transparent border-white/10"
+            ? "bg-slate-900/95 border-b border-slate-700/80"
+            : "bg-transparent border-b border-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-[64px] gap-4">
-            {/* Logo */}
+          <div className="flex items-center justify-between h-[52px] sm:h-[56px] gap-4">
+            {/* Logo (Clean, no black overlay line) */}
             <Link href="/" className="shrink-0 group flex items-center" aria-label="Be My Traveller — Home">
               <div
-                className={`relative w-[180px] h-[54px] sm:w-[215px] sm:h-[60px] p-1 rounded-xl transition-all duration-300 ${
-                  !isSolid ? "bg-white/90 backdrop-blur-xs shadow-sm" : ""
+                className={`relative w-[150px] h-[34px] sm:w-[170px] sm:h-[38px] flex items-center transition-all ${
+                  !isSolid ? "bg-white px-2 py-0.5 rounded-lg" : ""
                 }`}
               >
                 <Image
@@ -355,7 +359,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                   fill
                   className="object-contain object-left"
                   priority
-                  sizes="215px"
+                  sizes="180px"
                 />
               </div>
             </Link>
@@ -521,23 +525,19 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             </nav>
 
             {/* Desktop Right: Phone + CTA */}
-            <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <div className="hidden lg:flex items-center gap-2.5 shrink-0">
               <a
                 href={`tel:${cleanPhone}`}
-                className={`flex items-center gap-1.5 text-[13px] font-bold transition-colors ${
-                  isSolid
-                    ? "text-slate-800 hover:text-amber-600"
-                    : "text-white hover:text-amber-300 drop-shadow-xs"
-                }`}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-amber-600 transition-colors"
               >
-                <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
                 {helplinePhone}
               </a>
               <Link
                 href="/customize"
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-[12.5px] shadow-sm shadow-amber-500/30 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs shadow-2xs transition-all cursor-pointer"
               >
                 Free Quote →
               </Link>
@@ -546,7 +546,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             {/* Mobile Hamburger (High-Contrast & Always Visible) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl transition-all cursor-pointer bg-slate-900/80 hover:bg-slate-900 text-white border border-slate-700/60 shadow-md backdrop-blur-md active:scale-95 shrink-0"
+              className="lg:hidden flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg transition-all cursor-pointer bg-slate-900/90 hover:bg-slate-900 text-white border border-slate-700/60 shadow-xs active:scale-95 shrink-0"
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
               <div className="w-5 h-4 flex flex-col justify-between items-center">

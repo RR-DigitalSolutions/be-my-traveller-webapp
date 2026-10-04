@@ -67,25 +67,9 @@ export default function SiteFooter() {
   const hasAnySocial = hasInstagram || hasFacebook || hasYouTube;
 
   return (
-    <footer className="bg-slate-950 text-slate-400 text-xs pt-4 pb-8 px-4 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <footer className="bg-slate-950 text-slate-400 text-xs pt-6 pb-8 px-4 border-t border-slate-800">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* ── BRAND LOGO (Ultra-Compact & Centered without extra padding, overlay, or tagline) ── */}
-        <div className="flex items-center justify-center pt-0.5">
-          <Link href="/" className="inline-flex items-center justify-center" aria-label="Be My Traveller — Home">
-            <div className="relative w-[140px] h-[28px] sm:w-[160px] sm:h-[32px] rounded-md bg-white overflow-hidden shadow-none border-0">
-              <Image
-                src="/Logo for website PNG.webp"
-                alt={settings.tradeName || "Be My Traveller"}
-                fill
-                className="object-contain"
-                sizes="160px"
-                priority
-              />
-            </div>
-          </Link>
-        </div>
-
         {/* ── TOP SECTION: Balanced 2-Card Equal-Height Compact Layout ── */}
         <div className="grid gap-4 lg:grid-cols-2 text-[11px] text-slate-300 items-stretch">
           
@@ -311,9 +295,10 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        {/* ── BOTTOM STRIP: Copyright, Socials & Watermark ── */}
-        <div className="pt-7 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
-          <div className="flex items-center gap-2">
+        {/* ── BOTTOM STRIP: Copyright, Brand Logo (in center), Socials & Watermark ── */}
+        <div className="pt-6 border-t border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+          {/* Copyright */}
+          <div className="flex items-center gap-2 text-center md:text-left">
             <span className="w-5 h-5 rounded bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px]">
               B
             </span>
@@ -322,7 +307,24 @@ export default function SiteFooter() {
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
+          {/* Brand Logo in center after Copyright, aligned in same line */}
+          <div className="flex items-center justify-center">
+            <Link href="/" className="inline-flex items-center justify-center" aria-label="Be My Traveller — Home">
+              <div className="relative w-[130px] h-[26px] sm:w-[150px] sm:h-[30px] rounded-md bg-white px-2 py-0.5 overflow-hidden shadow-2xs">
+                <Image
+                  src="/Logo for website PNG.webp"
+                  alt={settings.tradeName || "Be My Traveller"}
+                  fill
+                  className="object-contain"
+                  sizes="150px"
+                  priority
+                />
+              </div>
+            </Link>
+          </div>
+
+          {/* Socials & Technology Partner */}
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-4">
             {hasInstagram && (
               <a href={settings.socialLinks!.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-amber-400 transition-colors">
                 Instagram

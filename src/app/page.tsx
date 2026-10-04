@@ -9,6 +9,9 @@ import SpecialOffersCarousel from "@/components/home/SpecialOffersCarousel";
 import BestPackagesCarousel from "@/components/home/BestPackagesCarousel";
 import ReviewsCarousel from "@/components/home/ReviewsCarousel";
 import WhyBookSection from "@/components/home/WhyBookSection";
+import AboutUsSection, { AboutUsData } from "@/components/home/AboutUsSection";
+import HomeFaqsSection, { HomeFaqsData } from "@/components/home/HomeFaqsSection";
+import HomeSeoContentSection, { HomeSeoContentData } from "@/components/home/HomeSeoContentSection";
 import SiteFooter from "@/components/common/SiteFooter";
 
 export default function HomePage() {
@@ -251,19 +254,29 @@ export default function HomePage() {
   const [domesticList, setDomesticList] = useState(domesticDestinations);
   const [intlList, setIntlList] = useState(internationalDestinations);
 
+  // Dynamic About Us, FAQs, and SEO Content Area states
+  const [aboutUsData, setAboutUsData] = useState<AboutUsData | null>(null);
+  const [faqsData, setFaqsData] = useState<HomeFaqsData | null>(null);
+  const [seoContentData, setSeoContentData] = useState<HomeSeoContentData | null>(null);
+
   useEffect(() => {
     fetch("/api/v1/admin/homepage-content")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.content?.popularDestinations) {
-          if (Array.isArray(data.content.popularDestinations.domestic) && data.content.popularDestinations.domestic.length > 0) {
-            const active = data.content.popularDestinations.domestic.filter((d: any) => d.isActive !== false);
-            if (active.length > 0) setDomesticList(active);
+        if (data.success && data.content) {
+          if (data.content.popularDestinations) {
+            if (Array.isArray(data.content.popularDestinations.domestic) && data.content.popularDestinations.domestic.length > 0) {
+              const active = data.content.popularDestinations.domestic.filter((d: any) => d.isActive !== false);
+              if (active.length > 0) setDomesticList(active);
+            }
+            if (Array.isArray(data.content.popularDestinations.international) && data.content.popularDestinations.international.length > 0) {
+              const active = data.content.popularDestinations.international.filter((d: any) => d.isActive !== false);
+              if (active.length > 0) setIntlList(active);
+            }
           }
-          if (Array.isArray(data.content.popularDestinations.international) && data.content.popularDestinations.international.length > 0) {
-            const active = data.content.popularDestinations.international.filter((d: any) => d.isActive !== false);
-            if (active.length > 0) setIntlList(active);
-          }
+          if (data.content.aboutUs) setAboutUsData(data.content.aboutUs);
+          if (data.content.faqs) setFaqsData(data.content.faqs);
+          if (data.content.seoContent) setSeoContentData(data.content.seoContent);
         }
       })
       .catch(() => {});
@@ -272,10 +285,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
       {/* ── BMT Comprehensive Multi-Tier Navigation ── */}
-      <BmtNavMenu />
+      <BmtNavMenu variant="transparent" />
 
       {/* ── Hero & Search Engine Widget (BMT Dynamic Booking Engine) ── */}
-      <section className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white -mt-[96px] pt-[116px] pb-12 px-4">
+      <section className="relative bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white -mt-[79px] pt-[92px] pb-6 sm:pb-8 px-4">
         {/* Background photo with gradient overlay */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-25">
           <img
@@ -285,7 +298,7 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="max-w-6xl mx-auto relative z-10 space-y-6">
+        <div className="max-w-6xl mx-auto relative z-10 space-y-3.5 sm:space-y-4">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
               ★ India&apos;s Leading Custom Tour Platform
@@ -302,10 +315,9 @@ export default function HomePage() {
           </div>
 
           {/* ── OTA Booking Search Card (Elevated White Box) ── */}
-          {/* ── OTA Booking Search Card (Elevated White Box) ── */}
-          <div className="bg-white rounded-2xl p-3.5 sm:p-7 shadow-2xl border border-slate-100 text-slate-900">
+          <div className="bg-white rounded-2xl p-3 sm:p-4.5 shadow-2xl border border-slate-100 text-slate-900">
             {/* Search Type Selector Tabs */}
-            <div className="flex items-center gap-1 sm:gap-2 border-b border-slate-200 pb-0 mb-3.5 sm:mb-5 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1 sm:gap-2 border-b border-slate-200 pb-0 mb-2.5 sm:mb-3.5 overflow-x-auto scrollbar-none">
               {[
                 { key: "holidays", icon: "🏖️", label: "Holiday Packages" },
                 { key: "custom", icon: "🧭", label: "Build Custom Itinerary" },
@@ -315,7 +327,7 @@ export default function HomePage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveSearchTab(tab.key as typeof activeSearchTab)}
-                  className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-3 text-[11px] sm:text-xs font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
                     activeSearchTab === tab.key
                       ? "text-amber-600 border-amber-500 bg-amber-50/60 rounded-t-lg"
                       : "text-slate-500 border-transparent hover:text-slate-800 hover:border-slate-300"
@@ -833,8 +845,17 @@ export default function HomePage() {
       {/* ── Why Choose Be My Traveller (Dynamic Two-Column) ── */}
       <WhyBookSection />
 
+      {/* ── About Us (About Be My Traveller) ── */}
+      <AboutUsSection data={aboutUsData} />
+
       {/* ── Verified Customer Reviews Carousel ── */}
       <ReviewsCarousel />
+
+      {/* ── Frequently Asked Questions (Above Content Area) ── */}
+      <HomeFaqsSection data={faqsData} />
+
+      {/* ── Homepage SEO, AEO, AIO & AI-Rich Content Area ── */}
+      <HomeSeoContentSection data={seoContentData} />
 
       {/* ── Universal Site Footer (BMT Travel Portal) ── */}
       <SiteFooter />

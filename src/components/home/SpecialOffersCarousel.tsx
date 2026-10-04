@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 
 export interface OfferItem {
   id: string;
@@ -20,6 +21,8 @@ export interface OfferItem {
   codeBorder: string;
   codeText: string;
   enquiryName: string;
+  /** Optional URL to navigate when CTA button is clicked instead of opening enquiry modal */
+  link?: string;
 }
 
 const OFFERS: OfferItem[] = [
@@ -311,13 +314,24 @@ export default function SpecialOffersCarousel({
                     <span className="text-[10px] opacity-70">📋</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => onClaimOffer(offer.enquiryName)}
-                    className={`${offer.buttonBg} ${offer.buttonText} px-3.5 py-1.5 rounded-xl font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer hover:shadow-lg`}
-                  >
-                    {offer.ctaText}
-                  </button>
+                  {offer.link ? (
+                    <Link
+                      href={offer.link}
+                      target={offer.link.startsWith("http") ? "_blank" : undefined}
+                      rel={offer.link.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className={`${offer.buttonBg} ${offer.buttonText} px-3.5 py-1.5 rounded-xl font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer hover:shadow-lg inline-block text-center`}
+                    >
+                      {offer.ctaText}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onClaimOffer(offer.enquiryName)}
+                      className={`${offer.buttonBg} ${offer.buttonText} px-3.5 py-1.5 rounded-xl font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer hover:shadow-lg`}
+                    >
+                      {offer.ctaText}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
