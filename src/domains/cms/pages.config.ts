@@ -436,9 +436,9 @@ export async function getPageBySlug(slug: string): Promise<ManagedPageData> {
           ? docContent.tableData
           : defaultData.tableData,
       seo: {
-        metaTitle: doc.seo?.metaTitle || defaultData.seo?.metaTitle,
+        metaTitle: (doc.seo as any)?.metaTitle || (doc.seo as any)?.title || defaultData.seo?.metaTitle,
         metaDescription: doc.seo?.metaDescription || defaultData.seo?.metaDescription,
-        keywords: doc.seo?.keywords || defaultData.seo?.keywords,
+        keywords: (doc.seo as any)?.keywords || (doc.seo as any)?.secondaryKeywords || defaultData.seo?.keywords,
       },
       status: (doc.status as any) || "PUBLISHED",
       updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : undefined,
