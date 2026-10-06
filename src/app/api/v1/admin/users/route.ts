@@ -10,6 +10,14 @@ import {
   Role,
   type RoleKey,
 } from "@/lib/auth/permissions";
+import {
+  getRootAdminEmail,
+  isRootAdminEmail,
+  canAccessStaffManagement,
+  canAssignSuperAdmin,
+  escapeRegex,
+  validatePasswordStrength,
+} from "@/lib/security/auth-protection";
 
 function resolveDepartmentFromRole(role?: string, explicitDept?: string): DepartmentKey {
   if (explicitDept && Object.values(Department).includes(explicitDept as any)) {
@@ -41,7 +49,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // RBAC Security Check
+    if (!canAccessStaffManagement(session.user)) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission to view Staff & RBAC management" },
+        { status: 403 }
+      );
+    }
+
     await connectDB();
+
+    const rootAdminEmail = getRootAdminEmail();
+    const callerEmail = session.user.email?.trim().toLowerCase() || "";
+    const isRootCaller = isRootAdminEmail(callerEmail);
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
@@ -49,40 +69,54 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "ALL";
     const role = searchParams.get("role") || "ALL";
 
-    // Build filter query
-    const query: Record<string, any> = {};
+    // Build filter query with strict root-admin stealth protection
+    const andConditions: any[] = [];
+
+    // Stealth Rule: If caller is NOT the root admin, root admin is completely invisible
+    if (!isRootCaller) {
+      andConditions.push({ email: { $ne: rootAdminEmail } });
+    }
 
     if (search.trim()) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { designation: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-      ];
+      const escapedSearch = escapeRegex(search.trim());
+      andConditions.push({
+        $or: [
+          { name: { $regex: escapedSearch, $options: "i" } },
+          { email: { $regex: escapedSearch, $options: "i" } },
+          { designation: { $regex: escapedSearch, $options: "i" } },
+          { phone: { $regex: escapedSearch, $options: "i" } },
+        ],
+      });
     }
 
     if (department !== "ALL") {
-      query.department = department;
+      andConditions.push({ department });
     }
 
     if (status !== "ALL") {
       if (status === "ACTIVE") {
-        query.$or = [{ status: "ACTIVE" }, { isActive: true, status: { $exists: false } }];
+        andConditions.push({
+          $or: [{ status: "ACTIVE" }, { isActive: true, status: { $exists: false } }],
+        });
       } else {
-        query.status = status;
+        andConditions.push({ status });
       }
     }
 
     if (role !== "ALL") {
-      query.role = role;
+      andConditions.push({ role });
     }
 
-    const users = await UserModel.find(query)
+    const finalQuery = andConditions.length > 0 ? { $and: andConditions } : {};
+
+    const users = await UserModel.find(finalQuery)
       .sort({ createdAt: -1 })
       .lean();
 
-    // Summary metrics across all users
-    const allUsers = await UserModel.find().lean();
+    // Summary metrics across users — stealth filtering applied so counts never leak hidden root admin
+    const statsQuery = isRootCaller ? {} : { email: { $ne: rootAdminEmail } };
+    const allUsers = await UserModel.find(statsQuery).lean();
+
     const stats = {
       totalUsers: allUsers.length,
       activeUsers: allUsers.filter((u) => u.isActive !== false && u.status !== "INACTIVE" && u.status !== "SUSPENDED").length,
@@ -111,6 +145,7 @@ export async function GET(req: NextRequest) {
         avatar: u.avatar || "",
         createdAt: u.createdAt,
         updatedAt: u.updatedAt,
+        isRootAccount: isRootAdminEmail(u.email),
       };
     });
 
@@ -118,6 +153,10 @@ export async function GET(req: NextRequest) {
       success: true,
       users: sanitizedUsers,
       stats,
+      currentCaller: {
+        email: callerEmail,
+        isRootAdmin: isRootCaller,
+      },
     });
   } catch (error: any) {
     console.error("[ADMIN_USERS_GET_ERROR]", error);
@@ -133,6 +172,14 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // RBAC Security Check
+    if (!canAccessStaffManagement(session.user)) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission to register staff accounts" },
+        { status: 403 }
+      );
     }
 
     await connectDB();
@@ -159,14 +206,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid Email address is required" }, { status: 400 });
     }
 
-    if (!password || password.length < 6) {
+    const cleanEmail = email.trim().toLowerCase();
+    const rootAdminEmail = getRootAdminEmail();
+
+    // Security check: Never allow assigning protected root admin email
+    if (cleanEmail === rootAdminEmail) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters long" },
-        { status: 400 }
+        { error: "Protected root administrator email address cannot be assigned." },
+        { status: 403 }
       );
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const passwordValidation = validatePasswordStrength(password || "");
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.message },
+        { status: 400 }
+      );
+    }
 
     const existingUser = await UserModel.findOne({ email: cleanEmail });
     if (existingUser) {
@@ -176,13 +233,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password.trim(), 12);
-
     const assignedDepartment = (department || "SALES") as DepartmentKey;
     const defaultRole = DEPARTMENTS[assignedDepartment]?.defaultRole || Role.EDITOR;
     const assignedRole = (role || defaultRole) as RoleKey;
 
     let finalPermissions: string[] = Array.isArray(permissions) ? permissions : [];
+
+    // Privilege Escalation Guard:
+    // Only existing Super Admins can create another Super Admin or assign master wildcard permissions
+    const wantsSuperAdmin = assignedDepartment === "ADMIN" || assignedRole === Role.SUPER_ADMIN || finalPermissions.includes("*");
+    if (wantsSuperAdmin && !canAssignSuperAdmin(session.user)) {
+      return NextResponse.json(
+        { error: "Forbidden: Only Super Administrators can grant Administrator or Master access." },
+        { status: 403 }
+      );
+    }
 
     // If department is ADMIN or role is SUPER_ADMIN, assign master *
     if (assignedDepartment === "ADMIN" || assignedRole === "SUPER_ADMIN") {
@@ -191,6 +256,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const passwordHash = await bcrypt.hash(password.trim(), 12);
     const userStatus = status || "ACTIVE";
     const isActive = userStatus === "ACTIVE";
 

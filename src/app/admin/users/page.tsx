@@ -25,6 +25,7 @@ interface StaffUser {
   lastLoginAt?: string;
   createdAt: string;
   updatedAt?: string;
+  isRootAccount?: boolean;
 }
 
 interface StatsSummary {
@@ -75,6 +76,7 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
+  const [currentCaller, setCurrentCaller] = useState<{ email: string; isRootAdmin: boolean } | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -104,6 +106,12 @@ export default function AdminUsersPage() {
   const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const isEditingRoot =
+    modalMode === "EDIT" &&
+    editingUserId !== null &&
+    (users.find((u) => u._id === editingUserId)?.email.toLowerCase() === "admin@bemytraveller.com" ||
+      users.find((u) => u._id === editingUserId)?.isRootAccount === true);
+
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
@@ -117,6 +125,9 @@ export default function AdminUsersPage() {
       if (data.success) {
         setUsers(data.users || []);
         setStats(data.stats || null);
+        if (data.currentCaller) {
+          setCurrentCaller(data.currentCaller);
+        }
       } else {
         showToast(data.error || "Failed to load staff members", "error");
       }
@@ -272,9 +283,15 @@ export default function AdminUsersPage() {
       return;
     }
 
-    if (modalMode === "CREATE" && (!formData.password || formData.password.length < 6)) {
-      showToast("Password must be at least 6 characters", "error");
-      return;
+    if (modalMode === "CREATE") {
+      if (!formData.password || formData.password.length < 8) {
+        showToast("Password must be at least 8 characters long", "error");
+        return;
+      }
+      if (formData.email.trim().toLowerCase() === "admin@bemytraveller.com") {
+        showToast("Protected root administrator email cannot be assigned", "error");
+        return;
+      }
     }
 
     setSaving(true);
@@ -342,8 +359,8 @@ export default function AdminUsersPage() {
 
   // Delete User
   const handleDeleteUser = async (user: StaffUser) => {
-    if (user.role === Role.SUPER_ADMIN || user.email === "admin@bemytraveller.com") {
-      showToast("Master Super Admin cannot be deleted", "error");
+    if (user.role === Role.SUPER_ADMIN || user.email.toLowerCase() === "admin@bemytraveller.com" || user.isRootAccount) {
+      showToast("Master Super Admin account is protected and cannot be deleted", "error");
       return;
     }
 
@@ -373,8 +390,8 @@ export default function AdminUsersPage() {
 
   // Quick Password Reset
   const handleQuickPasswordReset = async () => {
-    if (!resetModalUser || !newPasswordInput || newPasswordInput.length < 6) {
-      showToast("Password must be at least 6 characters", "error");
+    if (!resetModalUser || !newPasswordInput || newPasswordInput.length < 8) {
+      showToast("Password must be at least 8 characters long", "error");
       return;
     }
 
@@ -712,7 +729,9 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 filteredUsers.map((user) => {
-                  const isSuperAdmin = user.role === Role.SUPER_ADMIN || user.email === "admin@bemytraveller.com";
+                  const isRootUser = user.email.toLowerCase() === "admin@bemytraveller.com" || !!user.isRootAccount;
+                  const isSuperAdmin = user.role === Role.SUPER_ADMIN || isRootUser;
+                  const isCurrentUser = !!(currentCaller?.email && user.email.toLowerCase() === currentCaller.email.toLowerCase());
 
                   // Extract human friendly sections list
                   const authorizedSections: { id: string; name: string }[] = [];
@@ -745,11 +764,20 @@ export default function AdminUsersPage() {
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-white flex items-center gap-2 text-sm">
-                              {user.name}
-                              {isSuperAdmin && (
-                                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
+                            <div className="font-semibold text-white flex items-center gap-1.5 text-sm flex-wrap">
+                              <span>{user.name}</span>
+                              {isRootUser ? (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold border border-amber-500/30">
+                                  ROOT SUPER ADMIN
+                                </span>
+                              ) : isSuperAdmin ? (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-mono font-bold border border-amber-500/30">
                                   SUPER ADMIN
+                                </span>
+                              ) : null}
+                              {isCurrentUser && (
+                                <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-[10px] font-mono font-bold border border-sky-500/30">
+                                  YOU
                                 </span>
                               )}
                             </div>
@@ -835,7 +863,7 @@ export default function AdminUsersPage() {
                             </svg>
                           </button>
 
-                          {!isSuperAdmin && (
+                          {!isSuperAdmin && !isRootUser && (
                             <button
                               onClick={() => handleDeleteUser(user)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
@@ -900,9 +928,12 @@ export default function AdminUsersPage() {
                       <button
                         key={dept.key}
                         type="button"
-                        onClick={() => handleDepartmentChange(dept.key)}
+                        disabled={isEditingRoot && dept.key !== "ADMIN"}
+                        onClick={() => !isEditingRoot && handleDepartmentChange(dept.key)}
                         className={`p-3 rounded-xl border text-left transition-all ${
-                          isSelected
+                          isEditingRoot && dept.key !== "ADMIN"
+                            ? "opacity-35 cursor-not-allowed bg-slate-950/40 border-slate-900"
+                            : isSelected
                             ? "bg-slate-800 border-amber-500 shadow-md ring-1 ring-amber-500"
                             : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
                         }`}
@@ -948,11 +979,20 @@ export default function AdminUsersPage() {
                     <input
                       type="email"
                       required
+                      disabled={isEditingRoot}
+                      readOnly={isEditingRoot}
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="e.g. priya@bemytraveller.com"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      className={`w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 ${
+                        isEditingRoot ? "opacity-60 cursor-not-allowed bg-slate-950 text-slate-400" : ""
+                      }`}
                     />
+                    {isEditingRoot && (
+                      <p className="text-[10px] text-amber-400/90 mt-1 font-mono">
+                        🔒 Root Administrator login email is protected and read-only.
+                      </p>
+                    )}
                   </div>
 
                   {/* Designation */}
@@ -1006,14 +1046,20 @@ export default function AdminUsersPage() {
                   <div>
                     <label className="block text-slate-400 mb-1 font-medium">Account Status</label>
                     <select
+                      disabled={isEditingRoot}
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      className={`w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 ${
+                        isEditingRoot ? "opacity-60 cursor-not-allowed bg-slate-950 text-slate-400" : ""
+                      }`}
                     >
                       <option value="ACTIVE">Active (Can Login)</option>
                       <option value="SUSPENDED">Suspended (Access Blocked)</option>
                       <option value="INACTIVE">Inactive</option>
                     </select>
+                    {isEditingRoot && (
+                      <p className="text-[10px] text-slate-500 mt-0.5">Root Admin is permanently Active</p>
+                    )}
                   </div>
 
                   {/* Avatar URL */}

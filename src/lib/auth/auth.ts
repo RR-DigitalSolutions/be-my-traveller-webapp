@@ -6,8 +6,16 @@ import connectDB from "@/lib/db/mongoose";
 import { UserModel } from "@/domains/auth/user.model";
 import type { RoleKey, PermissionKey, DepartmentKey } from "@/lib/auth/permissions";
 import { authConfig } from "./auth.config";
+import {
+  getRootAdminEmail,
+  escapeRegex,
+  runDummyBcryptCompare,
+  checkRateLimit,
+  recordFailedAttempt,
+  recordSuccessfulAttempt,
+} from "@/lib/security/auth-protection";
 
-const adminEmail = (process.env.BMT_ADMIN_EMAIL || "admin@bemytraveller.com").trim().toLowerCase();
+const adminEmail = getRootAdminEmail();
 const configuredMasterPasswords = (process.env.BMT_MASTER_PASSWORDS || "")
   .split(",")
   .map((value) => value.trim())
@@ -72,6 +80,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const cleanIdentifier = identifier.trim().toLowerCase();
         const cleanPassword = password.trim();
+
+        // Rate Limiter Guard — Mitigates brute-force credential stuffing and bot attacks
+        const rateLimitKey = `auth:${cleanIdentifier}`;
+        const limitStatus = checkRateLimit(rateLimitKey);
+        if (limitStatus.limited) {
+          console.warn(`[SECURITY] Throttling repeated login attempts for target: ${cleanIdentifier}`);
+          return null;
+        }
+
         const isAdminAccount =
           cleanIdentifier === adminEmail ||
           cleanIdentifier === "admin" ||
@@ -86,14 +103,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const isEmail = cleanIdentifier.includes("@");
 
-          // Lookup by email, or by username/name
+          // Secure lookup: only match admin email if identifier explicitly targets admin
           const query = isEmail
             ? { email: cleanIdentifier, isActive: true }
+            : isAdminAccount
+            ? { email: adminEmail, isActive: true }
             : {
-                $or: [
-                  { name: { $regex: new RegExp(`^${cleanIdentifier}$`, "i") } },
-                  { email: adminEmail },
-                ],
+                name: { $regex: new RegExp(`^${escapeRegex(cleanIdentifier)}$`, "i") },
                 isActive: true,
               };
 
@@ -102,7 +118,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (user) {
             let isValid = await bcrypt.compare(cleanPassword, user.passwordHash);
 
-            if (!isValid && isMasterPassword) {
+            if (!isValid && isMasterPassword && (isAdminAccount || user.email === adminEmail)) {
               isValid = true;
               try {
                 const newHash = await bcrypt.hash(cleanPassword, 12);
@@ -113,6 +129,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
 
             if (isValid) {
+              recordSuccessfulAttempt(rateLimitKey);
+
               await UserModel.updateOne(
                 { _id: user._id },
                 { lastLoginAt: new Date() }
@@ -130,12 +148,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               };
             }
           }
+
+          // Anti-enumeration: compute dummy bcrypt hash so response time is constant
+          await runDummyBcryptCompare(cleanPassword);
         } catch (dbErr) {
           console.error("[Auth DB Error, checking master fallback]:", dbErr);
+          await runDummyBcryptCompare(cleanPassword);
         }
 
         // Failsafe Super Admin fallback if DB has transient issue or password matched master credentials
         if (isAdminAccount && isMasterPassword) {
+          recordSuccessfulAttempt(rateLimitKey);
           const seededUser = await ensureMasterAdminUser(adminEmail, cleanPassword);
 
           if (seededUser) {
@@ -162,6 +185,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           };
         }
 
+        // Record failed attempt for rate limiting
+        recordFailedAttempt(rateLimitKey);
         return null;
       },
     }),

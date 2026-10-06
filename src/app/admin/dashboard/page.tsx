@@ -175,33 +175,16 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Help Card: First Time Setup */}
+      {/* System Status Notice (Credentials never exposed in UI) */}
       {!stats.live && (
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 space-y-4">
           <div className="flex items-start gap-4">
             <span className="text-2xl">🚀</span>
             <div>
-              <h3 className="text-base font-bold text-amber-300">First Time Setup — Connect MongoDB Atlas</h3>
+              <h3 className="text-base font-bold text-amber-300">Database Connection Required</h3>
               <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-                Your admin is running. To activate live data, connect your MongoDB Atlas database in{" "}
-                <code className="text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded text-xs">.env.local</code>{" "}
-                and seed your first admin account.
+                Connect your MongoDB Atlas cluster in your server environment to persist records.
               </p>
-            </div>
-          </div>
-
-          <div className="bg-slate-900 rounded-xl p-4 space-y-3 text-xs font-mono">
-            <p className="text-slate-400 font-sans text-xs font-bold">Step 1 — Set your MongoDB URI in .env.local:</p>
-            <code className="text-emerald-400 block">MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/bemytraveller</code>
-
-            <p className="text-slate-400 font-sans text-xs font-bold mt-3">Step 2 — Seed your first admin (run in browser or curl):</p>
-            <code className="text-amber-400 block">POST http://localhost:3000/api/v1/admin/seed</code>
-
-            <p className="text-slate-400 font-sans text-xs font-bold mt-3">Step 3 — Default admin credentials (after seed):</p>
-            <div className="text-slate-300 space-y-1">
-              <div>Email: <span className="text-white">admin@bemytraveller.com</span></div>
-              <div>Password: <span className="text-white">BMTAdmin@2026#Secure</span></div>
-              <div className="text-amber-500 font-sans font-bold">⚠️ Change password after first login!</div>
             </div>
           </div>
         </div>
