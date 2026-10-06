@@ -148,24 +148,24 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans" data-watermark="RRDS">
       {/* ── BMT Comprehensive Multi-Tier Navigation ── */}
-      <BmtNavMenu variant="solid" />
+      <BmtNavMenu variant="transparent" />
 
-      {/* Breadcrumb Trail */}
-      <div className="bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-          <Link href="/" className="hover:text-amber-600 transition-colors">Home</Link>
-          <span className="text-slate-300">›</span>
-          <Link href="/destination/india-tour-packages" className="hover:text-amber-600 transition-colors">India Tours</Link>
+      {/* Breadcrumb Trail (Dark backdrop to float transparent navbar seamlessly before scroll) */}
+      <div className="bg-slate-950 border-b border-slate-800 -mt-[79px] pt-[90px]">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+          <Link href="/" className="hover:text-amber-400 transition-colors">Home</Link>
+          <span className="text-slate-600">›</span>
+          <Link href="/destination/india-tour-packages" className="hover:text-amber-400 transition-colors">India Tours</Link>
           {pkg.states && pkg.states.length > 0 && (
             <>
-              <span className="text-slate-300">›</span>
-              <Link href={`/destination/${pkg.states[0]}-tour-packages`} className="hover:text-amber-600 capitalize transition-colors">
+              <span className="text-slate-600">›</span>
+              <Link href={`/destination/${pkg.states[0]}-tour-packages`} className="hover:text-amber-400 capitalize transition-colors">
                 {pkg.states[0]}
               </Link>
             </>
           )}
-          <span className="text-slate-300">›</span>
-          <span className="text-slate-700 font-semibold line-clamp-1 max-w-[320px]">{pkg.title}</span>
+          <span className="text-slate-600">›</span>
+          <span className="text-slate-200 font-semibold line-clamp-1 max-w-[320px]">{pkg.title}</span>
         </div>
       </div>
 

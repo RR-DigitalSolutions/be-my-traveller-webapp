@@ -11,8 +11,8 @@ export default function NotFound() {
       <div className="absolute top-20 left-10 w-[350px] h-[350px] bg-rose-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Navigation */}
-      <header className="relative z-10">
-        <BmtNavMenu variant="solid" />
+      <header className="relative z-10 -mt-[79px] pt-[79px]">
+        <BmtNavMenu variant="transparent" />
       </header>
 
       {/* Main 404 Content */}

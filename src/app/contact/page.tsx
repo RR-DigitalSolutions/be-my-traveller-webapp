@@ -5,6 +5,14 @@ import BmtNavMenu from "@/components/navigation/BmtNavMenu";
 import SiteFooter from "@/components/common/SiteFooter";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
 
+const QUICK_TRIP_TYPES = [
+  "Family Vacation",
+  "Honeymoon Special",
+  "Adventure & Trekking",
+  "Corporate Retreat",
+  "Custom Mountain Roadtrip",
+];
+
 export default function ContactPage() {
   const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail, bookingsEmail, fullAddress } = useSiteSettings();
 
@@ -12,6 +20,7 @@ export default function ContactPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("Holiday Package Enquiry");
+  const [selectedTripType, setSelectedTripType] = useState<string>("Family Vacation");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,40 +36,98 @@ export default function ContactPage() {
           name: name || "Website Enquiry",
           phone,
           email: email || `${phone.replace(/\D/g, "") || "callback"}@bemytraveller.com`,
-          specialRequirements: `${subject}: ${message}`,
+          specialRequirements: `[${selectedTripType}] ${subject}: ${message}`,
           source: "CONTACT_PAGE",
         }),
       });
       setSubmitted(true);
+    } catch (err) {
+      console.error("Failed to submit lead", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <BmtNavMenu variant="solid" />
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans">
+      {/* ── Transparent Navbar (Transitions to Solid White on Scroll) ── */}
+      <BmtNavMenu variant="transparent" />
 
-      {/* Header Banner */}
-      <section className="bg-slate-900 px-4 py-16 text-center text-white">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-3.5 py-1 text-xs font-bold text-amber-300 mb-3">
-          ✨ 24/7 Verified Travel Specialist Concierge
-        </span>
-        <h1 className="text-4xl font-black">{settings.tradeName || "Be My Traveller"} Support &amp; Concierge</h1>
-        <p className="mx-auto mt-3 max-w-xl text-sm text-slate-400 leading-relaxed">
-          {settings.tagline || "Curated Experiential Mountain Holidays & Custom Tour Packages"}. Reach out to our registered head office or ground operational hubs.
-        </p>
+      {/* ── Header Banner (Padded for transparent floating navbar) ── */}
+      <section className="relative bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white -mt-[79px] pt-[124px] pb-16 px-4 text-center">
+        <div className="mx-auto max-w-4xl space-y-4 relative z-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/15 px-4 py-1.5 text-xs font-bold text-amber-300">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            24/7 Verified Travel Specialist Concierge Active
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+            {settings.tradeName || "Be My Traveller"} Support &amp; Concierge
+          </h1>
+
+          <p className="mx-auto max-w-2xl text-xs sm:text-sm text-slate-300 leading-relaxed">
+            {settings.tagline || "Curated Experiential Mountain Holidays & Custom Tour Packages"}. Connect directly with dedicated destination managers, mountain ground stations, and reservation desks.
+          </p>
+        </div>
       </section>
 
-      {/* Main Contact Grid */}
+      {/* ── Trust Metric Counters Strip ── */}
+      <section className="bg-slate-900 border-b border-slate-800 px-4 py-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="space-y-1">
+            <p className="text-xl sm:text-2xl font-black text-amber-400">&lt; 5 Mins</p>
+            <p className="text-[11px] font-medium text-slate-300">Avg WhatsApp Response</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xl sm:text-2xl font-black text-amber-400">24/7</p>
+            <p className="text-[11px] font-medium text-slate-300">On-Trip Fleet &amp; SOS Desk</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xl sm:text-2xl font-black text-amber-400">
+              {settings.branchOffices?.length ? `${settings.branchOffices.length} Hubs` : "3 Regional Hubs"}
+            </p>
+            <p className="text-[11px] font-medium text-slate-300">Ground Operations Bases</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xl sm:text-2xl font-black text-amber-400">100%</p>
+            <p className="text-[11px] font-medium text-slate-300">Verified Direct Specialists</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Main Contact Grid ── */}
       <section className="px-4 py-14">
         <div className="mx-auto max-w-6xl space-y-12">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+          {/* WhatsApp Direct Hero Callout */}
+          <div className="rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 p-6 text-white shadow-lg flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center sm:text-left">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-200">Instant Travel Consultation</span>
+              <h3 className="text-xl sm:text-2xl font-black">Need an Instant Custom Itinerary &amp; Live Quote?</h3>
+              <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
+                Chat directly with our senior destination planner on WhatsApp. Get handpicked hotel recommendations, route advice, and instant quotations.
+              </p>
+            </div>
+            <a
+              href={`https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent("Hi Be My Traveller, I would like to plan a custom holiday package.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-xs sm:text-sm font-black text-emerald-800 shadow-md hover:bg-emerald-50 transition-all shrink-0"
+            >
+              <span>💬</span> Chat on WhatsApp Now →
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
             {/* Left: Contact Helplines */}
             <div className="space-y-6">
               <div>
-                <h2 className="mb-2 text-xl font-black text-slate-900">Official Helplines &amp; Inboxes</h2>
-                <p className="text-xs text-slate-500">Fastest response channels for quotes, vouchers &amp; on-trip assistance.</p>
+                <h2 className="text-xl font-black text-slate-900">Official Helplines &amp; Inboxes</h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Fastest response channels for custom quotes, voucher issuance &amp; on-trip concierge.
+                </p>
               </div>
 
               <div className="space-y-3.5">
@@ -70,7 +137,7 @@ export default function ContactPage() {
                     label: "Primary Support Phone",
                     value: helplinePhone,
                     href: `tel:${cleanPhone}`,
-                    sub: "Available 24/7 for booking & concierge",
+                    sub: "Available for package inquiries & concierge",
                     accent: "amber",
                   },
                   {
@@ -78,7 +145,7 @@ export default function ContactPage() {
                     label: "24/7 Mountain Emergency Helpline",
                     value: settings.emergencyHelpline || helplinePhone,
                     href: `tel:${(settings.emergencyHelpline || helplinePhone).replace(/\D/g, "")}`,
-                    sub: "Dedicated fleet & mountain rescue assistance",
+                    sub: "Dedicated on-trip fleet & medical rescue assistance",
                     accent: "rose",
                   },
                   {
@@ -86,7 +153,7 @@ export default function ContactPage() {
                     label: "Official WhatsApp Concierge",
                     value: settings.whatsappNumber || helplinePhone,
                     href: `https://wa.me/${cleanWhatsApp}`,
-                    sub: "Instant itineraries & quote customization",
+                    sub: "Instant itineraries, day plans & PDF vouchers",
                     accent: "emerald",
                   },
                   {
@@ -94,15 +161,15 @@ export default function ContactPage() {
                     label: "Customer Support Email",
                     value: supportEmail,
                     href: `mailto:${supportEmail}`,
-                    sub: "Response guaranteed within 2 business hours",
+                    sub: "Guaranteed written response within 2 business hours",
                     accent: "sky",
                   },
                   {
                     icon: "📋",
-                    label: "Bookings & Inquiries Desk",
+                    label: "Bookings & B2B Inquiries Desk",
                     value: bookingsEmail,
                     href: `mailto:${bookingsEmail}`,
-                    sub: "For custom itinerary proposals and b2b queries",
+                    sub: "Custom group proposals, corporate offsites & partnerships",
                     accent: "violet",
                   },
                   {
@@ -110,7 +177,7 @@ export default function ContactPage() {
                     label: "Registered Head Office",
                     value: fullAddress,
                     href: "#",
-                    sub: `${settings.companyLegalName} (Corporate HQ)`,
+                    sub: `${settings.companyLegalName} (Corporate Headquarters)`,
                     accent: "slate",
                   },
                 ].map((info) => (
@@ -123,7 +190,7 @@ export default function ContactPage() {
                       {info.icon}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">{info.label}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{info.label}</p>
                       <p className="mt-0.5 text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors break-words">
                         {info.value}
                       </p>
@@ -133,37 +200,66 @@ export default function ContactPage() {
                 ))}
               </div>
 
-              {/* Office Hours */}
+              {/* Operating Hours Notice */}
               <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5">
                 <p className="mb-1 text-xs font-bold text-amber-800 flex items-center gap-1.5">
-                  <span>⏰</span> Operating Working Hours
+                  <span>⏰</span> Operating Hours &amp; Live Concierge
                 </p>
                 <p className="text-xs text-slate-700">Central Concierge: Mon–Sat: 9:00 AM – 8:00 PM IST</p>
-                <p className="text-xs text-emerald-700 font-bold mt-1">24/7 Mountain &amp; Airport Transfer Fleet Support: Active 365 Days</p>
+                <p className="text-xs text-emerald-700 font-bold mt-1">
+                  24/7 Mountain &amp; Airport Transfer Fleet Support: Active 365 Days
+                </p>
               </div>
             </div>
 
-            {/* Right: Message Form */}
+            {/* Right: Interactive Message & Quote Form */}
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 sm:p-8 shadow-sm">
               {submitted ? (
                 <div className="space-y-4 py-16 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">✓</div>
-                  <h3 className="text-xl font-black text-slate-900">We&apos;ve received your message!</h3>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">
+                    ✓
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900">We&apos;ve received your travel inquiry!</h3>
                   <p className="text-sm text-slate-500 max-w-sm mx-auto">
-                    Your destination specialist will connect with you within 2 hours on your provided phone or WhatsApp number.
+                    Your dedicated destination manager will call or message you on WhatsApp within 2 hours with customized options.
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}
-                    className="mt-4 px-6 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                    className="mt-4 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors"
                   >
-                    Send Another Message
+                    Send Another Inquiry
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900">Send an Enquiry to Concierge</h3>
-                    <p className="text-xs text-slate-500 mt-1">Fill out the form below and receive our tailored travel quote.</p>
+                    <h3 className="text-lg font-black text-slate-900">Request a Custom Itinerary &amp; Quote</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Share your travel plans and receive a transparent day-wise proposal.
+                    </p>
+                  </div>
+
+                  {/* Trip Type Selector */}
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">
+                      Select Vacation Type
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_TRIP_TYPES.map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setSelectedTripType(type)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            selectedTripType === type
+                              ? "bg-amber-500 text-slate-950 shadow-xs"
+                              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -200,11 +296,11 @@ export default function ContactPage() {
                       <option>Corporate &amp; Group Tour</option>
                       <option>Honeymoon Special Package</option>
                       <option>Existing Booking Support</option>
-                      <option>Other</option>
+                      <option>Other Question</option>
                     </select>
                     <textarea
                       rows={4}
-                      placeholder="Tell us about your destination, dates, number of travellers..."
+                      placeholder="Tell us about your destination, preferred dates, number of travellers, hotel category..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -216,8 +312,16 @@ export default function ContactPage() {
                     disabled={loading}
                     className="w-full rounded-xl bg-amber-500 py-3.5 text-sm font-black text-slate-950 shadow-md shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-50 transition-colors"
                   >
-                    {loading ? "Submitting..." : "Send Message →"}
+                    {loading ? "Sending Inquiry..." : "Submit Inquiry to Concierge →"}
                   </button>
+
+                  <div className="flex items-center justify-center gap-4 text-[11px] text-slate-400 pt-1">
+                    <span>🔒 100% Privacy Protected</span>
+                    <span>•</span>
+                    <span>⚡ No Spam Ever</span>
+                    <span>•</span>
+                    <span>✓ Free Consultation</span>
+                  </div>
                 </form>
               )}
             </div>

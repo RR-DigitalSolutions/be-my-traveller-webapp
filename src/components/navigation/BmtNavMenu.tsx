@@ -27,7 +27,7 @@ interface BmtNavMenuProps {
   variant?: "transparent" | "solid";
 }
 
-export default function BmtNavMenu({ variant = "solid" }: BmtNavMenuProps) {
+export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps) {
   const { settings, helplinePhone, cleanPhone, cleanWhatsApp, supportEmail } = useSiteSettings();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

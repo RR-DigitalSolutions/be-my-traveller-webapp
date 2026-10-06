@@ -31,7 +31,7 @@ const PageSchema = new Schema<IPage>(
       default: "DRAFT",
     },
     publishedAt: { type: Date },
-    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    createdBy: { type: Schema.Types.ObjectId, ref: "User", required: false },
   },
   { timestamps: true, collection: "pages" }
 );
