@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { customerName, customerPhone, customerEmail, destination, travelDates, paxCount, hotelTier, cabType, totalAmount } = body;
+    const { customerName, customerPhone, customerEmail, destination, travelDates, paxCount, hotelTier, cabType, totalAmount, leadId } = body;
 
     if (!customerName || !customerPhone || !destination) {
       return NextResponse.json({ error: "Customer details and destination required" }, { status: 400 });
@@ -115,11 +115,30 @@ export async function POST(req: NextRequest) {
       hotelTier: hotelTier || "4★ Deluxe",
       cabType: cabType || "Private AC Sedan/SUV",
       totalAmount: Number(totalAmount) || 50000,
+      leadId: leadId ? new mongoose.Types.ObjectId(leadId) : undefined,
       status: "SENT",
       createdAt: new Date(),
     };
 
     const res = await db.collection("quotes").insertOne(doc);
+
+    // If linked to a lead, automatically attach to the lead pipeline
+    if (leadId) {
+      try {
+        const { LeadService } = await import("@/domains/crm/lead.service");
+        await LeadService.attachQuote({
+          leadId,
+          quoteId: res.insertedId.toString(),
+          quoteNumber,
+          totalAmount: Number(totalAmount) || 50000,
+          userId: session.user.id || "admin",
+          userEmail: session.user.email || "admin@bemytraveller.com",
+        });
+      } catch (attachErr) {
+        console.warn("[Quote Create] Lead attach warning:", attachErr);
+      }
+    }
+
     return NextResponse.json({ success: true, quote: { ...doc, _id: res.insertedId } }, { status: 201 });
   } catch (error) {
     console.error("[Quotes POST Error]:", error);

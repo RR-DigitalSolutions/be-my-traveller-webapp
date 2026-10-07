@@ -64,10 +64,31 @@ export interface ILeadNote {
 export interface ILeadFollowUp {
   _id: mongoose.Types.ObjectId;
   dueAt: Date;
-  type: "CALL" | "EMAIL" | "WHATSAPP";
+  type: "CALL" | "EMAIL" | "WHATSAPP" | "MEETING";
+  priority?: "LOW" | "MEDIUM" | "HIGH";
   note?: string;
   completedAt?: Date;
   completedBy?: mongoose.Types.ObjectId;
+  outcome?: string;
+}
+
+export interface ILeadCommunication {
+  _id: mongoose.Types.ObjectId;
+  type: "CALL" | "WHATSAPP" | "EMAIL" | "MEETING" | "NOTE" | "STATUS_CHANGE" | "SYSTEM";
+  summary: string;
+  details?: string;
+  outcome?: string;
+  durationMinutes?: number;
+  performedBy?: mongoose.Types.ObjectId;
+  performedByName?: string;
+  timestamp: Date;
+}
+
+export interface ILeadOwnershipRecord {
+  assignedTo?: mongoose.Types.ObjectId;
+  assignedBy?: mongoose.Types.ObjectId;
+  assignedAt: Date;
+  reason?: string;
 }
 
 export interface ILead extends Document {
@@ -91,7 +112,19 @@ export interface ILead extends Document {
   lostReason?: string;
 
   assignedTo?: mongoose.Types.ObjectId;
+  assignedBy?: mongoose.Types.ObjectId;
   assignedAt?: Date;
+  ownershipHistory: ILeadOwnershipRecord[];
+
+  // SLA Tracking
+  slaDueAt?: Date;
+  firstContactedAt?: Date;
+  slaStatus: "WITHIN_SLA" | "MET" | "BREACHED";
+
+  // Deduplication
+  isDuplicate?: boolean;
+  primaryLeadId?: mongoose.Types.ObjectId;
+  duplicateCount?: number;
 
   source: LeadSource;
   utmSource?: string;
@@ -105,10 +138,14 @@ export interface ILead extends Document {
 
   notes: ILeadNote[];
   followUps: ILeadFollowUp[];
+  communications: ILeadCommunication[];
 
   customerId?: mongoose.Types.ObjectId;
   quoteIds: mongoose.Types.ObjectId[];
   bookingId?: mongoose.Types.ObjectId;
+
+  convertedAt?: Date;
+  convertedBy?: mongoose.Types.ObjectId;
 
   leadScore?: number;
   createdAt: Date;
@@ -127,12 +164,42 @@ const LeadNoteSchema = new Schema<ILeadNote>(
 const LeadFollowUpSchema = new Schema<ILeadFollowUp>(
   {
     dueAt: { type: Date, required: true },
-    type: { type: String, enum: ["CALL", "EMAIL", "WHATSAPP"], required: true },
+    type: { type: String, enum: ["CALL", "EMAIL", "WHATSAPP", "MEETING"], required: true },
+    priority: { type: String, enum: ["LOW", "MEDIUM", "HIGH"], default: "MEDIUM" },
     note: { type: String },
     completedAt: { type: Date },
     completedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    outcome: { type: String },
   },
   { _id: true }
+);
+
+const LeadCommunicationSchema = new Schema<ILeadCommunication>(
+  {
+    type: {
+      type: String,
+      enum: ["CALL", "WHATSAPP", "EMAIL", "MEETING", "NOTE", "STATUS_CHANGE", "SYSTEM"],
+      required: true,
+    },
+    summary: { type: String, required: true },
+    details: { type: String },
+    outcome: { type: String },
+    durationMinutes: { type: Number },
+    performedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    performedByName: { type: String },
+    timestamp: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
+const LeadOwnershipSchema = new Schema<ILeadOwnershipRecord>(
+  {
+    assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    assignedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    assignedAt: { type: Date, default: Date.now },
+    reason: { type: String },
+  },
+  { _id: false }
 );
 
 const LeadSchema = new Schema<ILead>(
@@ -200,7 +267,21 @@ const LeadSchema = new Schema<ILead>(
     lostReason: { type: String },
 
     assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    assignedBy: { type: Schema.Types.ObjectId, ref: "User" },
     assignedAt: { type: Date },
+    ownershipHistory: { type: [LeadOwnershipSchema], default: [] },
+
+    slaDueAt: { type: Date },
+    firstContactedAt: { type: Date },
+    slaStatus: {
+      type: String,
+      enum: ["WITHIN_SLA", "MET", "BREACHED"],
+      default: "WITHIN_SLA",
+    },
+
+    isDuplicate: { type: Boolean, default: false },
+    primaryLeadId: { type: Schema.Types.ObjectId, ref: "Lead" },
+    duplicateCount: { type: Number, default: 0 },
 
     source: {
       type: String,
@@ -233,10 +314,14 @@ const LeadSchema = new Schema<ILead>(
 
     notes: { type: [LeadNoteSchema], default: [] },
     followUps: { type: [LeadFollowUpSchema], default: [] },
+    communications: { type: [LeadCommunicationSchema], default: [] },
 
     customerId: { type: Schema.Types.ObjectId, ref: "Customer" },
     quoteIds: [{ type: Schema.Types.ObjectId, ref: "Quote" }],
     bookingId: { type: Schema.Types.ObjectId, ref: "Booking" },
+
+    convertedAt: { type: Date },
+    convertedBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     leadScore: { type: Number, min: 0, max: 100 },
   },
@@ -251,6 +336,9 @@ LeadSchema.index({ packageId: 1 });
 LeadSchema.index({ source: 1, createdAt: -1 });
 LeadSchema.index({ utmCampaign: 1 });
 LeadSchema.index({ "followUps.dueAt": 1 });
+LeadSchema.index({ "followUps.completedAt": 1 });
+LeadSchema.index({ slaStatus: 1, slaDueAt: 1 });
+LeadSchema.index({ isDuplicate: 1 });
 
 export const LeadModel: Model<ILead> =
   mongoose.models.Lead ?? mongoose.model<ILead>("Lead", LeadSchema);

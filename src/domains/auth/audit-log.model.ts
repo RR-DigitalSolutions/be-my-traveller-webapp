@@ -18,19 +18,36 @@ export type AuditAction =
   | "PERMISSION_CHANGE"
   | "PRICE_CHANGE"
   | "STATUS_CHANGE"
+  | "STATE_TRANSITION"
+  | "TASK_CREATE"
+  | "TASK_ASSIGN"
+  | "TASK_UPDATE"
+  | "TASK_COMPLETE"
+  | "TASK_CANCEL"
+  | "NOTIFICATION_DISPATCH"
+  | "INVOICE_CREATE"
+  | "PAYABLE_RECORD"
   | "PAYMENT_RECORD"
   | "BOOKING_CANCEL"
-  | "QUOTE_SEND";
+  | "QUOTE_SEND"
+  | "MIGRATION_RUN"
+  | "SECURITY_ALERT";
 
 export interface IAuditLog extends Document {
   userId: mongoose.Types.ObjectId;
   userEmail: string; // denormalized for readability if user is later deleted
   action: AuditAction;
-  entityType: string; // e.g. "Package" | "PricingRule" | "Booking"
+  entityType: string; // e.g. "Package" | "PricingRule" | "Booking" | "Lead" | "Task"
   entityId: string;
   entitySlug?: string;
   oldValue?: Record<string, unknown>;
   newValue?: Record<string, unknown>;
+  transitionDetails?: {
+    fromState?: string;
+    toState?: string;
+    trigger?: string;
+  };
+  metadata?: Record<string, unknown>;
   ip?: string;
   userAgent?: string;
   requestId?: string;
@@ -56,9 +73,20 @@ const AuditLogSchema = new Schema<IAuditLog>(
         "PERMISSION_CHANGE",
         "PRICE_CHANGE",
         "STATUS_CHANGE",
+        "STATE_TRANSITION",
+        "TASK_CREATE",
+        "TASK_ASSIGN",
+        "TASK_UPDATE",
+        "TASK_COMPLETE",
+        "TASK_CANCEL",
+        "NOTIFICATION_DISPATCH",
+        "INVOICE_CREATE",
+        "PAYABLE_RECORD",
         "PAYMENT_RECORD",
         "BOOKING_CANCEL",
         "QUOTE_SEND",
+        "MIGRATION_RUN",
+        "SECURITY_ALERT",
       ] satisfies AuditAction[],
     },
     entityType: { type: String, required: true },
@@ -66,6 +94,12 @@ const AuditLogSchema = new Schema<IAuditLog>(
     entitySlug: { type: String },
     oldValue: { type: Schema.Types.Mixed },
     newValue: { type: Schema.Types.Mixed },
+    transitionDetails: {
+      fromState: { type: String },
+      toState: { type: String },
+      trigger: { type: String },
+    },
+    metadata: { type: Schema.Types.Mixed },
     ip: { type: String },
     userAgent: { type: String },
     requestId: { type: String },
@@ -73,7 +107,6 @@ const AuditLogSchema = new Schema<IAuditLog>(
   },
   {
     collection: "audit_logs",
-    // Disable automatic timestamps — we use our own timestamp field
     timestamps: false,
   }
 );

@@ -93,10 +93,52 @@ const navItems: NavItem[] = [
       </svg>
     ),
     children: [
-      { label: "Leads", href: "/admin/leads" },
+      { label: "Leads Pipeline", href: "/admin/leads" },
+      { label: "Consultant Desk", href: "/admin/sales/consultant" },
+      { label: "Manager Desk", href: "/admin/sales/manager" },
       { label: "Quotes", href: "/admin/quotes" },
       { label: "Customers", href: "/admin/customers" },
       { label: "Bookings", href: "/admin/bookings" },
+    ],
+  },
+  {
+    label: "Operations",
+    href: "/admin/operations",
+    section: "operations",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+      </svg>
+    ),
+    children: [
+      { label: "Active Bookings", href: "/admin/bookings" },
+      { label: "Hotel Desk", href: "/admin/operations/hotels" },
+      { label: "Transport & Fleet", href: "/admin/operations/transport" },
+    ],
+  },
+  {
+    label: "Tasks",
+    href: "/admin/tasks",
+    section: "tasks",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    label: "Finance",
+    href: "/admin/finance",
+    section: "finance",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    ),
+    children: [
+      { label: "Overview", href: "/admin/finance" },
+      { label: "Invoices", href: "/admin/finance/invoices" },
+      { label: "Supplier Payables", href: "/admin/finance/payables" },
     ],
   },
   {
@@ -164,7 +206,7 @@ const navItems: NavItem[] = [
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-      },
+  },
 ];
 
 interface AdminSidebarProps {

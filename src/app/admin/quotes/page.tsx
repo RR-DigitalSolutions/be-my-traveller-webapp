@@ -10,13 +10,29 @@ interface QuoteItem {
   customerPhone: string;
   customerEmail?: string;
   destination: string;
-  travelDates: string;
+  travelDates: string | { from?: string | Date; to?: string | Date };
   paxCount: string;
   hotelTier: string;
   cabType: string;
   totalAmount: number;
   status: string;
   createdAt: string;
+}
+
+function formatTravelDates(td: string | { from?: string | Date; to?: string | Date } | any): string {
+  if (!td) return "Flexible Dates";
+  if (typeof td === "string") return td;
+  if (typeof td === "object") {
+    try {
+      const fromStr = td.from ? new Date(td.from).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+      const toStr = td.to ? new Date(td.to).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+      if (fromStr && toStr) return `${fromStr} – ${toStr}`;
+      return fromStr || toStr || "Flexible Dates";
+    } catch {
+      return "Flexible Dates";
+    }
+  }
+  return String(td);
 }
 
 export default function AdminQuotesPage() {
@@ -85,12 +101,13 @@ export default function AdminQuotesPage() {
   };
 
   const generateWhatsAppQuote = (q: QuoteItem) => {
+    const datesStr = formatTravelDates(q.travelDates);
     const text = `🌟 *Custom Holiday Proposal from Be My Traveller* 🌟\n\n` +
       `Dear *${q.customerName}*,\n` +
       `Here is your tailor-made itinerary proposal:\n\n` +
       `📌 *Quote Ref:* ${q.quoteNumber}\n` +
       `📍 *Destination:* ${q.destination}\n` +
-      `📅 *Travel Dates:* ${q.travelDates}\n` +
+      `📅 *Travel Dates:* ${datesStr}\n` +
       `👥 *Travelers:* ${q.paxCount}\n` +
       `🏨 *Stay Tier:* ${q.hotelTier}\n` +
       `🚗 *Transfers:* ${q.cabType}\n\n` +
@@ -105,10 +122,29 @@ export default function AdminQuotesPage() {
   };
 
   const copyQuoteSummary = (q: QuoteItem) => {
-    const text = `Be My Traveller Proposal - ${q.quoteNumber}\nCustomer: ${q.customerName}\nDestination: ${q.destination}\nDates: ${q.travelDates}\nAmount: ${formatINR(q.totalAmount)}`;
+    const text = `Be My Traveller Proposal - ${q.quoteNumber}\nCustomer: ${q.customerName}\nDestination: ${q.destination}\nDates: ${formatTravelDates(q.travelDates)}\nAmount: ${formatINR(q.totalAmount)}`;
     navigator.clipboard.writeText(text);
     setCopiedMsg(q._id);
     setTimeout(() => setCopiedMsg(null), 2000);
+  };
+
+  const handleConvertToBooking = async (quoteId: string) => {
+    try {
+      const res = await fetch("/api/v1/admin/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quoteId }),
+      });
+      if (res.ok) {
+        alert("Quote accepted & converted to active Booking successfully!");
+        fetchQuotes();
+      } else {
+        const err = await res.json();
+        alert(err?.error || "Failed to convert quote");
+      }
+    } catch (err) {
+      console.error("Convert error:", err);
+    }
   };
 
   return (
@@ -184,7 +220,7 @@ export default function AdminQuotesPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     <p className="font-semibold text-white">{q.destination}</p>
-                    <p className="text-slate-400 text-[11px]">📅 {q.travelDates} · {q.paxCount}</p>
+                    <p className="text-slate-400 text-[11px]">📅 {formatTravelDates(q.travelDates)} · {q.paxCount}</p>
                   </td>
                   <td className="py-3.5 px-4 max-w-xs">
                     <p className="text-slate-300 truncate">🏨 {q.hotelTier}</p>
@@ -210,6 +246,13 @@ export default function AdminQuotesPage() {
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleConvertToBooking(q._id)}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] flex items-center gap-1 shadow-xs cursor-pointer"
+                        title="Accept Quote & Convert to Booking"
+                      >
+                        <span>✈️</span> Book
+                      </button>
                       <button
                         onClick={() => generateWhatsAppQuote(q)}
                         className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] flex items-center gap-1 shadow-xs cursor-pointer"

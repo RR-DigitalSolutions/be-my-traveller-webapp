@@ -32,6 +32,33 @@ interface ILeadItem {
   hotelCategory?: string;
   status: LeadPipelineStatus;
   source: string;
+  assignedTo?: { _id: string; name: string; email: string; role?: string } | any;
+  assignedAt?: string;
+  slaStatus?: "WITHIN_SLA" | "MET" | "BREACHED";
+  slaDueAt?: string;
+  firstContactedAt?: string;
+  isDuplicate?: boolean;
+  duplicateCount?: number;
+  followUps?: Array<{
+    _id: string;
+    dueAt: string;
+    type: "CALL" | "EMAIL" | "WHATSAPP" | "MEETING";
+    priority?: string;
+    note?: string;
+    completedAt?: string;
+    outcome?: string;
+  }>;
+  communications?: Array<{
+    _id: string;
+    type: string;
+    summary: string;
+    details?: string;
+    outcome?: string;
+    timestamp: string;
+    performedByName?: string;
+  }>;
+  quoteIds?: string[];
+  customerId?: string;
   notes?: Array<{ _id?: string; content: string; createdAt?: string }> | string;
   createdAt: string;
 }
@@ -190,20 +217,50 @@ export default function AdminLeadsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState<LeadCategory>("ALL");
+  const [slaFilter, setSlaFilter] = useState<"ALL" | "URGENT" | "MET">("ALL");
+  const [assignedFilter, setAssignedFilter] = useState<"ALL" | "UNASSIGNED" | "ASSIGNED">("ALL");
   const [viewMode, setViewMode] = useState<"pipeline" | "table">("pipeline");
   const [selectedLead, setSelectedLead] = useState<ILeadItem | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [newNoteText, setNewNoteText] = useState("");
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
+  // CRM State Extensions
+  const [staffUsers, setStaffUsers] = useState<Array<{ _id: string; name: string; email: string; role: string }>>([]);
+  const [assigningLead, setAssigningLead] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+
+  // Follow-up Modal State
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [followUpType, setFollowUpType] = useState<"CALL" | "WHATSAPP" | "EMAIL" | "MEETING">("CALL");
+  const [followUpDueAt, setFollowUpDueAt] = useState("");
+  const [followUpNote, setFollowUpNote] = useState("");
+  const [submittingFollowUp, setSubmittingFollowUp] = useState(false);
+
+  // Communication Modal State
+  const [showCommModal, setShowCommModal] = useState(false);
+  const [commType, setCommType] = useState<"CALL" | "WHATSAPP" | "EMAIL" | "MEETING">("CALL");
+  const [commSummary, setCommSummary] = useState("");
+  const [commDetails, setCommDetails] = useState("");
+  const [submittingComm, setSubmittingComm] = useState(false);
+
+  // Quote Generator Modal State
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [quoteAmount, setQuoteAmount] = useState(65000);
+  const [quoteHotelTier, setQuoteHotelTier] = useState("4★ Deluxe Hotels");
+  const [quoteCabType, setQuoteCabType] = useState("Private Dedicated Innova Crysta");
+  const [submittingQuote, setSubmittingQuote] = useState(false);
+
   // Fetch all leads once from database (or on refresh)
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/v1/admin/leads");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.leads)) {
-        setRawLeads(data.leads);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.leads)) {
+          setRawLeads(data.leads);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch leads:", err);
@@ -212,9 +269,24 @@ export default function AdminLeadsPage() {
     }
   }, []);
 
+  const fetchStaff = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.users && Array.isArray(data.users)) {
+          setStaffUsers(data.users);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch staff:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchLeads();
-  }, [fetchLeads]);
+    fetchStaff();
+  }, [fetchLeads, fetchStaff]);
 
   // Keep selected lead synced with current master leads data
   useEffect(() => {
@@ -259,7 +331,15 @@ export default function AdminLeadsPage() {
         if (normalizeStatus(lead.status) !== statusFilter) return false;
       }
 
-      // 3. Search Filter
+      // 3. SLA Filter
+      if (slaFilter === "URGENT" && lead.slaStatus === "MET") return false;
+      if (slaFilter === "MET" && lead.slaStatus !== "MET") return false;
+
+      // 4. Assignment Filter
+      if (assignedFilter === "UNASSIGNED" && lead.assignedTo) return false;
+      if (assignedFilter === "ASSIGNED" && !lead.assignedTo) return false;
+
+      // 5. Search Filter
       if (search.trim()) {
         const q = search.toLowerCase().trim();
         const textToSearch = [
@@ -282,7 +362,7 @@ export default function AdminLeadsPage() {
 
       return true;
     });
-  }, [rawLeads, categoryFilter, statusFilter, search]);
+  }, [rawLeads, categoryFilter, statusFilter, slaFilter, assignedFilter, search]);
 
   // Stage counts for the current category context
   const stageCounts = useMemo(() => {
@@ -357,6 +437,177 @@ export default function AdminLeadsPage() {
       alert("Failed to save note");
     } finally {
       setIsSubmittingNote(false);
+    }
+  };
+
+  const handleAssignLead = async (leadId: string, assignedToId: string) => {
+    try {
+      setAssigningLead(true);
+      const res = await fetch("/api/v1/admin/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: leadId,
+          action: "ASSIGN",
+          assignedTo: assignedToId,
+          reason: "Manual assignment from Pipeline",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchLeads();
+      }
+    } catch {
+      alert("Failed to assign lead");
+    } finally {
+      setAssigningLead(false);
+    }
+  };
+
+  const handleScheduleFollowUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead || !followUpDueAt) return;
+    try {
+      setSubmittingFollowUp(true);
+      const res = await fetch("/api/v1/admin/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedLead._id,
+          action: "FOLLOW_UP",
+          followUp: {
+            dueAt: followUpDueAt,
+            type: followUpType,
+            note: followUpNote,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowFollowUpModal(false);
+        setFollowUpNote("");
+        setFollowUpDueAt("");
+        fetchLeads();
+      }
+    } catch {
+      alert("Failed to schedule follow-up");
+    } finally {
+      setSubmittingFollowUp(false);
+    }
+  };
+
+  const handleCompleteFollowUp = async (leadId: string, followUpId: string) => {
+    try {
+      const res = await fetch("/api/v1/admin/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: leadId,
+          action: "COMPLETE_FOLLOW_UP",
+          followUpId,
+          outcome: "Concluded from CRM drawer",
+        }),
+      });
+      if (res.ok) fetchLeads();
+    } catch {
+      alert("Failed to complete follow-up");
+    }
+  };
+
+  const handleLogCommunication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead || !commSummary.trim()) return;
+    try {
+      setSubmittingComm(true);
+      const res = await fetch("/api/v1/admin/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedLead._id,
+          action: "COMMUNICATION",
+          communication: {
+            type: commType,
+            summary: commSummary.trim(),
+            details: commDetails.trim(),
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowCommModal(false);
+        setCommSummary("");
+        setCommDetails("");
+        fetchLeads();
+      }
+    } catch {
+      alert("Failed to log communication");
+    } finally {
+      setSubmittingComm(false);
+    }
+  };
+
+  const handleCreateQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    try {
+      setSubmittingQuote(true);
+      const destination = selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Custom Tour Package";
+      const travelDates = selectedLead.travelDates?.from
+        ? `${new Date(selectedLead.travelDates.from).toLocaleDateString("en-IN")}`
+        : "Flexible Dates";
+      const paxCount = `${selectedLead.travellers?.adults || 2} Adults`;
+
+      const res = await fetch("/api/v1/admin/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: selectedLead.name,
+          customerPhone: selectedLead.phone,
+          customerEmail: selectedLead.email,
+          destination,
+          travelDates,
+          paxCount,
+          hotelTier: quoteHotelTier,
+          cabType: quoteCabType,
+          totalAmount: quoteAmount,
+          leadId: selectedLead._id,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setShowQuoteModal(false);
+        fetchLeads();
+        alert(`Quotation ${data.quote?.quoteNumber || ""} created & linked successfully!`);
+      }
+    } catch {
+      alert("Failed to create quote");
+    } finally {
+      setSubmittingQuote(false);
+    }
+  };
+
+  const handleConvertLead = async (leadId: string) => {
+    if (!confirm("Are you ready to convert this Lead into a confirmed Customer profile?")) return;
+    try {
+      setIsConverting(true);
+      const res = await fetch("/api/v1/admin/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: leadId,
+          action: "CONVERT",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchLeads();
+        alert("🎉 Lead successfully converted to Customer profile!");
+      }
+    } catch {
+      alert("Failed to convert lead");
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -503,93 +754,215 @@ export default function AdminLeadsPage() {
           <option value="CONFIRMED">🎉 Won / Confirmed</option>
           <option value="LOST">❌ Lost Leads</option>
         </select>
+
+        <select
+          value={slaFilter}
+          onChange={(e) => setSlaFilter(e.target.value as any)}
+          className="px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer"
+        >
+          <option value="ALL">All SLA Statuses</option>
+          <option value="URGENT">⚠️ Needs SLA Response</option>
+          <option value="MET">✅ SLA Met</option>
+        </select>
+
+        <select
+          value={assignedFilter}
+          onChange={(e) => setAssignedFilter(e.target.value as any)}
+          className="px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 cursor-pointer"
+        >
+          <option value="ALL">All Ownership</option>
+          <option value="UNASSIGNED">⚪ Unassigned Leads</option>
+          <option value="ASSIGNED">👤 Assigned to Consultants</option>
+        </select>
+
+        {(statusFilter !== "ALL" || slaFilter !== "ALL" || assignedFilter !== "ALL" || search) && (
+          <button
+            onClick={() => {
+              setStatusFilter("ALL");
+              setSlaFilter("ALL");
+              setAssignedFilter("ALL");
+              setSearch("");
+            }}
+            className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-bold border border-slate-700 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            Reset Filters ✕
+          </button>
+        )}
       </div>
 
-      {/* ── VIEW 1: PIPELINE KANBAN BOARD ── */}
+      {/* ── VIEW 1: ENTERPRISE PIPELINE KANBAN BOARD ── */}
       {viewMode === "pipeline" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 items-start overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-6 pt-1 items-start scrollbar-thin">
           {PIPELINE_STAGES.map((stage) => {
             const stageLeads = filteredLeads.filter((l) => normalizeStatus(l.status) === stage.id);
             return (
               <div
                 key={stage.id}
-                className="bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col min-h-[460px] shadow-lg overflow-hidden"
+                className="w-[320px] min-w-[310px] shrink-0 bg-slate-900/80 border border-slate-800 rounded-2xl flex flex-col min-h-[580px] max-h-[820px] shadow-xl overflow-hidden backdrop-blur-xs"
               >
                 {/* Column Header */}
-                <div className={`px-3.5 py-3 border-b flex items-center justify-between ${stage.headerClass}`}>
-                  <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
-                    <span>{stage.icon}</span>
+                <div className={`px-4 py-3.5 border-b flex items-center justify-between ${stage.headerClass}`}>
+                  <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider">
+                    <span className="text-sm">{stage.icon}</span>
                     <span>{stage.label}</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-slate-900/70 text-slate-200 text-[11px] font-mono font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-slate-900/90 text-slate-200 text-xs font-mono font-black border border-slate-700/60 shadow-xs">
                     {stageLeads.length}
                   </span>
                 </div>
 
                 {/* Cards Container */}
-                <div className="p-2 space-y-2.5 flex-1 overflow-y-auto max-h-[680px]">
+                <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[740px] scrollbar-thin">
                   {stageLeads.length === 0 ? (
-                    <div className="py-12 text-center text-slate-600 text-xs">
-                      No leads in {stage.label}
+                    <div className="py-16 text-center text-slate-500 text-xs font-medium">
+                      <span className="text-2xl block mb-2 opacity-40">📭</span>
+                      No inquiries in {stage.label}
                     </div>
                   ) : (
                     stageLeads.map((lead) => {
                       const category = getLeadCategory(lead);
                       const isSelected = selectedLead?._id === lead._id;
+                      const leadCleanPhone = lead.phone ? lead.phone.replace(/[^0-9]/g, "") : "";
+                      const initials = lead.name
+                        ? lead.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase()
+                        : "TR";
 
                       return (
                         <div
                           key={lead._id}
                           onClick={() => setSelectedLead(lead)}
-                          className={`p-3 rounded-xl border transition-all cursor-pointer shadow-sm relative group ${
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer shadow-md relative group ${
                             isSelected
-                              ? "bg-slate-800 border-amber-500 ring-2 ring-amber-500/20"
-                              : "bg-slate-800/80 hover:bg-slate-800 border-slate-700/60 hover:border-slate-600"
+                              ? "bg-slate-800 border-amber-500 ring-2 ring-amber-500/20 shadow-amber-500/10"
+                              : "bg-slate-800/90 hover:bg-slate-800 border-slate-700/70 hover:border-slate-600 hover:shadow-lg"
                           }`}
                         >
                           {/* Header: Category Badge & Time */}
-                          <div className="flex items-center justify-between gap-1 mb-1.5">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${category.bg}`}>
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border flex items-center gap-1.5 ${category.bg}`}>
                               <span>{category.icon}</span> <span>{category.label}</span>
                             </span>
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              {formatRelativeTime(lead.createdAt)}
+                            <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                              <span>🕒</span>
+                              <span>{formatRelativeTime(lead.createdAt)}</span>
                             </span>
                           </div>
 
-                          {/* Client Name & Phone */}
-                          <h4 className="font-bold text-white text-xs sm:text-sm line-clamp-1">
-                            {lead.name}
-                          </h4>
-                          <p className="text-[11px] font-mono text-amber-400 mt-0.5 font-semibold">
-                            {lead.phone}
-                          </p>
+                          {/* Traveller Profile & Direct CTAs */}
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/30 border border-amber-500/40 text-amber-300 font-black text-xs flex items-center justify-center shrink-0">
+                                {initials}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-bold text-white text-xs sm:text-sm truncate leading-snug">
+                                  {lead.name}
+                                </h4>
+                                <p className="text-[11px] font-mono text-amber-400 font-semibold tracking-wide">
+                                  {lead.phone}
+                                </p>
+                              </div>
+                            </div>
 
-                          {/* Service Specific Details */}
+                            {/* 1-Click Communication CTAs */}
+                            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {leadCleanPhone && (
+                                <a
+                                  href={`https://wa.me/${leadCleanPhone.startsWith("91") ? leadCleanPhone : "91" + leadCleanPhone}?text=Hello%20${encodeURIComponent(lead.name)}%2C%20thank%20you%20for%20contacting%20Be%20My%20Traveller.`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="WhatsApp Traveller"
+                                  className="w-7 h-7 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 flex items-center justify-center text-xs font-bold transition-all shadow-xs"
+                                >
+                                  💬
+                                </a>
+                              )}
+                              {lead.phone && (
+                                <a
+                                  href={`tel:${lead.phone}`}
+                                  title="Call Traveller"
+                                  className="w-7 h-7 rounded-lg bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-slate-950 border border-sky-500/30 flex items-center justify-center text-xs font-bold transition-all shadow-xs"
+                                >
+                                  📞
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Service Details Snippet */}
                           {lead.tripDetails?.vehicleType ? (
-                            <div className="mt-2 bg-slate-900/60 rounded-lg p-2 text-[11px] border border-slate-700/40 text-slate-300 space-y-0.5">
-                              <p className="font-semibold text-white truncate">
-                                🚗 {lead.tripDetails.tripType?.replace("_", " ")}: {lead.tripDetails.pickupCity} → {lead.tripDetails.dropCity}
+                            <div className="my-2 bg-slate-900/80 rounded-xl p-2.5 text-xs border border-slate-700/60 text-slate-300 space-y-1">
+                              <p className="font-bold text-white truncate flex items-center gap-1.5">
+                                <span>🚗</span>
+                                <span>{lead.tripDetails.tripType?.replace("_", " ") || "Cab"}: {lead.tripDetails.pickupCity} → {lead.tripDetails.dropCity}</span>
                               </p>
-                              <p className="text-slate-400 text-[10px] truncate">
-                                Car: <span className="text-amber-300 font-medium">{lead.tripDetails.vehicleType}</span>
-                              </p>
+                              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                                <span>Vehicle: <strong className="text-amber-300 font-semibold">{lead.tripDetails.vehicleType}</strong></span>
+                                {lead.tripDetails.passengers && <span>👥 {lead.tripDetails.passengers} Pax</span>}
+                              </div>
                             </div>
                           ) : (
-                            <p className="text-slate-400 text-[11px] mt-1.5 line-clamp-2 leading-relaxed">
-                              {lead.specialRequirements || lead.destinations?.[0] || "Custom Tour Package Inquiry"}
-                            </p>
+                            <div className="my-2 bg-slate-900/60 rounded-xl p-2.5 text-xs border border-slate-700/50 text-slate-300 space-y-1">
+                              <p className="font-semibold text-white line-clamp-1 flex items-center gap-1.5">
+                                <span>📍</span>
+                                <span>{lead.destinations?.[0] || lead.specialRequirements || "Custom Tour Inquiry"}</span>
+                              </p>
+                              {lead.travelDates?.from && (
+                                <p className="text-[11px] text-slate-400">
+                                  📅 {new Date(lead.travelDates.from).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                                  {lead.travellers?.adults ? ` · 👥 ${lead.travellers.adults} Adults` : ""}
+                                </p>
+                              )}
+                            </div>
                           )}
 
+                          {/* Ownership & SLA Row */}
+                          <div className="flex items-center justify-between gap-1 mt-2.5 pt-2 border-t border-slate-700/50 text-[11px]">
+                            <span className="text-slate-400 font-medium truncate max-w-[140px] flex items-center gap-1">
+                              {lead.assignedTo?.name ? (
+                                <>
+                                  <span className="text-emerald-400">👤</span>
+                                  <span className="text-slate-300 font-medium">{lead.assignedTo.name}</span>
+                                </>
+                              ) : (
+                                <span className="text-amber-400/90 font-medium flex items-center gap-1">
+                                  <span>⚠️</span> Unassigned
+                                </span>
+                              )}
+                            </span>
+
+                            {lead.isDuplicate ? (
+                              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold">
+                                🔄 Repeat
+                              </span>
+                            ) : (
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
+                                  lead.slaStatus === "MET"
+                                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                                    : lead.slaStatus === "BREACHED"
+                                    ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                                    : "bg-sky-500/15 text-sky-400 border-sky-500/30"
+                                }`}
+                              >
+                                {lead.slaStatus === "MET" ? "✓ SLA OK" : lead.slaStatus === "BREACHED" ? "⚠ BREACHED" : "⏱ 30M SLA"}
+                              </span>
+                            )}
+                          </div>
+
                           {/* Quick Stage Move Dropdown in Card */}
-                          <div className="mt-3 pt-2 border-t border-slate-700/40 flex items-center justify-between">
-                            <span className="text-[10px] text-slate-500 font-medium">Stage:</span>
+                          <div className="mt-2 pt-2 border-t border-slate-700/40 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10.5px] text-slate-400 font-medium">Pipeline Stage:</span>
                             <select
                               value={normalizeStatus(lead.status)}
                               disabled={updatingStatus}
-                              onClick={(e) => e.stopPropagation()}
                               onChange={(e) => handleUpdateStatus(lead._id, e.target.value as LeadPipelineStatus)}
-                              className="text-[10px] font-bold bg-slate-900 border border-slate-700 rounded-md px-1.5 py-0.5 text-slate-300 hover:text-white cursor-pointer focus:outline-none"
+                              className="text-[11px] font-bold bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-amber-300 hover:text-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500/50"
                             >
                               <option value="NEW">⚡ New</option>
                               <option value="CONTACTED">📞 Connected</option>
@@ -759,6 +1132,159 @@ export default function AdminLeadsPage() {
                 </a>
               </div>
 
+              {/* Duplicate Inquiry Alert Banner */}
+              {selectedLead.isDuplicate && (
+                <div className="bg-purple-950/40 border border-purple-500/40 rounded-2xl p-3.5 space-y-1 text-xs">
+                  <div className="flex items-center gap-2 text-purple-300 font-bold">
+                    <span>🔄</span>
+                    <span>Repeat Inbound Inquiry Detected</span>
+                  </div>
+                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                    This traveller has submitted multiple inquiries across our channels. Check timeline below for interaction history.
+                  </p>
+                </div>
+              )}
+
+              {/* Consultant Ownership & SLA Card */}
+              <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <label className="text-[11px] uppercase font-black tracking-wider text-slate-400">
+                    Lead Ownership & Assignment
+                  </label>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                      selectedLead.slaStatus === "MET"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : selectedLead.slaStatus === "BREACHED"
+                        ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                        : "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                    }`}
+                  >
+                    SLA: {selectedLead.slaStatus || "WITHIN_SLA"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={
+                      typeof selectedLead.assignedTo === "object"
+                        ? selectedLead.assignedTo?._id || ""
+                        : selectedLead.assignedTo || ""
+                    }
+                    disabled={assigningLead}
+                    onChange={(e) => handleAssignLead(selectedLead._id, e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-bold text-amber-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  >
+                    <option value="">Unassigned (Assign Travel Consultant...)</option>
+                    {staffUsers.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* CRM Direct Actions Ribbon */}
+              <div className="grid grid-cols-4 gap-2 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCommType("CALL");
+                    setShowCommModal(true);
+                  }}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-center text-slate-200 transition-colors cursor-pointer"
+                >
+                  <span className="block text-sm mb-0.5">📞</span> Log Activity
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowFollowUpModal(true)}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-center text-slate-200 transition-colors cursor-pointer"
+                >
+                  <span className="block text-sm mb-0.5">⏰</span> Follow-up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQuoteModal(true)}
+                  className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-center text-amber-300 transition-colors cursor-pointer"
+                >
+                  <span className="block text-sm mb-0.5">📝</span> Quote
+                </button>
+                <button
+                  type="button"
+                  disabled={isConverting || selectedLead.status === "CONFIRMED"}
+                  onClick={() => handleConvertLead(selectedLead._id)}
+                  className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-center text-emerald-300 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <span className="block text-sm mb-0.5">🏆</span> Convert
+                </button>
+              </div>
+
+              {/* Scheduled Follow-ups Queue */}
+              {Array.isArray(selectedLead.followUps) && selectedLead.followUps.length > 0 && (
+                <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/40 space-y-2.5 text-xs">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-amber-400">
+                    Scheduled Follow-ups ({selectedLead.followUps.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedLead.followUps.map((f) => (
+                      <div
+                        key={f._id}
+                        className="bg-slate-900/80 rounded-xl p-3 border border-slate-800 flex items-center justify-between gap-2"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-bold text-white">
+                            <span className="text-amber-400">{f.type}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              ({new Date(f.dueAt).toLocaleString("en-IN")})
+                            </span>
+                          </div>
+                          {f.note && <p className="text-slate-300 text-[11px]">{f.note}</p>}
+                        </div>
+                        {!f.completedAt ? (
+                          <button
+                            onClick={() => handleCompleteFollowUp(selectedLead._id, f._id)}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[10px] hover:bg-amber-400 cursor-pointer shadow-sm"
+                          >
+                            Done ✓
+                          </button>
+                        ) : (
+                          <span className="text-emerald-400 font-mono text-[10px] font-bold">Completed</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Communication Timeline & Activity Stream */}
+              {Array.isArray(selectedLead.communications) && selectedLead.communications.length > 0 && (
+                <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/40 space-y-2.5 text-xs">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-sky-400">
+                    Activity Stream & Timeline
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedLead.communications.map((comm) => (
+                      <div
+                        key={comm._id}
+                        className="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-[11px] font-bold text-white">
+                          <span>{comm.type}: {comm.summary}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {new Date(comm.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                        {comm.details && (
+                          <p className="text-slate-400 text-[11px] leading-relaxed">{comm.details}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Pipeline Workflow Stage Transition */}
               <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/60 space-y-3">
                 <label className="text-[11px] uppercase font-black tracking-wider text-slate-400 block">
@@ -900,6 +1426,255 @@ export default function AdminLeadsPage() {
             >
               Close Drawer
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 1: LOG COMMUNICATION MODAL ── */}
+      {showCommModal && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-black text-white text-base">Log Communication</h3>
+                <p className="text-xs text-slate-400">{selectedLead.name} ({selectedLead.phone})</p>
+              </div>
+              <button
+                onClick={() => setShowCommModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleLogCommunication} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Interaction Type</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(["CALL", "WHATSAPP", "EMAIL", "MEETING"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setCommType(t)}
+                      className={`py-2 rounded-xl border text-center font-bold transition-all cursor-pointer ${
+                        commType === t
+                          ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md"
+                          : "bg-slate-800 text-slate-300 border-slate-700"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Summary / Headline</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Discussed 5N/6D Kashmir Tour & Itinerary"
+                  value={commSummary}
+                  onChange={(e) => setCommSummary(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Detailed Discussion Notes</label>
+                <textarea
+                  rows={3}
+                  placeholder="Client prefers luxury houseboats and private cab..."
+                  value={commDetails}
+                  onChange={(e) => setCommDetails(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCommModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingComm || !commSummary.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer disabled:opacity-50"
+                >
+                  {submittingComm ? "Saving..." : "Save to Timeline"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 2: SCHEDULE FOLLOW-UP MODAL ── */}
+      {showFollowUpModal && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-black text-white text-base">Schedule Follow-up</h3>
+                <p className="text-xs text-slate-400">{selectedLead.name} ({selectedLead.phone})</p>
+              </div>
+              <button
+                onClick={() => setShowFollowUpModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleFollowUp} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Follow-up Type</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(["CALL", "WHATSAPP", "EMAIL", "MEETING"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFollowUpType(t)}
+                      className={`py-2 rounded-xl border text-center font-bold transition-all cursor-pointer ${
+                        followUpType === t
+                          ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md"
+                          : "bg-slate-800 text-slate-300 border-slate-700"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Due Date & Time</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={followUpDueAt}
+                  onChange={(e) => setFollowUpDueAt(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Follow-up Objective / Note</label>
+                <textarea
+                  rows={3}
+                  placeholder="Call to finalize package inclusions and send quotation..."
+                  value={followUpNote}
+                  onChange={(e) => setFollowUpNote(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFollowUpModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingFollowUp || !followUpDueAt}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer disabled:opacity-50"
+                >
+                  {submittingFollowUp ? "Scheduling..." : "Schedule Follow-up"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 3: QUICK QUOTE BUILDER MODAL ── */}
+      {showQuoteModal && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="font-black text-white text-base">Generate Quotation for Lead</h3>
+                <p className="text-xs text-slate-400">{selectedLead.name} ({selectedLead.phone})</p>
+              </div>
+              <button
+                onClick={() => setShowQuoteModal(false)}
+                className="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateQuote} className="space-y-4 text-xs">
+              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 space-y-1">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Destination:</span>
+                  <span className="font-bold text-white">
+                    {selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Custom Tour"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Travellers:</span>
+                  <span className="font-bold text-amber-300">{selectedLead.travellers?.adults || 2} Adults</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Hotel Category / Tier</label>
+                <input
+                  type="text"
+                  required
+                  value={quoteHotelTier}
+                  onChange={(e) => setQuoteHotelTier(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Cab & Transportation Setup</label>
+                <input
+                  type="text"
+                  required
+                  value={quoteCabType}
+                  onChange={(e) => setQuoteCabType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Total Quotation Amount (₹ INR)</label>
+                <input
+                  type="number"
+                  required
+                  min={1000}
+                  value={quoteAmount}
+                  onChange={(e) => setQuoteAmount(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuoteModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingQuote}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer disabled:opacity-50 shadow-md"
+                >
+                  {submittingQuote ? "Creating Quote..." : "Create & Attach Quote"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

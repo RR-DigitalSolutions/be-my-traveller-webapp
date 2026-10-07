@@ -107,23 +107,57 @@ export const Permission = {
   SECTION_PRODUCTS: "product.manage",
   SECTION_PRICING: "pricing.manage",
   SECTION_SALES: "sales.manage",
+  SECTION_OPERATIONS: "operations.manage",
+  SECTION_TASKS: "tasks.manage",
+  SECTION_FINANCE: "finance.manage",
   SECTION_MEDIA: "media.manage",
   SECTION_SEO: "seo.manage",
   SECTION_SUPPLIERS: "supplier.manage",
   SECTION_ANALYTICS: "analytics.view",
   SECTION_USERS: "user.manage",
   SECTION_SETTINGS: "settings.manage",
+
+  // Operations Desk
+  OPERATION_VIEW: "operation.view",
+  OPERATION_HOTEL_MANAGE: "operation.hotel.manage",
+  OPERATION_TRANSPORT_MANAGE: "operation.transport.manage",
+  OPERATION_ACTIVITY_MANAGE: "operation.activity.manage",
+  OPERATION_DISPATCH: "operation.dispatch",
+
+  // Operational Tasks
+  TASK_VIEW: "task.view",
+  TASK_CREATE: "task.create",
+  TASK_ASSIGN: "task.assign",
+  TASK_UPDATE: "task.update",
+  TASK_COMPLETE: "task.complete",
+
+  // Notifications
+  NOTIFICATION_VIEW: "notification.view",
+  NOTIFICATION_SEND: "notification.send",
+  NOTIFICATION_TEMPLATE_MANAGE: "notification.template.manage",
+
+  // Finance & Ledgers
+  FINANCE_VIEW: "finance.view",
+  FINANCE_INVOICE_MANAGE: "finance.invoice.manage",
+  FINANCE_PAYABLE_MANAGE: "finance.payable.manage",
+  FINANCE_RECONCILE: "finance.reconcile",
+
+  // Workflows & State Machines
+  WORKFLOW_TRANSITION: "workflow.transition",
+  WORKFLOW_OVERRIDE: "workflow.override",
 } as const;
 
 export type PermissionKey = (typeof Permission)[keyof typeof Permission] | string;
 
 // ============================================================
-// Department Enum — 4 Primary Platforms & Custom
+// Department Enum — Primary Platform Departments & Custom
 // ============================================================
 export const Department = {
   ADMIN: "ADMIN",
   MANAGEMENT: "MANAGEMENT",
   SALES: "SALES",
+  OPERATIONS: "OPERATIONS",
+  FINANCE: "FINANCE",
   SUPPORT_CONTENT: "SUPPORT_CONTENT",
   CUSTOM: "CUSTOM",
 } as const;
@@ -184,7 +218,23 @@ export const DEPARTMENTS: Record<DepartmentKey, DepartmentInfo> = {
     badgeColor: "from-emerald-500 to-teal-600",
     description: "Customer acquisition, lead management, custom quotes, booking executions and customer CRM.",
     defaultRole: "SALES_AGENT",
-    defaultSections: ["dashboard", "sales", "packages"],
+    defaultSections: ["dashboard", "sales", "packages", "tasks"],
+  },
+  OPERATIONS: {
+    key: "OPERATIONS",
+    name: "Operations & Fleet",
+    badgeColor: "from-amber-600 to-orange-600",
+    description: "Trip operations, hotel room allocations, fleet dispatch, driver trip sheets & activity coordination.",
+    defaultRole: "OPERATIONS",
+    defaultSections: ["dashboard", "operations", "tasks", "products", "suppliers"],
+  },
+  FINANCE: {
+    key: "FINANCE",
+    name: "Finance & Accounts",
+    badgeColor: "from-emerald-600 to-teal-700",
+    description: "Invoicing, payment collection, supplier payables, bank reconciliations & profitability.",
+    defaultRole: "FINANCE",
+    defaultSections: ["dashboard", "finance", "tasks", "sales", "analytics"],
   },
   SUPPORT_CONTENT: {
     key: "SUPPORT_CONTENT",
@@ -264,6 +314,30 @@ export const ADMIN_SECTIONS: AdminSectionConfig[] = [
     icon: "sales",
     path: "/admin/leads",
     requiredPermission: "sales.manage",
+  },
+  {
+    id: "operations",
+    name: "Operations Desk",
+    description: "Hotel confirmations, transport dispatch, activity coordination & trip execution.",
+    icon: "operations",
+    path: "/admin/operations",
+    requiredPermission: "operations.manage",
+  },
+  {
+    id: "tasks",
+    name: "Operational Tasks",
+    description: "Cross-departmental action items, deadlines, SLA tracking & assignments.",
+    icon: "tasks",
+    path: "/admin/tasks",
+    requiredPermission: "tasks.manage",
+  },
+  {
+    id: "finance",
+    name: "Finance & Accounts",
+    description: "Customer invoices, supplier payables, payment reconciliation & financial ledgers.",
+    icon: "finance",
+    path: "/admin/finance",
+    requiredPermission: "finance.manage",
   },
   {
     id: "media",
@@ -348,6 +422,9 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.SECTION_PRODUCTS,
     Permission.SECTION_PRICING,
     Permission.SECTION_SALES,
+    Permission.SECTION_OPERATIONS,
+    Permission.SECTION_TASKS,
+    Permission.SECTION_FINANCE,
     Permission.SECTION_MEDIA,
     Permission.SECTION_SEO,
     Permission.SECTION_SUPPLIERS,
@@ -363,6 +440,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.SECTION_PACKAGES,
     Permission.SECTION_PRODUCTS,
     Permission.SECTION_PRICING,
+    Permission.SECTION_TASKS,
     Permission.SECTION_MEDIA,
     Permission.DESTINATION_CREATE,
     Permission.DESTINATION_EDIT,
@@ -384,12 +462,18 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.CONTENT_EDIT,
     Permission.MEDIA_UPLOAD,
     Permission.ANALYTICS_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_CREATE,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.NOTIFICATION_VIEW,
   ],
 
   [Role.CONTENT_MANAGER]: [
     Permission.SECTION_DASHBOARD,
     Permission.SECTION_CONTENT,
     Permission.SECTION_PACKAGES,
+    Permission.SECTION_TASKS,
     Permission.SECTION_MEDIA,
     Permission.SECTION_SEO,
     Permission.DESTINATION_EDIT,
@@ -402,6 +486,10 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.CONTENT_PUBLISH,
     Permission.MEDIA_UPLOAD,
     Permission.REDIRECT_MANAGE,
+    Permission.TASK_VIEW,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.NOTIFICATION_VIEW,
   ],
 
   [Role.SEO_MANAGER]: [
@@ -413,12 +501,17 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.CONTENT_EDIT,
     Permission.REDIRECT_MANAGE,
     Permission.ANALYTICS_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.NOTIFICATION_VIEW,
   ],
 
   [Role.SALES_MANAGER]: [
     Permission.SECTION_DASHBOARD,
     Permission.SECTION_SALES,
     Permission.SECTION_PACKAGES,
+    Permission.SECTION_TASKS,
     Permission.SECTION_ANALYTICS,
     Permission.LEAD_VIEW,
     Permission.LEAD_EDIT,
@@ -436,12 +529,21 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.CUSTOMER_EDIT,
     Permission.PRICING_VIEW,
     Permission.ANALYTICS_VIEW,
+    Permission.TASK_VIEW,
+    Permission.TASK_CREATE,
+    Permission.TASK_ASSIGN,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.WORKFLOW_TRANSITION,
+    Permission.NOTIFICATION_VIEW,
+    Permission.NOTIFICATION_SEND,
   ],
 
   [Role.SALES_AGENT]: [
     Permission.SECTION_DASHBOARD,
     Permission.SECTION_SALES,
     Permission.SECTION_PACKAGES,
+    Permission.SECTION_TASKS,
     Permission.LEAD_VIEW,
     Permission.LEAD_EDIT,
     Permission.QUOTE_CREATE,
@@ -451,13 +553,33 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.BOOKING_CREATE,
     Permission.CUSTOMER_VIEW,
     Permission.CUSTOMER_EDIT,
+    Permission.TASK_VIEW,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.WORKFLOW_TRANSITION,
+    Permission.NOTIFICATION_VIEW,
   ],
 
   [Role.OPERATIONS]: [
     Permission.SECTION_DASHBOARD,
+    Permission.SECTION_OPERATIONS,
+    Permission.SECTION_TASKS,
     Permission.SECTION_SALES,
     Permission.SECTION_SUPPLIERS,
     Permission.SECTION_PRODUCTS,
+    Permission.OPERATION_VIEW,
+    Permission.OPERATION_HOTEL_MANAGE,
+    Permission.OPERATION_TRANSPORT_MANAGE,
+    Permission.OPERATION_ACTIVITY_MANAGE,
+    Permission.OPERATION_DISPATCH,
+    Permission.TASK_VIEW,
+    Permission.TASK_CREATE,
+    Permission.TASK_ASSIGN,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.NOTIFICATION_VIEW,
+    Permission.NOTIFICATION_SEND,
+    Permission.WORKFLOW_TRANSITION,
     Permission.LEAD_VIEW,
     Permission.BOOKING_VIEW,
     Permission.BOOKING_EDIT,
@@ -470,7 +592,18 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
 
   [Role.FINANCE]: [
     Permission.SECTION_DASHBOARD,
+    Permission.SECTION_FINANCE,
+    Permission.SECTION_TASKS,
     Permission.SECTION_ANALYTICS,
+    Permission.FINANCE_VIEW,
+    Permission.FINANCE_INVOICE_MANAGE,
+    Permission.FINANCE_PAYABLE_MANAGE,
+    Permission.FINANCE_RECONCILE,
+    Permission.TASK_VIEW,
+    Permission.TASK_UPDATE,
+    Permission.TASK_COMPLETE,
+    Permission.NOTIFICATION_VIEW,
+    Permission.NOTIFICATION_SEND,
     Permission.PAYMENT_VIEW,
     Permission.PAYMENT_RECORD,
     Permission.PAYMENT_REFUND,
@@ -485,6 +618,9 @@ export const ROLE_PERMISSIONS: Record<RoleKey, PermissionKey[]> = {
     Permission.CONTENT_EDIT,
     Permission.MEDIA_UPLOAD,
     Permission.SEO_EDIT,
+    Permission.TASK_VIEW,
+    Permission.TASK_UPDATE,
+    Permission.NOTIFICATION_VIEW,
   ],
 };
 
@@ -550,9 +686,9 @@ export function hasSectionAccess(
   if (user.role && ROLE_PERMISSIONS[user.role]) {
     const rolePerms = ROLE_PERMISSIONS[user.role];
     if (
-      rolePerms.includes(sectionKey as any) ||
-      rolePerms.includes(sectionManage as any) ||
-      rolePerms.includes(sectionView as any)
+      rolePerms.includes(sectionKey as PermissionKey) ||
+      rolePerms.includes(sectionManage as PermissionKey) ||
+      rolePerms.includes(sectionView as PermissionKey)
     ) {
       return true;
     }

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import connectDB from "@/lib/db/mongoose";
-import { LeadModel } from "@/domains/crm/lead.model";
+import { LeadService } from "@/domains/crm/lead.service";
 import { apiSuccess, apiError } from "@/lib/errors/app-errors";
 
 const createLeadSchema = z.object({
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const lead = await LeadModel.create({
+    const result = await LeadService.captureLead({
       ...data,
       travelDates: data.travelDates
         ? {
@@ -82,12 +82,12 @@ export async function POST(req: NextRequest) {
             flexible: data.travelDates.flexible,
           }
         : undefined,
-      status: "NEW",
     });
 
     return apiSuccess(
       {
-        id: lead._id,
+        id: result.lead._id,
+        isDuplicate: result.isDuplicate,
         message: "Enquiry submitted successfully. Our travel specialists will contact you shortly.",
       },
       201
