@@ -21,6 +21,7 @@ import {
 
 function resolveDepartmentFromRole(role?: string, explicitDept?: string): DepartmentKey {
   if (explicitDept && Object.values(Department).includes(explicitDept as any)) {
+    if (explicitDept === "FINANCE") return "ACCOUNTS" as DepartmentKey;
     return explicitDept as DepartmentKey;
   }
   switch (role) {
@@ -30,9 +31,21 @@ function resolveDepartmentFromRole(role?: string, explicitDept?: string): Depart
     case Role.SALES_MANAGER:
     case Role.SALES_AGENT:
       return Department.SALES;
-    case Role.PRODUCT_MANAGER:
+    case Role.HOTEL_MANAGER:
+    case Role.HOTEL_EXECUTIVE:
+      return Department.HOTEL;
+    case Role.TRANSPORT_MANAGER:
+    case Role.TRANSPORT_EXECUTIVE:
+      return Department.TRANSPORT;
+    case Role.ACCOUNTS_MANAGER:
     case Role.FINANCE:
+      return Department.ACCOUNTS;
+    case Role.HR_MANAGER:
+    case Role.HR_EXECUTIVE:
+      return Department.HR;
     case Role.OPERATIONS:
+      return Department.OPERATIONS;
+    case Role.PRODUCT_MANAGER:
       return Department.MANAGEMENT;
     case Role.CONTENT_MANAGER:
     case Role.SEO_MANAGER:
@@ -90,7 +103,11 @@ export async function GET(req: NextRequest) {
     }
 
     if (department !== "ALL") {
-      andConditions.push({ department });
+      if (department === "ACCOUNTS") {
+        andConditions.push({ $or: [{ department: "ACCOUNTS" }, { department: "FINANCE" }] });
+      } else {
+        andConditions.push({ department });
+      }
     }
 
     if (status !== "ALL") {
@@ -122,8 +139,15 @@ export async function GET(req: NextRequest) {
       activeUsers: allUsers.filter((u) => u.isActive !== false && u.status !== "INACTIVE" && u.status !== "SUSPENDED").length,
       suspendedUsers: allUsers.filter((u) => u.status === "SUSPENDED").length,
       adminCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "ADMIN").length,
-      managementCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "MANAGEMENT").length,
       salesCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "SALES").length,
+      hotelCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "HOTEL").length,
+      transportCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "TRANSPORT").length,
+      accountsCount: allUsers.filter((u) => {
+        const d = resolveDepartmentFromRole(u.role, u.department);
+        return d === "ACCOUNTS" || d === "FINANCE";
+      }).length,
+      hrCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "HR").length,
+      managementCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "MANAGEMENT").length,
       supportContentCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "SUPPORT_CONTENT").length,
       customCount: allUsers.filter((u) => resolveDepartmentFromRole(u.role, u.department) === "CUSTOM").length,
     };

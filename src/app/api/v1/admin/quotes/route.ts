@@ -92,7 +92,26 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { customerName, customerPhone, customerEmail, destination, travelDates, paxCount, hotelTier, cabType, totalAmount, leadId } = body;
+    const {
+      customerName,
+      customerPhone,
+      customerEmail,
+      destination,
+      travelDates,
+      paxCount,
+      hotelTier,
+      cabType,
+      totalAmount,
+      leadId,
+      itinerary,
+      inclusions,
+      exclusions,
+      adultsCount,
+      childrenCount,
+      infantsCount,
+      costing,
+      notes,
+    } = body;
 
     if (!customerName || !customerPhone || !destination) {
       return NextResponse.json({ error: "Customer details and destination required" }, { status: 400 });
@@ -111,13 +130,24 @@ export async function POST(req: NextRequest) {
       customerEmail: customerEmail || "",
       destination,
       travelDates: travelDates || "Flexible",
-      paxCount: paxCount || "2 Adults",
+      paxCount: paxCount || `${adultsCount || 2} Adults${childrenCount ? `, ${childrenCount} Child` : ""}`,
       hotelTier: hotelTier || "4★ Deluxe",
       cabType: cabType || "Private AC Sedan/SUV",
       totalAmount: Number(totalAmount) || 50000,
       leadId: leadId ? new mongoose.Types.ObjectId(leadId) : undefined,
       status: "SENT",
+      itinerary: Array.isArray(itinerary) ? itinerary : [],
+      inclusions: Array.isArray(inclusions) ? inclusions : [],
+      exclusions: Array.isArray(exclusions) ? exclusions : [],
+      travellers: {
+        adults: Number(adultsCount) || 2,
+        children: Number(childrenCount) || 0,
+        infants: Number(infantsCount) || 0,
+      },
+      costing: costing || {},
+      notes: notes || "",
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const res = await db.collection("quotes").insertOne(doc);

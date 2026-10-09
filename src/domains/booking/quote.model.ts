@@ -9,6 +9,18 @@ export type QuoteStatus =
   | "EXPIRED"
   | "CONVERTED";
 
+export interface IQuoteDayPlan {
+  dayNumber: number;
+  title: string;
+  description: string;
+  city: string;
+  hotelName?: string;
+  roomCategory?: string;
+  mealPlan?: string; // EP (Room Only), CP (Breakfast), MAP (Breakfast + Dinner), AP (All Meals)
+  vehicleType?: string;
+  activities?: string[];
+}
+
 export interface IQuoteItem {
   _id: mongoose.Types.ObjectId;
   type: string;
@@ -29,9 +41,9 @@ export interface IQuote extends Document {
   customer?: mongoose.Types.ObjectId;
   createdBy: mongoose.Types.ObjectId;
 
-  packageId?: mongoose.Types.ObjectId;
   packageName: string;
   packageSlug?: string;
+  packageId?: mongoose.Types.ObjectId;
   destinations: string[];
 
   travelDates: {
@@ -47,7 +59,20 @@ export interface IQuote extends Document {
     infants: number;
   };
 
+  itinerary?: IQuoteDayPlan[];
+  inclusions?: string[];
+  exclusions?: string[];
+  cabType?: string;
+  hotelTier?: string;
+
   items: IQuoteItem[];
+
+  costing?: {
+    netCost?: number;
+    markupPercent?: number;
+    gstPercent?: number;
+    perPersonCost?: number;
+  };
 
   subtotal: number;
   discount: number;
@@ -130,6 +155,30 @@ const QuoteSchema = new Schema<IQuote>(
     taxAmount: { type: Number, required: true },
     totalAmount: { type: Number, required: true },
     currency: { type: String, default: "INR" },
+
+    itinerary: [
+      {
+        dayNumber: { type: Number, required: true },
+        title: { type: String, required: true },
+        description: { type: String, required: true },
+        city: { type: String, required: true },
+        hotelName: { type: String },
+        roomCategory: { type: String },
+        mealPlan: { type: String },
+        vehicleType: { type: String },
+        activities: [{ type: String }],
+      },
+    ],
+    inclusions: [{ type: String }],
+    exclusions: [{ type: String }],
+    cabType: { type: String },
+    hotelTier: { type: String },
+    costing: {
+      netCost: { type: Number },
+      markupPercent: { type: Number },
+      gstPercent: { type: Number },
+      perPersonCost: { type: Number },
+    },
 
     hotelConfig: [
       {

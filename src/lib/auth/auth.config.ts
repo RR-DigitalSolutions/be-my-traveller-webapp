@@ -7,6 +7,8 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = String(user.id);
+        token.name = user.name;
+        token.email = user.email;
         token.role = (user as { role: RoleKey }).role;
         token.department = (user as { department?: DepartmentKey }).department;
         token.designation = (user as { designation?: string }).designation;
@@ -21,6 +23,8 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.name = (token.name as string) || session.user.name;
+        session.user.email = (token.email as string) || session.user.email;
         session.user.role = token.role as RoleKey;
         session.user.department = token.department as DepartmentKey | undefined;
         session.user.designation = token.designation as string | undefined;

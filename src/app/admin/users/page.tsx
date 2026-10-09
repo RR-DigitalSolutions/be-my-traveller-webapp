@@ -8,6 +8,8 @@ import {
   ADMIN_SECTIONS,
   Role,
   type RoleKey,
+  DETAILED_PERMISSION_GROUPS,
+  type GranularPermissionCategory,
 } from "@/lib/auth/permissions";
 
 interface StaffUser {
@@ -35,6 +37,10 @@ interface StatsSummary {
   adminCount: number;
   managementCount: number;
   salesCount: number;
+  hotelCount: number;
+  transportCount: number;
+  accountsCount: number;
+  hrCount: number;
   supportContentCount: number;
   customCount: number;
 }
@@ -43,9 +49,14 @@ const SECTION_PERMISSION_MAP: Record<string, string> = {
   dashboard: "dashboard.view",
   content: "content.manage",
   packages: "package.manage",
+  hotels: "hotels.manage",
+  transport: "transport.manage",
   products: "product.manage",
   pricing: "pricing.manage",
   sales: "sales.manage",
+  operations: "operations.manage",
+  tasks: "tasks.manage",
+  finance: "finance.manage",
   media: "media.manage",
   seo: "seo.manage",
   suppliers: "supplier.manage",
@@ -58,15 +69,20 @@ const SECTION_ICONS: Record<string, string> = {
   dashboard: "📊",
   content: "📝",
   packages: "🎒",
-  products: "🚗",
+  hotels: "🏨",
+  transport: "🚗",
+  products: "📦",
   pricing: "🏷️",
   sales: "💼",
+  operations: "⚙️",
+  tasks: "✅",
+  finance: "💳",
   media: "🖼️",
   seo: "🔍",
   suppliers: "🤝",
   analytics: "📈",
   users: "👥",
-  settings: "⚙️",
+  settings: "🛠️",
 };
 
 export default function AdminUsersPage() {
@@ -82,6 +98,8 @@ export default function AdminUsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"CREATE" | "EDIT">("CREATE");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [activePermTab, setActivePermTab] = useState<"SECTIONS" | "GRANULAR">("SECTIONS");
+  const [expandedPermGroup, setExpandedPermGroup] = useState<string | null>("hotels");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -95,6 +113,7 @@ export default function AdminUsersPage() {
     status: "ACTIVE" as "ACTIVE" | "INACTIVE" | "SUSPENDED",
     avatar: "",
     selectedSections: [] as string[],
+    selectedGranularPermissions: [] as string[],
   });
 
   // Password Reset Modal
@@ -169,17 +188,21 @@ export default function AdminUsersPage() {
     setEditingUserId(null);
     const defaultDept = Department.SALES;
     const defaultSections = DEPARTMENTS[defaultDept].defaultSections;
+    const deptGroup = DETAILED_PERMISSION_GROUPS.find((g) => g.department === defaultDept);
+    const defaultGranular = deptGroup ? deptGroup.permissions.map((p) => p.id) : [];
+
     setFormData({
       name: "",
       email: "",
       password: generateRandomPassword(),
       department: defaultDept,
       role: DEPARTMENTS[defaultDept].defaultRole,
-      designation: "Sales Executive",
+      designation: "Senior Travel Consultant",
       phone: "",
       status: "ACTIVE",
       avatar: "",
       selectedSections: [...defaultSections],
+      selectedGranularPermissions: defaultGranular,
     });
     setIsModalOpen(true);
   };
@@ -205,6 +228,11 @@ export default function AdminUsersPage() {
       }
     });
 
+    const allGranularKeys = DETAILED_PERMISSION_GROUPS.flatMap((g) => g.permissions.map((p) => p.id));
+    const userGranular = user.permissions.includes("*")
+      ? allGranularKeys
+      : user.permissions.filter((p) => !ADMIN_SECTIONS.some((s) => s.id === p) && p !== "*");
+
     setFormData({
       name: user.name,
       email: user.email,
@@ -216,6 +244,7 @@ export default function AdminUsersPage() {
       status: user.status,
       avatar: user.avatar || "",
       selectedSections: userSections.length > 0 ? userSections : DEPARTMENTS[user.department || "SUPPORT_CONTENT"]?.defaultSections || ["dashboard"],
+      selectedGranularPermissions: userGranular,
     });
     setIsModalOpen(true);
   };
@@ -223,16 +252,26 @@ export default function AdminUsersPage() {
   // Department Selection in Modal
   const handleDepartmentChange = (dept: DepartmentKey) => {
     const deptConfig = DEPARTMENTS[dept];
+    const deptGroup = DETAILED_PERMISSION_GROUPS.find((g) => g.department === dept);
+    const defaultGranular = deptGroup ? deptGroup.permissions.map((p) => p.id) : [];
+
     setFormData((prev) => ({
       ...prev,
       department: dept,
-      role: deptConfig.defaultRole,
-      selectedSections: [...deptConfig.defaultSections],
+      role: deptConfig?.defaultRole || Role.EDITOR,
+      selectedSections: [...(deptConfig?.defaultSections || ["dashboard"])],
+      selectedGranularPermissions: defaultGranular,
       designation:
-        prev.designation && prev.designation !== "Sales Executive" && prev.designation !== "Staff Member"
-          ? prev.designation
-          : dept === "SALES"
-          ? "Sales Executive"
+        dept === "SALES"
+          ? "Senior Travel Consultant"
+          : dept === "HOTEL"
+          ? "Hotel Operations Lead"
+          : dept === "TRANSPORT"
+          ? "Fleet & Transport Manager"
+          : dept === "ACCOUNTS" || dept === "FINANCE"
+          ? "Finance Controller"
+          : dept === "HR"
+          ? "HR & People Operations Manager"
           : dept === "MANAGEMENT"
           ? "Management Executive"
           : dept === "SUPPORT_CONTENT"
@@ -263,6 +302,37 @@ export default function AdminUsersPage() {
     setFormData((prev) => ({
       ...prev,
       selectedSections: [],
+    }));
+  };
+
+  // Granular Permission Toggles
+  const toggleGranularPermission = (permId: string) => {
+    setFormData((prev) => {
+      const exists = prev.selectedGranularPermissions.includes(permId);
+      const updated = exists
+        ? prev.selectedGranularPermissions.filter((id) => id !== permId)
+        : [...prev.selectedGranularPermissions, permId];
+      return { ...prev, selectedGranularPermissions: updated };
+    });
+  };
+
+  const handleSelectAllGroupPermissions = (groupId: string) => {
+    const group = DETAILED_PERMISSION_GROUPS.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupPermIds = group.permissions.map((p) => p.id);
+    setFormData((prev) => ({
+      ...prev,
+      selectedGranularPermissions: Array.from(new Set([...prev.selectedGranularPermissions, ...groupPermIds])),
+    }));
+  };
+
+  const handleClearGroupPermissions = (groupId: string) => {
+    const group = DETAILED_PERMISSION_GROUPS.find((g) => g.id === groupId);
+    if (!group) return;
+    const groupPermIds = new Set(group.permissions.map((p) => p.id));
+    setFormData((prev) => ({
+      ...prev,
+      selectedGranularPermissions: prev.selectedGranularPermissions.filter((id) => !groupPermIds.has(id)),
     }));
   };
 
@@ -308,6 +378,13 @@ export default function AdminUsersPage() {
       }
       if (!permissions.includes(secId)) {
         permissions.push(secId);
+      }
+    });
+
+    // Add granular RBAC permissions
+    formData.selectedGranularPermissions.forEach((p) => {
+      if (!permissions.includes(p)) {
+        permissions.push(p);
       }
     });
 
@@ -357,15 +434,22 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Delete User
+  // Delete User (Main Root Admin has master access to delete other admins and staff)
   const handleDeleteUser = async (user: StaffUser) => {
-    if (user.role === Role.SUPER_ADMIN || user.email.toLowerCase() === "admin@bemytraveller.com" || user.isRootAccount) {
-      showToast("Master Super Admin account is protected and cannot be deleted", "error");
+    const isTargetRoot = user.email.toLowerCase() === "admin@bemytraveller.com" || !!user.isRootAccount;
+    if (isTargetRoot) {
+      showToast("Master Root Administrator account is protected and cannot be deleted", "error");
       return;
     }
 
+    if (currentCaller?.email && user.email.toLowerCase() === currentCaller.email.toLowerCase()) {
+      showToast("You cannot delete your own active administrator account", "error");
+      return;
+    }
+
+    const roleName = user.role === Role.SUPER_ADMIN ? "Administrator" : "Staff Member";
     const confirmed = window.confirm(
-      `Are you sure you want to delete staff account for ${user.name} (${user.email})? This action cannot be undone.`
+      `⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${roleName} "${user.name}" (${user.email}) from the database? This action cannot be undone.`
     );
     if (!confirmed) return;
 
@@ -375,9 +459,9 @@ export default function AdminUsersPage() {
       });
       const result = await res.json();
       if (result.success) {
-        showToast("Staff account deleted successfully");
-        // Update local state immediately
+        showToast(`Account for ${user.name} permanently deleted from database`, "success");
         setUsers((prev) => prev.filter((u) => u._id !== user._id));
+        setIsModalOpen(false);
         fetchUsers();
       } else {
         showToast(result.error || "Failed to delete account", "error");
@@ -385,6 +469,44 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error(err);
       showToast("Failed to delete user", "error");
+    }
+  };
+
+  // Quick 1-Click Toggle: Active / Deactivate User
+  const handleToggleUserStatus = async (user: StaffUser) => {
+    const isTargetRoot = user.email.toLowerCase() === "admin@bemytraveller.com" || !!user.isRootAccount;
+    if (isTargetRoot) {
+      showToast("Master Root Administrator is permanently active", "error");
+      return;
+    }
+
+    const nextStatus = user.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    const actionVerb = nextStatus === "ACTIVE" ? "ACTIVATE" : "DEACTIVATE / SUSPEND";
+
+    const confirmed = window.confirm(
+      `Are you sure you want to ${actionVerb} access for ${user.name} (${user.email})?`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/v1/admin/users/${user._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        showToast(
+          `Staff member ${user.name} is now ${nextStatus === "ACTIVE" ? "Active" : "Deactivated"}!`,
+          "success"
+        );
+        fetchUsers();
+      } else {
+        showToast(result.error || "Failed to update user status", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to update user status", "error");
     }
   };
 
@@ -438,20 +560,49 @@ export default function AdminUsersPage() {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 whitespace-nowrap">
             <span>🏢</span>
-            <span>Company Management</span>
+            <span>Management</span>
           </span>
         );
       case "SALES":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
             <span>💼</span>
-            <span>Sales Executives</span>
+            <span>Sales & CRM</span>
+          </span>
+        );
+      case "HOTEL":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30 whitespace-nowrap">
+            <span>🏨</span>
+            <span>Hotel Operations</span>
+          </span>
+        );
+      case "TRANSPORT":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-600/15 text-amber-300 border border-amber-600/30 whitespace-nowrap">
+            <span>🚗</span>
+            <span>Transport & Fleet</span>
+          </span>
+        );
+      case "ACCOUNTS":
+      case "FINANCE":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-teal-500/15 text-teal-300 border border-teal-500/30 whitespace-nowrap">
+            <span>💳</span>
+            <span>Accounts & Finance</span>
+          </span>
+        );
+      case "HR":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-pink-500/15 text-pink-300 border border-pink-500/30 whitespace-nowrap">
+            <span>👥</span>
+            <span>Human Resources</span>
           </span>
         );
       case "SUPPORT_CONTENT":
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30 whitespace-nowrap">
             <span>✍️</span>
             <span>Content & Support</span>
           </span>
@@ -536,98 +687,120 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
-      {/* 4 Department Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+      {/* 6 Department Summary KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {/* Admin */}
         <div
           onClick={() => setSelectedDeptFilter(selectedDeptFilter === "ADMIN" ? "ALL" : "ADMIN")}
-          className={`cursor-pointer rounded-xl p-4 border transition-all relative overflow-hidden ${
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
             selectedDeptFilter === "ADMIN"
               ? "bg-amber-500/10 border-amber-500/60 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/60"
               : "bg-slate-900/80 border-slate-800/90 hover:border-amber-500/40 hover:bg-slate-900"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">👑</span>
-              <span className="text-xs font-bold text-white">Admin & Executive</span>
-            </div>
-            <span className="text-sm font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">👑</span>
+            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
               {stats?.adminCount ?? 0}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-            Super Administrator with full master control over all 12 platform modules.
-          </p>
+          <div className="text-xs font-bold text-white truncate">Admin & Exec</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">Master control</p>
         </div>
 
-        {/* Company Management */}
-        <div
-          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "MANAGEMENT" ? "ALL" : "MANAGEMENT")}
-          className={`cursor-pointer rounded-xl p-4 border transition-all relative overflow-hidden ${
-            selectedDeptFilter === "MANAGEMENT"
-              ? "bg-purple-500/10 border-purple-500/60 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/60"
-              : "bg-slate-900/80 border-slate-800/90 hover:border-purple-500/40 hover:bg-slate-900"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🏢</span>
-              <span className="text-xs font-bold text-white">Company Management</span>
-            </div>
-            <span className="text-sm font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
-              {stats?.managementCount ?? 0}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-            Executive oversight of Dashboard, Analytics, Packages, Pricing, Sales & Suppliers.
-          </p>
-        </div>
-
-        {/* Sales Executives */}
+        {/* Sales */}
         <div
           onClick={() => setSelectedDeptFilter(selectedDeptFilter === "SALES" ? "ALL" : "SALES")}
-          className={`cursor-pointer rounded-xl p-4 border transition-all relative overflow-hidden ${
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
             selectedDeptFilter === "SALES"
               ? "bg-emerald-500/10 border-emerald-500/60 shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500/60"
               : "bg-slate-900/80 border-slate-800/90 hover:border-emerald-500/40 hover:bg-slate-900"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">💼</span>
-              <span className="text-xs font-bold text-white">Sales Executives</span>
-            </div>
-            <span className="text-sm font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">💼</span>
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
               {stats?.salesCount ?? 0}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-            Leads pipeline, custom quotes, booking executions, and customer relations.
-          </p>
+          <div className="text-xs font-bold text-white truncate">Sales & CRM</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">Leads & Quotes</p>
         </div>
 
-        {/* Support & Content */}
+        {/* Hotel */}
         <div
-          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "SUPPORT_CONTENT" ? "ALL" : "SUPPORT_CONTENT")}
-          className={`cursor-pointer rounded-xl p-4 border transition-all relative overflow-hidden ${
-            selectedDeptFilter === "SUPPORT_CONTENT"
+          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "HOTEL" ? "ALL" : "HOTEL")}
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
+            selectedDeptFilter === "HOTEL"
               ? "bg-sky-500/10 border-sky-500/60 shadow-lg shadow-sky-500/10 ring-1 ring-sky-500/60"
               : "bg-slate-900/80 border-slate-800/90 hover:border-sky-500/40 hover:bg-slate-900"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-base">✍️</span>
-              <span className="text-xs font-bold text-white">Content & Support</span>
-            </div>
-            <span className="text-sm font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
-              {stats?.supportContentCount ?? 0}
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">🏨</span>
+            <span className="text-xs font-bold text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
+              {stats?.hotelCount ?? 0}
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-            Destinations, Attractions, Tour Packages, Blogs, FAQs, Media & SEO Studio.
-          </p>
+          <div className="text-xs font-bold text-white truncate">Hotel Desk</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">Rooms & Vouchers</p>
+        </div>
+
+        {/* Transport */}
+        <div
+          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "TRANSPORT" ? "ALL" : "TRANSPORT")}
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
+            selectedDeptFilter === "TRANSPORT"
+              ? "bg-amber-600/10 border-amber-600/60 shadow-lg shadow-amber-600/10 ring-1 ring-amber-600/60"
+              : "bg-slate-900/80 border-slate-800/90 hover:border-amber-600/40 hover:bg-slate-900"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">🚗</span>
+            <span className="text-xs font-bold text-amber-400 bg-amber-600/10 px-1.5 py-0.5 rounded border border-amber-600/20">
+              {stats?.transportCount ?? 0}
+            </span>
+          </div>
+          <div className="text-xs font-bold text-white truncate">Transport Desk</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">Fleet & Dispatch</p>
+        </div>
+
+        {/* Accounts */}
+        <div
+          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "ACCOUNTS" ? "ALL" : "ACCOUNTS")}
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
+            selectedDeptFilter === "ACCOUNTS"
+              ? "bg-teal-500/10 border-teal-500/60 shadow-lg shadow-teal-500/10 ring-1 ring-teal-500/60"
+              : "bg-slate-900/80 border-slate-800/90 hover:border-teal-500/40 hover:bg-slate-900"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">💳</span>
+            <span className="text-xs font-bold text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
+              {stats?.accountsCount ?? 0}
+            </span>
+          </div>
+          <div className="text-xs font-bold text-white truncate">Accounts</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">Ledgers & Payouts</p>
+        </div>
+
+        {/* HR */}
+        <div
+          onClick={() => setSelectedDeptFilter(selectedDeptFilter === "HR" ? "ALL" : "HR")}
+          className={`cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden ${
+            selectedDeptFilter === "HR"
+              ? "bg-pink-500/10 border-pink-500/60 shadow-lg shadow-pink-500/10 ring-1 ring-pink-500/60"
+              : "bg-slate-900/80 border-slate-800/90 hover:border-pink-500/40 hover:bg-slate-900"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm">👥</span>
+            <span className="text-xs font-bold text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded border border-pink-500/20">
+              {stats?.hrCount ?? 0}
+            </span>
+          </div>
+          <div className="text-xs font-bold text-white truncate">HR & Staff</div>
+          <p className="text-[10px] text-slate-400 truncate mt-0.5">RBAC & Roster</p>
         </div>
       </div>
 
@@ -663,9 +836,12 @@ export default function AdminUsersPage() {
           {[
             { key: "ALL", label: "All Staff" },
             { key: "ADMIN", label: "Admin" },
-            { key: "MANAGEMENT", label: "Management" },
             { key: "SALES", label: "Sales" },
-            { key: "SUPPORT_CONTENT", label: "Content/Support" },
+            { key: "HOTEL", label: "Hotel" },
+            { key: "TRANSPORT", label: "Transport" },
+            { key: "ACCOUNTS", label: "Accounts" },
+            { key: "HR", label: "HR" },
+            { key: "SUPPORT_CONTENT", label: "Content" },
           ].map((item) => (
             <button
               key={item.key}
@@ -837,44 +1013,18 @@ export default function AdminUsersPage() {
                         {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : "Never"}
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions - Only Edit outside */}
                       <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenEdit(user)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-colors"
-                            title="Edit Privileges & Profile"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setResetModalUser(user);
-                              setNewPasswordInput(generateRandomPassword());
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-slate-800 transition-colors"
-                            title="Reset Staff Password"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                            </svg>
-                          </button>
-
-                          {!isSuperAdmin && !isRootUser && (
-                            <button
-                              onClick={() => handleDeleteUser(user)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                              title="Delete Account"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => handleOpenEdit(user)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-700/80 transition-all text-xs font-semibold shadow-xs hover:border-amber-500/50"
+                          title="Edit Staff Member & Privileges"
+                        >
+                          <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span>Edit</span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -916,12 +1066,15 @@ export default function AdminUsersPage() {
                 <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2">
                   1. Primary Department Preset
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                   {[
-                    { key: "ADMIN" as DepartmentKey, emoji: "👑", title: "Admin", desc: "Master access across all 12 modules" },
-                    { key: "MANAGEMENT" as DepartmentKey, emoji: "🏢", title: "Management", desc: "Executive suite & financial operations" },
-                    { key: "SALES" as DepartmentKey, emoji: "💼", title: "Sales", desc: "CRM, Leads, Quotes & Bookings" },
-                    { key: "SUPPORT_CONTENT" as DepartmentKey, emoji: "✍️", title: "Content/Support", desc: "Content CMS, Media & SEO Studio" },
+                    { key: "ADMIN" as DepartmentKey, emoji: "👑", title: "Admin", desc: "Master control" },
+                    { key: "SALES" as DepartmentKey, emoji: "💼", title: "Sales", desc: "Leads & Quotes" },
+                    { key: "HOTEL" as DepartmentKey, emoji: "🏨", title: "Hotel", desc: "Rooms & Vouchers" },
+                    { key: "TRANSPORT" as DepartmentKey, emoji: "🚗", title: "Transport", desc: "Fleet & Dispatch" },
+                    { key: "ACCOUNTS" as DepartmentKey, emoji: "💳", title: "Accounts", desc: "Ledgers & Payables" },
+                    { key: "HR" as DepartmentKey, emoji: "👥", title: "HR", desc: "Staff & RBAC" },
+                    { key: "SUPPORT_CONTENT" as DepartmentKey, emoji: "✍️", title: "Content", desc: "CMS & Media" },
                   ].map((dept) => {
                     const isSelected = formData.department === dept.key;
                     return (
@@ -930,7 +1083,7 @@ export default function AdminUsersPage() {
                         type="button"
                         disabled={isEditingRoot && dept.key !== "ADMIN"}
                         onClick={() => !isEditingRoot && handleDepartmentChange(dept.key)}
-                        className={`p-3 rounded-xl border text-left transition-all ${
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
                           isEditingRoot && dept.key !== "ADMIN"
                             ? "opacity-35 cursor-not-allowed bg-slate-950/40 border-slate-900"
                             : isSelected
@@ -939,13 +1092,13 @@ export default function AdminUsersPage() {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-white flex items-center gap-1.5">
+                          <span className="font-bold text-white flex items-center gap-1 text-xs">
                             <span>{dept.emoji}</span>
-                            <span>{dept.title}</span>
+                            <span className="truncate">{dept.title}</span>
                           </span>
-                          {isSelected && <span className="w-2 h-2 rounded-full bg-amber-400" />}
+                          {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />}
                         </div>
-                        <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">
+                        <p className="text-[10px] text-slate-400 truncate leading-tight">
                           {dept.desc}
                         </p>
                       </button>
@@ -1019,46 +1172,41 @@ export default function AdminUsersPage() {
                     />
                   </div>
 
-                  {/* Password */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-slate-400 mb-1 font-medium">
-                      {modalMode === "CREATE" ? "CMS Password *" : "Set New Password (Optional)"}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder={modalMode === "CREATE" ? "Enter password..." : "Leave blank to keep current password"}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-500"
-                      />
+                  {/* Account Access Status - Compact small size for optimal UX */}
+                  <div>
+                    <label className="block text-slate-400 mb-1 font-medium">Account Access Status</label>
+                    <div className="flex items-center gap-1 p-0.5 bg-slate-950 border border-slate-800 rounded-lg h-[34px]">
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, password: generateRandomPassword() })}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 transition-colors"
+                        disabled={isEditingRoot}
+                        onClick={() => setFormData({ ...formData, status: "ACTIVE" })}
+                        className={`flex-1 h-full flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold transition-all ${
+                          formData.status === "ACTIVE"
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-xs"
+                            : "text-slate-400 hover:text-slate-200"
+                        } ${isEditingRoot ? "cursor-not-allowed opacity-60" : ""}`}
                       >
-                        Generate Random
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span>Active</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isEditingRoot}
+                        onClick={() => setFormData({ ...formData, status: "SUSPENDED" })}
+                        className={`flex-1 h-full flex items-center justify-center gap-1.5 rounded-md text-xs font-semibold transition-all ${
+                          formData.status === "SUSPENDED" || formData.status === "INACTIVE"
+                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs"
+                            : "text-slate-400 hover:text-slate-200"
+                        } ${isEditingRoot ? "cursor-not-allowed opacity-40" : ""}`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                        <span>Deactivated</span>
                       </button>
                     </div>
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <label className="block text-slate-400 mb-1 font-medium">Account Status</label>
-                    <select
-                      disabled={isEditingRoot}
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className={`w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 ${
-                        isEditingRoot ? "opacity-60 cursor-not-allowed bg-slate-950 text-slate-400" : ""
-                      }`}
-                    >
-                      <option value="ACTIVE">Active (Can Login)</option>
-                      <option value="SUSPENDED">Suspended (Access Blocked)</option>
-                      <option value="INACTIVE">Inactive</option>
-                    </select>
                     {isEditingRoot && (
-                      <p className="text-[10px] text-slate-500 mt-0.5">Root Admin is permanently Active</p>
+                      <p className="text-[10px] text-amber-400/80 mt-1 font-mono">
+                        Master Root Admin (Protected)
+                      </p>
                     )}
                   </div>
 
@@ -1070,89 +1218,275 @@ export default function AdminUsersPage() {
                       value={formData.avatar}
                       onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
                       placeholder="https://images.unsplash.com/..."
-                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 h-[34px]"
                     />
                   </div>
-                </div>
-              </div>
 
-              {/* Step 3: Granular Section Privileges Selection */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                    3. Section-by-Section Privileges ({formData.selectedSections.length}/12 Modules)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSelectAllSections}
-                      className="text-amber-400 hover:underline text-[11px]"
-                    >
-                      Select All
-                    </button>
-                    <span className="text-slate-600">·</span>
-                    <button
-                      type="button"
-                      onClick={handleClearAllSections}
-                      className="text-slate-400 hover:underline text-[11px]"
-                    >
-                      Clear All
-                    </button>
+                  {/* Password & Reset */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-slate-400 font-medium">
+                        {modalMode === "CREATE" ? "Staff CMS Password *" : "Password & Reset"}
+                      </label>
+                      {modalMode === "EDIT" && formData.password && (
+                        <span className="text-[10px] text-amber-400 font-mono">
+                          Password will be updated upon saving
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder={modalMode === "CREATE" ? "Enter password..." : "Type new password or generate random to reset..."}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-500 h-[34px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, password: generateRandomPassword() })}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 transition-colors h-[34px] shrink-0"
+                      >
+                        Generate Random
+                      </button>
+                      {formData.password && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(formData.password);
+                            showToast("Password copied to clipboard!", "success");
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-sky-950/80 hover:bg-sky-900 border border-sky-800/60 text-[11px] font-medium text-sky-300 transition-colors h-[34px] shrink-0"
+                        >
+                          Copy
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {ADMIN_SECTIONS.map((sec) => {
-                    const isChecked = formData.selectedSections.includes(sec.id);
-                    return (
-                      <label
-                        key={sec.id}
-                        className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                          isChecked
-                            ? "bg-slate-800/90 border-amber-500/50 shadow-sm"
-                            : "bg-slate-950/40 border-slate-800/80 hover:bg-slate-900/60"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSection(sec.id)}
-                          className="mt-0.5 w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-white flex items-center justify-between text-[11px]">
-                            <span className="flex items-center gap-1 truncate">
-                              <span>{SECTION_ICONS[sec.id] || "📌"}</span>
-                              <span>{sec.name}</span>
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5 leading-tight">
-                            {sec.description}
-                          </p>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
               </div>
 
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium text-slate-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold transition-all shadow-md shadow-amber-500/20 disabled:opacity-50"
-                >
-                  {saving && <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />}
-                  {modalMode === "CREATE" ? "Register Staff" : "Save Changes"}
-                </button>
+              {/* Step 3: Granular Section Privileges & RBAC Matrix */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setActivePermTab("SECTIONS")}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        activePermTab === "SECTIONS"
+                          ? "bg-amber-500 text-slate-950 shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      📌 Module Sections ({formData.selectedSections.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActivePermTab("GRANULAR")}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        activePermTab === "GRANULAR"
+                          ? "bg-amber-500 text-slate-950 shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      🛡️ Detailed RBAC Matrix ({formData.selectedGranularPermissions.length})
+                    </button>
+                  </div>
+
+                  {activePermTab === "SECTIONS" ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllSections}
+                        className="text-amber-400 hover:underline text-[11px]"
+                      >
+                        Select All
+                      </button>
+                      <span className="text-slate-600">·</span>
+                      <button
+                        type="button"
+                        onClick={handleClearAllSections}
+                        className="text-slate-400 hover:underline text-[11px]"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allGranularKeys = DETAILED_PERMISSION_GROUPS.flatMap((g) => g.permissions.map((p) => p.id));
+                        setFormData((prev) => ({ ...prev, selectedGranularPermissions: allGranularKeys }));
+                      }}
+                      className="text-amber-400 hover:underline text-[11px]"
+                    >
+                      Grant All Granular Permissions
+                    </button>
+                  )}
+                </div>
+
+                {activePermTab === "SECTIONS" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {ADMIN_SECTIONS.map((sec) => {
+                      const isChecked = formData.selectedSections.includes(sec.id);
+                      return (
+                        <label
+                          key={sec.id}
+                          className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
+                            isChecked
+                              ? "bg-slate-800/90 border-amber-500/50 shadow-sm"
+                              : "bg-slate-950/40 border-slate-800/80 hover:bg-slate-900/60"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSection(sec.id)}
+                            className="mt-0.5 w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-white flex items-center justify-between text-[11px]">
+                              <span className="flex items-center gap-1 truncate">
+                                <span>{SECTION_ICONS[sec.id] || "📌"}</span>
+                                <span>{sec.name}</span>
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5 leading-tight">
+                              {sec.description}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+                    {DETAILED_PERMISSION_GROUPS.map((group) => {
+                      const isExpanded = expandedPermGroup === group.id;
+                      const groupSelectedCount = group.permissions.filter((p) =>
+                        formData.selectedGranularPermissions.includes(p.id)
+                      ).length;
+
+                      return (
+                        <div
+                          key={group.id}
+                          className="bg-slate-950/60 border border-slate-800/90 rounded-xl overflow-hidden transition-all"
+                        >
+                          {/* Accordion Header */}
+                          <div
+                            onClick={() => setExpandedPermGroup(isExpanded ? null : group.id)}
+                            className="flex items-center justify-between p-2.5 bg-slate-900/60 cursor-pointer hover:bg-slate-900 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{group.icon}</span>
+                              <span className="font-bold text-white text-xs">{group.name}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                                {groupSelectedCount}/{group.permissions.length} granted
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectAllGroupPermissions(group.id)}
+                                className="text-[10px] text-amber-400 hover:underline px-1.5 py-0.5 rounded hover:bg-slate-800"
+                              >
+                                Select All
+                              </button>
+                              <span className="text-slate-600">·</span>
+                              <button
+                                type="button"
+                                onClick={() => handleClearGroupPermissions(group.id)}
+                                className="text-[10px] text-slate-400 hover:underline px-1.5 py-0.5 rounded hover:bg-slate-800"
+                              >
+                                Clear
+                              </button>
+                              <span className="text-slate-500 text-xs ml-1">{isExpanded ? "▲" : "▼"}</span>
+                            </div>
+                          </div>
+
+                          {/* Accordion Body */}
+                          {isExpanded && (
+                            <div className="p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 border-t border-slate-800/80 bg-slate-950/40">
+                              {group.permissions.map((perm) => {
+                                const isPermChecked = formData.selectedGranularPermissions.includes(perm.id);
+                                return (
+                                  <label
+                                    key={perm.id}
+                                    className={`flex items-start gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                                      isPermChecked
+                                        ? "bg-slate-800/80 border-amber-500/40 text-slate-200"
+                                        : "bg-slate-950/40 border-slate-800/60 text-slate-400 hover:bg-slate-900/40"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isPermChecked}
+                                      onChange={() => toggleGranularPermission(perm.id)}
+                                      className="mt-0.5 w-3.5 h-3.5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500 shrink-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <div className="font-semibold text-white text-[11px] truncate">
+                                        {perm.name}
+                                      </div>
+                                      <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                                        {perm.description}
+                                      </p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions & Master Delete Option */}
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-800">
+                <div>
+                  {modalMode === "EDIT" &&
+                    !isEditingRoot &&
+                    (!currentCaller?.email ||
+                      formData.email.toLowerCase() !== currentCaller.email.toLowerCase()) && (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => {
+                        const targetUser = users.find((u) => u._id === editingUserId);
+                        if (targetUser) handleDeleteUser(targetUser);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-100 border border-rose-500/30 text-xs font-semibold transition-colors"
+                      title="Permanently Delete Account from Database"
+                    >
+                      <svg className="w-3.5 h-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>Delete User</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-medium text-slate-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold transition-all shadow-md shadow-amber-500/20 disabled:opacity-50"
+                  >
+                    {saving && <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />}
+                    {modalMode === "CREATE" ? "Register Staff" : "Save Changes"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

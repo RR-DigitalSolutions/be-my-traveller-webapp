@@ -31,6 +31,7 @@ export interface IUser extends Document {
   lastLoginAt?: Date;
   lastLoginIp?: string;
   avatar?: string; // R2 URL
+  isRootAccount?: boolean; // True only for Master Super Admin
   createdBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -85,6 +86,7 @@ const UserSchema = new Schema<IUser>(
     },
     permissions: [{ type: String }],
     isActive: { type: Boolean, default: true },
+    isRootAccount: { type: Boolean, default: false },
     isTwoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: { type: String, select: false },
     lastLoginAt: { type: Date },

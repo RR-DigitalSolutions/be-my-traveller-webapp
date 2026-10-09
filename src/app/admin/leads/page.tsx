@@ -248,8 +248,15 @@ export default function AdminLeadsPage() {
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [quoteAmount, setQuoteAmount] = useState(65000);
   const [quoteHotelTier, setQuoteHotelTier] = useState("4★ Deluxe Hotels");
+  const [quoteHotelName, setQuoteHotelName] = useState("Radisson / Lemon Tree Hotels");
+  const [quoteMealPlan, setQuoteMealPlan] = useState<"MAP" | "CP" | "AP" | "EP">("MAP");
   const [quoteCabType, setQuoteCabType] = useState("Private Dedicated Innova Crysta");
+  const [quoteAdults, setQuoteAdults] = useState(2);
+  const [quoteChildren, setQuoteChildren] = useState(0);
+  const [quoteInfants, setQuoteInfants] = useState(0);
+  const [quoteDaysCount, setQuoteDaysCount] = useState(6);
   const [submittingQuote, setSubmittingQuote] = useState(false);
+  const [lastGeneratedQuote, setLastGeneratedQuote] = useState<any>(null);
 
   // Fetch all leads once from database (or on refresh)
   const fetchLeads = useCallback(async () => {
@@ -555,7 +562,19 @@ export default function AdminLeadsPage() {
       const travelDates = selectedLead.travelDates?.from
         ? `${new Date(selectedLead.travelDates.from).toLocaleDateString("en-IN")}`
         : "Flexible Dates";
-      const paxCount = `${selectedLead.travellers?.adults || 2} Adults`;
+      const paxCount = `${quoteAdults} Adults${quoteChildren ? `, ${quoteChildren} Child` : ""}${quoteInfants ? `, ${quoteInfants} Infant` : ""}`;
+
+      // Build daywise sequential timeline
+      const generatedDays = Array.from({ length: quoteDaysCount }, (_, idx) => ({
+        dayNumber: idx + 1,
+        title: `Day ${idx + 1} - ${idx === 0 ? "Arrival & Local Exploration" : idx === quoteDaysCount - 1 ? "Departure & Return" : "Sightseeing & Tour Highlights"}`,
+        city: selectedLead.destinations?.[0] || "Destination City",
+        hotelName: quoteHotelName,
+        roomCategory: "Deluxe Room",
+        mealPlan: quoteMealPlan,
+        vehicleType: quoteCabType,
+        activities: `Personalized day plan with ${quoteMealPlan} meals, private cab, and sightseeing.`,
+      }));
 
       const res = await fetch("/api/v1/admin/quotes", {
         method: "POST",
@@ -571,19 +590,96 @@ export default function AdminLeadsPage() {
           cabType: quoteCabType,
           totalAmount: quoteAmount,
           leadId: selectedLead._id,
+          itinerary: generatedDays,
+          adultsCount: quoteAdults,
+          childrenCount: quoteChildren,
+          infantsCount: quoteInfants,
+          inclusions: [
+            `${quoteDaysCount - 1} Nights Stay in ${quoteHotelTier}`,
+            `Meal Plan: ${quoteMealPlan === "MAP" ? "Breakfast & Dinner (MAP)" : quoteMealPlan === "CP" ? "Breakfast Only (CP)" : "All Meals (AP)"}`,
+            `Dedicated Cab: ${quoteCabType}`,
+            "All toll taxes, state permits, and driver allowance",
+            "24/7 On-Trip Assistance",
+          ],
+          exclusions: [
+            "Airfare / Train tickets",
+            "Personal expenses & entry monuments",
+          ],
         }),
       });
 
       const data = await res.json();
-      if (data.success) {
-        setShowQuoteModal(false);
+      if (res.ok) {
+        setLastGeneratedQuote({
+          ...data,
+          customerName: selectedLead.name,
+          customerPhone: selectedLead.phone,
+          customerEmail: selectedLead.email,
+          destination,
+          travelDates,
+          totalAmount: quoteAmount,
+          hotelTier: quoteHotelTier,
+          mealPlan: quoteMealPlan,
+          cabType: quoteCabType,
+          quoteNumber: data?.quoteNumber || "BMT-PROPOSAL",
+        });
         fetchLeads();
-        alert(`Quotation ${data.quote?.quoteNumber || ""} created & linked successfully!`);
+      } else {
+        alert(data?.error || "Failed to create quote");
       }
     } catch {
       alert("Failed to create quote");
     } finally {
       setSubmittingQuote(false);
+    }
+  };
+
+  const handleShareQuoteWhatsApp = (qData: any) => {
+    if (!qData) return;
+    const text = `🌟 *Custom Holiday Proposal from Be My Traveller* 🌟\n\n` +
+      `Dear *${qData.customerName}*,\n` +
+      `Here is your tailor-made holiday itinerary proposal:\n\n` +
+      `📌 *Quote Ref:* ${qData.quoteNumber || "BMT-PROPOSAL"}\n` +
+      `📍 *Destination:* ${qData.destination}\n` +
+      `👥 *Travellers:* ${quoteAdults} Adults${quoteChildren ? `, ${quoteChildren} Child` : ""}\n` +
+      `🏨 *Stay:* ${qData.hotelTier} (${qData.mealPlan || "MAP"} Plan)\n` +
+      `🚗 *Transfers:* ${qData.cabType}\n\n` +
+      `💰 *Total Package Price:* ₹${Number(qData.totalAmount || 0).toLocaleString("en-IN")} (All-Inclusive)\n\n` +
+      `✅ *Inclusions:* Deluxe Hotels, Daily Breakfast & Dinner, Private Sanitized Cab with Driver, Sightseeing Passes, 24/7 Tour Concierge.\n\n` +
+      `👉 Reply to this message to lock your dates or make adjustments!\n` +
+      `📞 *Call / WhatsApp:* +91 8091638090 | www.bemytraveller.com`;
+
+    const cleanPhone = (qData.customerPhone || "").replace(/[^0-9]/g, "");
+    const url = `https://wa.me/${cleanPhone.startsWith("91") ? cleanPhone : "91" + cleanPhone}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  const handleShareQuoteEmail = async (qData: any) => {
+    if (!qData) return;
+    const emailToUse = qData.customerEmail || prompt("Enter client email address:");
+    if (!emailToUse || !emailToUse.includes("@")) {
+      alert("Valid email address required");
+      return;
+    }
+    try {
+      const res = await fetch("/api/v1/admin/quotes/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quoteNumber: qData.quoteNumber || "BMT-PROPOSAL",
+          recipientEmail: emailToUse,
+          customerName: qData.customerName,
+          destination: qData.destination,
+          totalAmount: qData.totalAmount,
+        }),
+      });
+      if (res.ok) {
+        alert(`Holiday proposal successfully emailed to ${emailToUse}!`);
+      } else {
+        alert("Failed to dispatch email");
+      }
+    } catch {
+      alert("Error sending email proposal");
     }
   };
 
@@ -1221,6 +1317,61 @@ export default function AdminLeadsPage() {
                 </button>
               </div>
 
+              {/* Active Proposal Quick-Action Box */}
+              {(selectedLead.status === "QUOTE_SENT" || (selectedLead.quoteIds && selectedLead.quoteIds.length > 0)) && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-400 font-black text-sm">📝</span>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-300">
+                        Active Quotation &amp; Proposal
+                      </h4>
+                    </div>
+                    <a
+                      href="/admin/quotes"
+                      className="text-[11px] font-bold text-amber-400 hover:underline"
+                    >
+                      Quotes Engine →
+                    </a>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    A personalized tour quotation proposal is attached to this client. You can dispatch or re-send directly:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleShareQuoteWhatsApp({
+                        customerName: selectedLead.name,
+                        customerPhone: selectedLead.phone,
+                        destination: selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Holiday Tour Package",
+                        totalAmount: quoteAmount,
+                        hotelTier: quoteHotelTier,
+                        mealPlan: quoteMealPlan,
+                        cabType: quoteCabType,
+                        quoteNumber: "BMT-PROPOSAL",
+                      })}
+                      className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <span>💬</span> Send on WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleShareQuoteEmail({
+                        customerName: selectedLead.name,
+                        customerPhone: selectedLead.phone,
+                        customerEmail: selectedLead.email,
+                        destination: selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Holiday Tour Package",
+                        totalAmount: quoteAmount,
+                        quoteNumber: "BMT-PROPOSAL",
+                      })}
+                      className="py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                    >
+                      <span>✉️</span> Send via Email
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Scheduled Follow-ups Queue */}
               {Array.isArray(selectedLead.followUps) && selectedLead.followUps.length > 0 && (
                 <div className="bg-slate-800/40 rounded-2xl p-4 border border-slate-700/40 space-y-2.5 text-xs">
@@ -1593,88 +1744,257 @@ export default function AdminLeadsPage() {
         </div>
       )}
 
-      {/* ── MODAL 3: QUICK QUOTE BUILDER MODAL ── */}
+      {/* ── MODAL 3: ENHANCED DAYWISE QUOTE BUILDER MODAL ── */}
       {showQuoteModal && selectedLead && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl p-6 sm:p-7 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <h3 className="font-black text-white text-base">Generate Quotation for Lead</h3>
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">QUOTATION PROPOSAL GENERATOR</span>
+                <h3 className="font-black text-white text-base mt-0.5">Build Tour Package Proposal</h3>
                 <p className="text-xs text-slate-400">{selectedLead.name} ({selectedLead.phone})</p>
               </div>
               <button
-                onClick={() => setShowQuoteModal(false)}
-                className="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
+                onClick={() => {
+                  setShowQuoteModal(false);
+                  setLastGeneratedQuote(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateQuote} className="space-y-4 text-xs">
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 space-y-1">
-                <div className="flex justify-between text-slate-300">
-                  <span className="text-slate-500">Destination:</span>
-                  <span className="font-bold text-white">
-                    {selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Custom Tour"}
-                  </span>
+            {/* If Quote was just generated, show Instant Sharing Action Panel */}
+            {lastGeneratedQuote ? (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                  <span>✓</span>
+                  <span>Proposal #{lastGeneratedQuote.quoteNumber} attached to Lead successfully!</span>
                 </div>
-                <div className="flex justify-between text-slate-300">
-                  <span className="text-slate-500">Travellers:</span>
-                  <span className="font-bold text-amber-300">{selectedLead.travellers?.adults || 2} Adults</span>
+                <p className="text-xs text-slate-300">
+                  Ready to send to {lastGeneratedQuote.customerName} ({lastGeneratedQuote.customerPhone}):
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleShareQuoteWhatsApp(lastGeneratedQuote)}
+                    className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <span>💬</span> Send on WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShareQuoteEmail(lastGeneratedQuote)}
+                    className="p-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <span>✉️</span> Send via Email
+                  </button>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px]">
+                  <a
+                    href="/admin/quotes"
+                    className="text-amber-400 hover:underline font-bold"
+                  >
+                    Open in Full Itinerary Builder →
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowQuoteModal(false);
+                      setLastGeneratedQuote(null);
+                    }}
+                    className="text-slate-400 hover:text-white font-bold cursor-pointer"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
+            ) : (
+              <form onSubmit={handleCreateQuote} className="space-y-4 text-xs">
+                <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/60 flex justify-between items-center text-slate-300">
+                  <div>
+                    <span className="text-[10px] text-slate-500 uppercase block font-bold">Destination</span>
+                    <span className="font-bold text-white text-sm">
+                      {selectedLead.destinations?.[0] || selectedLead.specialRequirements || "Custom Tour Package"}
+                    </span>
+                  </div>
+                  <a
+                    href="/admin/quotes"
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-[11px] hover:bg-amber-500/30"
+                  >
+                    Full Builder ↗
+                  </a>
+                </div>
 
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Hotel Category / Tier</label>
-                <input
-                  type="text"
-                  required
-                  value={quoteHotelTier}
-                  onChange={(e) => setQuoteHotelTier(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
+                {/* Number of Passengers Adjuster */}
+                <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-bold">Adjust Travelers (Pax):</span>
+                    <span className="text-amber-400 font-mono font-bold text-[11px]">
+                      {quoteAdults} Adults{quoteChildren > 0 ? `, ${quoteChildren} Kids` : ""}{quoteInfants > 0 ? `, ${quoteInfants} Inf` : ""}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-700">
+                      <span className="text-slate-400 text-[11px]">Adults:</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setQuoteAdults(Math.max(1, quoteAdults - 1))}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          -
+                        </button>
+                        <span className="font-bold text-white w-4 text-center">{quoteAdults}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuoteAdults(quoteAdults + 1)}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Cab & Transportation Setup</label>
-                <input
-                  type="text"
-                  required
-                  value={quoteCabType}
-                  onChange={(e) => setQuoteCabType(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-700">
+                      <span className="text-slate-400 text-[11px]">Children:</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setQuoteChildren(Math.max(0, quoteChildren - 1))}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          -
+                        </button>
+                        <span className="font-bold text-white w-4 text-center">{quoteChildren}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuoteChildren(quoteChildren + 1)}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
 
-              <div>
-                <label className="block text-slate-400 font-bold mb-1">Total Quotation Amount (₹ INR)</label>
-                <input
-                  type="number"
-                  required
-                  min={1000}
-                  value={quoteAmount}
-                  onChange={(e) => setQuoteAmount(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-700">
+                      <span className="text-slate-400 text-[11px]">Infants:</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setQuoteInfants(Math.max(0, quoteInfants - 1))}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          -
+                        </button>
+                        <span className="font-bold text-white w-4 text-center">{quoteInfants}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuoteInfants(quoteInfants + 1)}
+                          className="w-5 h-5 rounded bg-slate-700 text-white font-bold text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowQuoteModal(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingQuote}
-                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer disabled:opacity-50 shadow-md"
-                >
-                  {submittingQuote ? "Creating Quote..." : "Create & Attach Quote"}
-                </button>
-              </div>
-            </form>
+                {/* Hotel, Room & Meal Plan */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Hotel Category / Tier</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 4★ Deluxe / 5★ Luxury"
+                      value={quoteHotelTier}
+                      onChange={(e) => setQuoteHotelTier(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Hotel Name / Property</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Radisson / Lemon Tree / Houseboat"
+                      value={quoteHotelName}
+                      onChange={(e) => setQuoteHotelName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Meal Plan</label>
+                    <select
+                      value={quoteMealPlan}
+                      onChange={(e) => setQuoteMealPlan(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    >
+                      <option value="MAP">MAP (Daily Breakfast + Dinner)</option>
+                      <option value="CP">CP (Daily Breakfast Only)</option>
+                      <option value="AP">AP (All Meals - B, L, D)</option>
+                      <option value="EP">EP (Room Only - No Meals)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 font-bold mb-1">Duration (Days)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={quoteDaysCount}
+                      onChange={(e) => setQuoteDaysCount(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Vehicle / Cab Setup</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dedicated AC Innova Crysta"
+                    value={quoteCabType}
+                    onChange={(e) => setQuoteCabType(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Total Package Price (₹ INR All-Inclusive)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1000}
+                    value={quoteAmount}
+                    onChange={(e) => setQuoteAmount(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 font-mono text-base font-black focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowQuoteModal(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingQuote}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black cursor-pointer disabled:opacity-50 shadow-md"
+                  >
+                    {submittingQuote ? "Generating Proposal..." : "✓ Generate & Attach Quote"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
