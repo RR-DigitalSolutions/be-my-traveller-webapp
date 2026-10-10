@@ -70,7 +70,6 @@ const MODAL_TABS = [
   { id: "hierarchy", label: "Hierarchy & Basic", icon: "📍" },
   { id: "facts", label: "Fast Facts & Pricing", icon: "🏔️" },
   { id: "overview", label: "Content & Story", icon: "📝" },
-  { id: "attractions", label: "Attractions", icon: "🎡" },
   { id: "faqs", label: "FAQs & Schema", icon: "❓" },
   { id: "seo", label: "SEO & AI Search", icon: "🔍" },
   { id: "media", label: "Media & Photos", icon: "📸" },
@@ -141,14 +140,7 @@ export default function AdminDestinationsPage() {
     status: "PUBLISHED" as "PUBLISHED" | "DRAFT",
   });
 
-  // Inline sub-states for adding new Attraction / FAQ inside the modal
-  const [newAttraction, setNewAttraction] = useState<AttractionItem>({
-    name: "",
-    desc: "",
-    img: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?auto=format&fit=crop&w=600&q=80",
-    category: "Sightseeing",
-    entryFee: "Free",
-  });
+  // Inline sub-states for adding new FAQ inside the modal
 
   const [newFaq, setNewFaq] = useState<FaqItem>({
     q: "",
@@ -253,27 +245,7 @@ export default function AdminDestinationsPage() {
     }
   };
 
-  const handleAddAttraction = () => {
-    if (!newAttraction.name.trim()) return;
-    setFormData((prev) => ({
-      ...prev,
-      attractions: [...prev.attractions, newAttraction],
-    }));
-    setNewAttraction({
-      name: "",
-      desc: "",
-      img: "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?auto=format&fit=crop&w=600&q=80",
-      category: "Sightseeing",
-      entryFee: "Free",
-    });
-  };
 
-  const handleRemoveAttraction = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      attractions: prev.attractions.filter((_, i) => i !== index),
-    }));
-  };
 
   const handleAddFaq = () => {
     if (!newFaq.q.trim() || !newFaq.a.trim()) return;
@@ -978,90 +950,7 @@ export default function AdminDestinationsPage() {
                 </div>
               )}
 
-              {/* TAB 4: Attractions & Sightseeing */}
-              {activeTab === "attractions" && (
-                <div className="space-y-5 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Iconic Sightseeing Attractions</h3>
-                      <p className="text-xs text-slate-400">Add key spots that appear in the Sightseeing Highlights section.</p>
-                    </div>
-                    <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                      {formData.attractions.length} Added
-                    </span>
-                  </div>
 
-                  {/* Add New Attraction Card */}
-                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-3">
-                    <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-                      + Add New Sightseeing Spot
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <input
-                        type="text"
-                        value={newAttraction.name}
-                        onChange={(e) => setNewAttraction({ ...newAttraction, name: e.target.value })}
-                        placeholder="Attraction Name (e.g. Solang Valley)"
-                        className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                      />
-                      <input
-                        type="text"
-                        value={newAttraction.category}
-                        onChange={(e) => setNewAttraction({ ...newAttraction, category: e.target.value })}
-                        placeholder="Category (e.g. Snow & Adventure)"
-                        className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                      />
-                      <input
-                        type="text"
-                        value={newAttraction.img}
-                        onChange={(e) => setNewAttraction({ ...newAttraction, img: e.target.value })}
-                        placeholder="Image URL"
-                        className="px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                      />
-                    </div>
-                    <textarea
-                      rows={2}
-                      value={newAttraction.desc}
-                      onChange={(e) => setNewAttraction({ ...newAttraction, desc: e.target.value })}
-                      placeholder="Attraction description and traveller highlights..."
-                      className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddAttraction}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer"
-                    >
-                      + Add to List
-                    </button>
-                  </div>
-
-                  {/* List of Attractions */}
-                  {formData.attractions.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {formData.attractions.map((att, idx) => (
-                        <div key={idx} className="p-3.5 bg-slate-950 rounded-xl border border-slate-800 flex gap-3 items-start justify-between">
-                          <div className="flex gap-3">
-                            <img src={att.img} alt={att.name} className="w-14 h-14 rounded-lg object-cover bg-slate-800 shrink-0" />
-                            <div className="space-y-0.5">
-                              <h4 className="font-bold text-white text-xs">{att.name}</h4>
-                              <p className="text-[11px] text-slate-400 line-clamp-2">{att.desc}</p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveAttraction(idx)}
-                            className="text-red-400 hover:text-red-300 text-xs font-bold cursor-pointer"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500 text-center py-4">No custom attractions added yet.</p>
-                  )}
-                </div>
-              )}
 
               {/* TAB 5: FAQs & Schema */}
               {activeTab === "faqs" && (

@@ -64,12 +64,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       name,
+      slug: customSlug,
       destinationId,
       destinationSlug,
       destinationName,
       stateSlug,
       stateName,
       desc,
+      detailedContent,
+      highlights,
+      howToReach,
+      bestTime,
+      faqs,
+      seo,
       img,
       category,
       entryFee,
@@ -92,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve destination details if ID is provided
-    const finalDestId = destinationId ? new Types.ObjectId(destinationId) : undefined;
+    let finalDestId = destinationId ? new Types.ObjectId(destinationId) : undefined;
     let finalDestSlug = destinationSlug || "";
     let finalDestName = destinationName || "";
     let finalStateSlug = stateSlug || "";
@@ -106,16 +113,42 @@ export async function POST(req: NextRequest) {
         finalStateSlug = dest.stateSlug || "";
         finalStateName = dest.stateName || "";
       }
+    } else if (finalDestSlug) {
+      const dest = await db.collection("destinations").findOne({ slug: finalDestSlug });
+      if (dest) {
+        finalDestId = dest._id;
+        finalDestName = dest.name;
+        finalStateSlug = dest.stateSlug || "";
+        finalStateName = dest.stateName || "";
+      }
     }
+
+    const calculatedSlug =
+      customSlug ||
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "");
 
     const doc = {
       name,
+      slug: calculatedSlug,
       destinationId: finalDestId,
       destinationSlug: finalDestSlug,
       destinationName: finalDestName,
       stateSlug: finalStateSlug,
       stateName: finalStateName,
       desc: desc || "",
+      detailedContent: detailedContent || desc || "",
+      highlights: Array.isArray(highlights) ? highlights : highlights ? String(highlights).split("\n").filter(Boolean) : [],
+      howToReach: howToReach || "",
+      bestTime: bestTime || "",
+      faqs: Array.isArray(faqs) ? faqs : [],
+      seo: seo || {
+        metaTitle: `${name} Travel Guide - Timings, Entry Fee & History | Be My Traveller`,
+        metaDescription: `Plan your visit to ${name} in ${finalDestName || "India"}. Discover visitor timings, entry fees, highlights, and travel tips with Be My Traveller.`,
+        keywords: `${name.toLowerCase()}, ${name.toLowerCase()} timings, ${name.toLowerCase()} entry fee, places to visit in ${finalDestName.toLowerCase()}`,
+      },
       img: img || "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?auto=format&fit=crop&w=800&q=80",
       category: category || "Sightseeing",
       entryFee: entryFee || "Free",

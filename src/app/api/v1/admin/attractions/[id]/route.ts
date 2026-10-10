@@ -66,6 +66,14 @@ export async function PATCH(
         updateDoc.stateSlug = dest.stateSlug || "";
         updateDoc.stateName = dest.stateName || "";
       }
+    } else if (body.destinationSlug) {
+      const dest = await db.collection("destinations").findOne({ slug: body.destinationSlug });
+      if (dest) {
+        updateDoc.destinationId = dest._id;
+        updateDoc.destinationName = dest.name;
+        updateDoc.stateSlug = dest.stateSlug || "";
+        updateDoc.stateName = dest.stateName || "";
+      }
     }
 
     await db.collection("attractions").updateOne(

@@ -135,26 +135,25 @@ export default function DestinationPackageGrid({
         </div>
       </div>
 
-      {/* ── Smart Search & Filter Control Bar ── */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-        {/* Search input + Sort dropdown */}
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+      {/* ── Smart Single-Line Compact Search & Filter Bar ── */}
+      <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 shadow-xs">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5">
+          {/* 1. Search Box (Flexible) */}
+          <div className="relative min-w-[190px] sm:min-w-[240px] flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
               🔍
             </span>
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by place, tour name, route (e.g. Manali, Volvo, Honeymoon)..."
-              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all text-slate-800 placeholder:text-slate-400 font-medium"
+              placeholder="Search by place, tour, route..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-800 placeholder:text-slate-400 font-medium"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-[10px] w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center cursor-pointer"
                 title="Clear search"
               >
                 ✕
@@ -162,122 +161,60 @@ export default function DestinationPackageGrid({
             )}
           </div>
 
-          {/* Sort Dropdown */}
-          <div className="sm:w-52 shrink-0">
+          {/* 2. Duration Dropdown */}
+          <div className="shrink-0">
+            <select
+              value={selectedDuration}
+              onChange={(e) => setSelectedDuration(e.target.value)}
+              aria-label="Filter by duration"
+              className="py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-amber-500 font-bold text-slate-700 cursor-pointer"
+            >
+              <option value="ALL">⏱️ Duration: All</option>
+              <option value="SHORT">&lt; 5 Days</option>
+              <option value="MEDIUM">5 - 7 Days</option>
+              <option value="LONG">8+ Days</option>
+            </select>
+          </div>
+
+          {/* 3. Budget Dropdown */}
+          <div className="shrink-0">
+            <select
+              value={selectedBudget}
+              onChange={(e) => setSelectedBudget(e.target.value)}
+              aria-label="Filter by budget"
+              className="py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-amber-500 font-bold text-slate-700 cursor-pointer"
+            >
+              <option value="ALL">💰 Budget: All</option>
+              <option value="BUDGET">Under ₹20K</option>
+              <option value="MID">₹20K - ₹35K</option>
+              <option value="LUXURY">₹35K+</option>
+            </select>
+          </div>
+
+          {/* 4. Sort Dropdown */}
+          <div className="shrink-0">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               aria-label="Sort packages by"
-              className="w-full py-2 px-3 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 font-semibold text-slate-700 cursor-pointer"
+              className="py-1.5 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-amber-500 font-bold text-slate-700 cursor-pointer"
             >
-              <option value="FEATURED">⭐ Featured (Popular)</option>
+              <option value="FEATURED">⭐ Sort: Featured</option>
               <option value="PRICE_ASC">💰 Price: Low to High</option>
               <option value="PRICE_DESC">💎 Price: High to Low</option>
               <option value="DURATION_ASC">⏱️ Duration: Short First</option>
               <option value="DURATION_DESC">⏳ Duration: Long First</option>
-              <option value="RATING">⭐ Highest Rated</option>
+              <option value="RATING">⭐ Top Rated</option>
             </select>
           </div>
-        </div>
 
-        {/* Quick Filter Pills (Duration & Budget) */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-            Duration:
-          </span>
-          <button
-            onClick={() => setSelectedDuration("ALL")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedDuration === "ALL"
-                ? "bg-[#0b1b36] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setSelectedDuration("SHORT")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedDuration === "SHORT"
-                ? "bg-[#0b1b36] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            &lt; 5 Days
-          </button>
-          <button
-            onClick={() => setSelectedDuration("MEDIUM")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedDuration === "MEDIUM"
-                ? "bg-[#0b1b36] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            5 - 7 Days
-          </button>
-          <button
-            onClick={() => setSelectedDuration("LONG")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedDuration === "LONG"
-                ? "bg-[#0b1b36] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            8+ Days
-          </button>
-
-          <span className="text-slate-300 mx-1">|</span>
-
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-            Budget:
-          </span>
-          <button
-            onClick={() => setSelectedBudget("ALL")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedBudget === "ALL"
-                ? "bg-amber-500 text-slate-950 shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setSelectedBudget("BUDGET")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedBudget === "BUDGET"
-                ? "bg-amber-500 text-slate-950 shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            Under ₹20K
-          </button>
-          <button
-            onClick={() => setSelectedBudget("MID")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedBudget === "MID"
-                ? "bg-amber-500 text-slate-950 shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            ₹20K - ₹35K
-          </button>
-          <button
-            onClick={() => setSelectedBudget("LUXURY")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              selectedBudget === "LUXURY"
-                ? "bg-amber-500 text-slate-950 shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            ₹35K+
-          </button>
-
+          {/* 5. Clear Filters Button */}
           {(searchTerm || selectedDuration !== "ALL" || selectedBudget !== "ALL" || sortBy !== "FEATURED") && (
             <button
               onClick={resetFilters}
-              className="ml-auto text-amber-600 hover:text-amber-700 font-bold text-xs underline cursor-pointer"
+              className="shrink-0 py-1.5 px-2.5 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/60 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1"
             >
-              Reset Filters
+              <span>✕</span> Reset
             </button>
           )}
         </div>
@@ -383,7 +320,7 @@ export default function DestinationPackageGrid({
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* WhatsApp Quick Enquire */}
                       <a
-                        href={`https://wa.me/919999999999?text=${encodeURIComponent(
+                        href={`https://wa.me/918091638090?text=${encodeURIComponent(
                           `Hi Be My Traveller, I am interested in booking: "${pkg.title}" (${pkg.nights}) priced at ${pkg.price}. Please share customized quote!`
                         )}`}
                         target="_blank"

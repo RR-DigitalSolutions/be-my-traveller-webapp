@@ -67,8 +67,8 @@ export default function SiteFooter() {
   const hasAnySocial = hasInstagram || hasFacebook || hasYouTube;
 
   return (
-    <footer className="bg-slate-950 text-slate-400 text-xs pt-6 pb-8 px-4 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <footer className="bg-slate-950 text-slate-400 text-xs pt-6 pb-8 border-t border-slate-800">
+      <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 space-y-6">
         
         {/* ── TOP SECTION: Balanced 2-Card Equal-Height Compact Layout ── */}
         <div className="grid gap-4 lg:grid-cols-2 text-[11px] text-slate-300 items-stretch">

@@ -303,7 +303,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             : "bg-slate-950/30 backdrop-blur-xs border-white/10 text-white/90"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="flex items-center justify-between h-7 text-[10.5px] sm:text-[11px]">
             {/* Left: info */}
             <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto scrollbar-none whitespace-nowrap">
@@ -344,7 +344,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="flex items-center justify-between h-[52px] sm:h-[56px] gap-4">
             {/* Logo (Clean, no black overlay line) */}
             <Link href="/" className="shrink-0 group flex items-center" aria-label="Be My Traveller — Home">
