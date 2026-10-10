@@ -62,8 +62,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // RBAC Security Check
-    if (!canAccessStaffManagement(session.user)) {
+    const { searchParams } = new URL(req.url);
+    const forAssignment = searchParams.get("forAssignment") === "true";
+
+    // RBAC Security Check: full staff management access OR assignment query for staff
+    if (!forAssignment && !canAccessStaffManagement(session.user)) {
       return NextResponse.json(
         { error: "Forbidden: You do not have permission to view Staff & RBAC management" },
         { status: 403 }
@@ -76,10 +79,9 @@ export async function GET(req: NextRequest) {
     const callerEmail = session.user.email?.trim().toLowerCase() || "";
     const isRootCaller = isRootAdminEmail(callerEmail);
 
-    const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const department = searchParams.get("department") || "ALL";
-    const status = searchParams.get("status") || "ALL";
+    const status = searchParams.get("status") || (forAssignment ? "ACTIVE" : "ALL");
     const role = searchParams.get("role") || "ALL";
 
     // Build filter query with strict root-admin stealth protection

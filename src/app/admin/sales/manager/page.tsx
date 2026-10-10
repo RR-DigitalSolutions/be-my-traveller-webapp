@@ -77,7 +77,7 @@ export default function SalesManagerDashboardPage() {
 
       // Safe secondary check for staff users if permitted
       try {
-        const usersRes = await fetch("/api/v1/admin/users");
+        const usersRes = await fetch("/api/v1/admin/users?forAssignment=true");
         if (usersRes.ok) {
           const usersJson = await usersRes.json();
           if (usersJson?.users && Array.isArray(usersJson.users)) {
@@ -113,12 +113,15 @@ export default function SalesManagerDashboardPage() {
         }),
       });
 
-      if (res.ok) {
+      const resData = await res.json().catch(() => ({}));
+      if (res.ok && resData.success) {
         fetchDashboard();
+      } else {
+        alert(resData.error || resData.detail || "Failed to assign lead");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Assignment error:", e);
-      alert("Failed to assign lead");
+      alert(e?.message || "Failed to assign lead");
     } finally {
       setAssigningId(null);
     }

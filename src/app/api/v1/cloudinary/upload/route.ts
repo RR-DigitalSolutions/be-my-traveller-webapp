@@ -27,7 +27,10 @@ export async function POST(req: NextRequest) {
     const folderType = (formData.get("folderType") as MediaFolderType) || "destinations";
     const category = (formData.get("category") as DestinationCategory | string) || "domestic";
     const slug = (formData.get("slug") as string) || "general";
-    const customFolder = (formData.get("customFolder") as string) || "";
+    const customFolder =
+      (formData.get("customFolder") as string) ||
+      (formData.get("folder") as string) ||
+      "";
     const countrySlug = (formData.get("countrySlug") as string) || "";
     const stateSlug = (formData.get("stateSlug") as string) || "";
     const placeSlug = (formData.get("placeSlug") as string) || "";
@@ -82,6 +85,12 @@ export async function POST(req: NextRequest) {
       // Continue if index already dropped or non-existent
     }
 
+    const rawUserId = (session.user as any)?.id;
+    const uploadedBy =
+      rawUserId && mongoose.Types.ObjectId.isValid(rawUserId)
+        ? new mongoose.Types.ObjectId(rawUserId)
+        : undefined;
+
     const mediaDoc = await MediaModel.create({
       filename: file.name,
       provider: "cloudinary",
@@ -100,13 +109,17 @@ export async function POST(req: NextRequest) {
       folder: uploadResult.folder,
       category: folderType === "destinations" ? category : folderType,
       tags: [folderType, category, slug, ...tags],
-      uploadedBy: (session.user as any).id,
+      uploadedBy,
     });
 
     return NextResponse.json(
       {
         success: true,
         message: "File uploaded and optimized successfully",
+        // Direct top-level fields for direct cover upload handlers
+        secure_url: uploadResult.secureUrl,
+        url: uploadResult.optimizedUrl || uploadResult.secureUrl,
+        public_id: uploadResult.publicId,
         media: {
           _id: mediaDoc._id.toString(),
           title: mediaDoc.caption || mediaDoc.filename,

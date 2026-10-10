@@ -225,6 +225,8 @@ export default function AdminDestinationsPage() {
       const data = new FormData();
       data.append("file", file);
       data.append("folder", targetFolder);
+      data.append("customFolder", targetFolder);
+      data.append("title", `${formData.name || "Destination"} Cover Image`);
 
       const res = await fetch("/api/v1/cloudinary/upload", {
         method: "POST",
@@ -232,15 +234,22 @@ export default function AdminDestinationsPage() {
       });
 
       const json = await res.json();
-      if (json.secure_url) {
-        setFormData((prev) => ({ ...prev, coverImage: json.secure_url }));
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to upload image to Cloudinary.");
+      }
+
+      const imageUrl =
+        json.secure_url || json.url || json.media?.url || json.media?.secureUrl;
+      if (imageUrl) {
+        setFormData((prev) => ({ ...prev, coverImage: imageUrl }));
       } else {
-        setUploadError(json.error || "Upload failed");
+        setUploadError(json.error || "Upload succeeded but no image URL was returned");
       }
     } catch (err: any) {
       setUploadError(err.message || "Failed to upload image");
     } finally {
       setUploadingImage(false);
+      if (e.target) e.target.value = "";
     }
   };
 

@@ -181,9 +181,9 @@ export class LeadService {
    */
   static async assignLead(params: {
     leadId: string;
-    assignedToId: string;
-    assignedById: string;
-    assignedByName: string;
+    assignedToId?: string | null;
+    assignedById?: string | null;
+    assignedByName?: string | null;
     reason?: string;
   }): Promise<ILead> {
     await connectDB();
@@ -192,74 +192,109 @@ export class LeadService {
     if (!lead) throw new Error("Lead not found");
 
     const now = new Date();
-    const assignedToObj = new mongoose.Types.ObjectId(params.assignedToId);
-    const assignedByObj = new mongoose.Types.ObjectId(params.assignedById);
+
+    // Check if unassigning
+    const isUnassigning =
+      !params.assignedToId ||
+      params.assignedToId.trim() === "" ||
+      params.assignedToId.toLowerCase() === "unassigned";
+
+    // Safe ObjectId conversion for assignedTo
+    let assignedToObj: mongoose.Types.ObjectId | undefined = undefined;
+    if (!isUnassigning) {
+      if (params.assignedToId && mongoose.Types.ObjectId.isValid(params.assignedToId)) {
+        assignedToObj = new mongoose.Types.ObjectId(params.assignedToId);
+      } else {
+        throw new Error(`Invalid consultant ID: ${params.assignedToId}`);
+      }
+    }
+
+    // Safe ObjectId conversion for assignedBy
+    let assignedByObj: mongoose.Types.ObjectId | undefined = undefined;
+    if (params.assignedById && mongoose.Types.ObjectId.isValid(params.assignedById)) {
+      assignedByObj = new mongoose.Types.ObjectId(params.assignedById);
+    }
+
+    // Ensure array properties exist
+    if (!lead.ownershipHistory) lead.ownershipHistory = [];
+    if (!lead.communications) lead.communications = [];
 
     // Record ownership change history
     lead.ownershipHistory.push({
       assignedTo: assignedToObj,
       assignedBy: assignedByObj,
       assignedAt: now,
-      reason: params.reason || "Manual Assignment",
+      reason: params.reason || (isUnassigning ? "Unassigned by Admin" : "Manual Assignment"),
     });
 
     lead.assignedTo = assignedToObj;
     lead.assignedBy = assignedByObj;
-    lead.assignedAt = now;
+    lead.assignedAt = isUnassigning ? undefined : now;
 
     // Timeline event
     lead.communications.push({
       _id: new mongoose.Types.ObjectId(),
       type: "STATUS_CHANGE",
-      summary: `Assigned to Travel Consultant (${params.assignedToId})`,
-      details: params.reason || `Assigned by ${params.assignedByName}`,
+      summary: isUnassigning
+        ? "Lead marked as Unassigned"
+        : `Assigned to Travel Consultant (${params.assignedToId})`,
+      details: params.reason || (isUnassigning ? "Lead unassigned" : `Assigned by ${params.assignedByName || "Admin"}`),
       performedBy: assignedByObj,
-      performedByName: params.assignedByName,
+      performedByName: params.assignedByName || "Admin",
       timestamp: now,
     });
 
-    await lead.save();
+    await lead.save({ validateModifiedOnly: true });
 
-    // Log in central audit
-    await AuditService.logTransition({
-      userId: params.assignedById,
-      userEmail: params.assignedByName,
-      entityType: "Lead",
-      entityId: lead._id.toString(),
-      fromState: "UNASSIGNED",
-      toState: params.assignedToId,
-      trigger: "LEAD_ASSIGN",
-      metadata: { reason: params.reason },
-    });
-
-    // Notify assigned consultant
-    await NotificationService.notifyUser(
-      params.assignedToId,
-      "📋 New Lead Assigned to You",
-      `You have been assigned lead "${lead.name}". Contact traveller before SLA deadline.`,
-      {
-        type: "LEAD_ALERT",
-        link: `/admin/leads?search=${encodeURIComponent(lead.name)}`,
-      }
-    );
-
-    // Create First-Contact Task for consultant
+    // Safe Central Audit Transition Log
     try {
-      await TaskService.createTask({
-        title: `First Contact: ${lead.name} (${lead.phone})`,
-        description: `Reach out to traveller regarding their inquiry: ${lead.specialRequirements || "Tour / Transfer request"}. Check SLA compliance.`,
-        type: "CUSTOMER_FOLLOW_UP",
-        priority: "HIGH",
-        department: Department.SALES,
-        assignedTo: params.assignedToId,
-        assignedBy: params.assignedById,
+      await AuditService.logTransition({
+        userId: assignedByObj ? assignedByObj.toString() : (params.assignedById || "admin"),
+        userEmail: params.assignedByName || "admin@bemytraveller.com",
         entityType: "Lead",
         entityId: lead._id.toString(),
-        entityRef: lead.name,
-        dueDate: lead.slaDueAt || new Date(now.getTime() + 30 * 60 * 1000),
+        fromState: "UNASSIGNED",
+        toState: isUnassigning ? "UNASSIGNED" : (params.assignedToId || "ASSIGNED"),
+        trigger: "LEAD_ASSIGN",
+        metadata: { reason: params.reason },
       });
-    } catch (e) {
-      console.warn("[LeadService] Task creation warning:", e);
+    } catch (auditErr) {
+      console.warn("[LeadService] Audit log warning:", auditErr);
+    }
+
+    // If assigned to a consultant, notify and create task safely
+    if (assignedToObj) {
+      try {
+        await NotificationService.notifyUser(
+          assignedToObj.toString(),
+          "📋 New Lead Assigned to You",
+          `You have been assigned lead "${lead.name}". Contact traveller before SLA deadline.`,
+          {
+            type: "LEAD_ALERT",
+            link: `/admin/leads?search=${encodeURIComponent(lead.name)}`,
+          }
+        );
+      } catch (notifyErr) {
+        console.warn("[LeadService] Notification warning:", notifyErr);
+      }
+
+      try {
+        await TaskService.createTask({
+          title: `First Contact: ${lead.name} (${lead.phone})`,
+          description: `Reach out to traveller regarding their inquiry: ${lead.specialRequirements || "Tour / Transfer request"}. Check SLA compliance.`,
+          type: "CUSTOMER_FOLLOW_UP",
+          priority: "HIGH",
+          department: Department.SALES,
+          assignedTo: assignedToObj.toString(),
+          assignedBy: assignedByObj ? assignedByObj.toString() : undefined,
+          entityType: "Lead",
+          entityId: lead._id.toString(),
+          entityRef: lead.name,
+          dueDate: lead.slaDueAt || new Date(now.getTime() + 30 * 60 * 1000),
+        });
+      } catch (taskErr) {
+        console.warn("[LeadService] Task creation warning:", taskErr);
+      }
     }
 
     return lead;

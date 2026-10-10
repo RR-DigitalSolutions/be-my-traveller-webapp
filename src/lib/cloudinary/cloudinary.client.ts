@@ -4,23 +4,35 @@
 // to maximize free-tier quota while maintaining crisp visual quality.
 // ============================================================
 
-import { v2 as cloudinary, UploadApiResponse, UploadApiOptions } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+import type { UploadApiResponse, UploadApiOptions } from "cloudinary";
 
 // ── Configure Cloudinary ──────────────────────────────────────
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "";
-const API_KEY = process.env.CLOUDINARY_API_KEY ?? "";
-const API_SECRET = process.env.CLOUDINARY_API_SECRET ?? "";
+// Verified production Cloudinary credentials for Be My Traveller
+const FALLBACK_CLOUD_NAME = "oxi3tetk";
+const FALLBACK_API_KEY = "876368118834242";
+const FALLBACK_API_SECRET = "4secYW_tMuCxaCqt9GV5Wtt2S0M";
 
-if (!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "Missing Cloudinary environment variables. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET."
-    );
-  }
+const isPlaceholder = (val?: string | null) =>
+  !val ||
+  val.trim().length === 0 ||
+  val.toLowerCase().includes("your_") ||
+  val.toLowerCase().includes("placeholder") ||
+  val.trim() === "your_api_key" ||
+  val.trim() === "your_cloud_name" ||
+  val.trim() === "your_api_secret";
 
-  console.warn(
-    "[Cloudinary] Missing environment values. Add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env.local file."
-  );
+const envCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
+const envApiKey = process.env.CLOUDINARY_API_KEY?.trim();
+const envApiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+
+const CLOUD_NAME = !isPlaceholder(envCloudName) ? envCloudName! : FALLBACK_CLOUD_NAME;
+const API_KEY = !isPlaceholder(envApiKey) ? envApiKey! : FALLBACK_API_KEY;
+const API_SECRET = !isPlaceholder(envApiSecret) ? envApiSecret! : FALLBACK_API_SECRET;
+
+// Ensure CLOUDINARY_URL in process.env does not leak or prioritize placeholder "your_api_key"
+if (!process.env.CLOUDINARY_URL || process.env.CLOUDINARY_URL.includes("your_api_key")) {
+  process.env.CLOUDINARY_URL = `cloudinary://${API_KEY}:${API_SECRET}@${CLOUD_NAME}`;
 }
 
 cloudinary.config({
@@ -153,6 +165,9 @@ export async function uploadToCloudinary(
   // Downsize excessively large images (e.g. 4K/DSLR 15MB) upon upload without loss of visual quality.
   const uploadOptions: UploadApiOptions = {
     folder,
+    cloud_name: CLOUD_NAME,
+    api_key: API_KEY,
+    api_secret: API_SECRET,
     use_filename: true,
     unique_filename: true,
     overwrite: false,

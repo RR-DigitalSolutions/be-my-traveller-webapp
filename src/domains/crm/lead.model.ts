@@ -96,7 +96,7 @@ export interface ILead extends Document {
   email: string;
   phone: string;
 
-  destinations: mongoose.Types.ObjectId[];
+  destinations: (mongoose.Types.ObjectId | string)[];
   packageId?: mongoose.Types.ObjectId;
   travelDates?: { from?: Date; to?: Date; flexible: boolean };
   duration?: string;
@@ -208,7 +208,7 @@ const LeadSchema = new Schema<ILead>(
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String, required: true, trim: true },
 
-    destinations: [{ type: Schema.Types.ObjectId, ref: "Destination" }],
+    destinations: [{ type: Schema.Types.Mixed, ref: "Destination" }],
     packageId: { type: Schema.Types.ObjectId, ref: "Package" },
     travelDates: {
       from: { type: Date },

@@ -34,7 +34,7 @@ export type AuditAction =
   | "SECURITY_ALERT";
 
 export interface IAuditLog extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId | string;
   userEmail: string; // denormalized for readability if user is later deleted
   action: AuditAction;
   entityType: string; // e.g. "Package" | "PricingRule" | "Booking" | "Lead" | "Task"
@@ -56,7 +56,7 @@ export interface IAuditLog extends Document {
 
 const AuditLogSchema = new Schema<IAuditLog>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type: Schema.Types.Mixed, ref: "User", required: false },
     userEmail: { type: String, required: true },
     action: {
       type: String,

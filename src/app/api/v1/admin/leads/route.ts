@@ -131,8 +131,8 @@ export async function PATCH(req: NextRequest) {
     const userEmail = session.user.email || "admin@bemytraveller.com";
     const userName = session.user.name || "Administrator";
 
-    // 1. Explicit Lead Assignment Action
-    if (action === "ASSIGN" && assignedTo) {
+    // 1. Explicit Lead Assignment Action (Supports assigning to consultant and unassigning)
+    if (action === "ASSIGN") {
       const updated = await LeadService.assignLead({
         leadId: id,
         assignedToId: assignedTo,
@@ -140,7 +140,16 @@ export async function PATCH(req: NextRequest) {
         assignedByName: userName,
         reason,
       });
-      return NextResponse.json({ success: true, lead: updated, message: "Lead assigned successfully" });
+
+      const populated = await LeadModel.findById(id)
+        .populate("assignedTo", "name email role")
+        .lean();
+
+      return NextResponse.json({
+        success: true,
+        lead: populated || updated,
+        message: assignedTo ? "Lead assigned successfully" : "Lead unassigned successfully",
+      });
     }
 
     // 2. Schedule Follow-up Action

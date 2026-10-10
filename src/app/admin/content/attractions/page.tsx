@@ -140,7 +140,9 @@ export default function AdminAttractionsPage() {
     try {
       const uploadForm = new FormData();
       uploadForm.append("file", file);
-      uploadForm.append("folder", `bemytraveller/attractions/${formData.destinationSlug || "general"}`);
+      const targetFolder = `bemytraveller/attractions/${formData.destinationSlug || "general"}`;
+      uploadForm.append("folder", targetFolder);
+      uploadForm.append("customFolder", targetFolder);
 
       const res = await fetch("/api/v1/cloudinary/upload", {
         method: "POST",
@@ -148,15 +150,22 @@ export default function AdminAttractionsPage() {
       });
 
       const data = await res.json();
-      if (data.secure_url) {
-        setFormData((prev) => ({ ...prev, img: data.secure_url }));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload image to Cloudinary.");
+      }
+
+      const imageUrl =
+        data.secure_url || data.url || data.media?.url || data.media?.secureUrl;
+      if (imageUrl) {
+        setFormData((prev) => ({ ...prev, img: imageUrl }));
       } else {
-        setUploadError(data.error || "Upload failed");
+        setUploadError(data.error || "Upload succeeded but no image URL was returned");
       }
     } catch (err: any) {
       setUploadError(err.message || "Failed to upload image");
     } finally {
       setUploadingImage(false);
+      if (e.target) e.target.value = "";
     }
   };
 

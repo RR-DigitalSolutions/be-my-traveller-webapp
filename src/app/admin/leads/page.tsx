@@ -278,7 +278,7 @@ export default function AdminLeadsPage() {
 
   const fetchStaff = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/admin/users");
+      const res = await fetch("/api/v1/admin/users?forAssignment=true");
       if (res.ok) {
         const data = await res.json();
         if (data.users && Array.isArray(data.users)) {
@@ -450,6 +450,18 @@ export default function AdminLeadsPage() {
   const handleAssignLead = async (leadId: string, assignedToId: string) => {
     try {
       setAssigningLead(true);
+
+      // Instant optimistic UI update so the dropdown reflects immediately
+      const assignedUser = staffUsers.find((u) => u._id === assignedToId);
+      const newAssignedValue = assignedUser
+        ? { _id: assignedUser._id, name: assignedUser.name, email: assignedUser.email, role: assignedUser.role }
+        : undefined;
+
+      setSelectedLead((prev) => (prev && prev._id === leadId ? { ...prev, assignedTo: newAssignedValue } : prev));
+      setRawLeads((prev) =>
+        prev.map((l) => (l._id === leadId ? { ...l, assignedTo: newAssignedValue } : l))
+      );
+
       const res = await fetch("/api/v1/admin/leads", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -462,10 +474,18 @@ export default function AdminLeadsPage() {
       });
       const data = await res.json();
       if (data.success) {
+        if (data.lead) {
+          setSelectedLead((prev) => (prev && prev._id === leadId ? data.lead : prev));
+          setRawLeads((prev) => prev.map((l) => (l._id === leadId ? data.lead : l)));
+        }
+        fetchLeads();
+      } else {
+        alert(data.error || data.detail || "Failed to assign lead");
         fetchLeads();
       }
-    } catch {
-      alert("Failed to assign lead");
+    } catch (err: any) {
+      alert(err?.message || "Failed to assign lead");
+      fetchLeads();
     } finally {
       setAssigningLead(false);
     }
