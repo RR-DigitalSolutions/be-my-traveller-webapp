@@ -6,6 +6,7 @@ import SiteFooter from "@/components/common/SiteFooter";
 import DestinationCardCarousel from "@/components/destinations/DestinationCardCarousel";
 import DestinationPackageGrid from "@/components/destinations/DestinationPackageGrid";
 import DestinationReviewsCarousel from "@/components/destinations/DestinationReviewsCarousel";
+import DestinationOverviewStory from "@/components/destinations/DestinationOverviewStory";
 import connectDB from "@/lib/db/mongoose";
 import {
   parseDestinationSlug,
@@ -375,8 +376,8 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       dbDest?.coverImage ||
       "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=1600&auto=format&fit=crop&q=80",
     overview:
-      dbDest?.overview ||
       dbDest?.shortDescription ||
+      dbDest?.overview ||
       `Explore extraordinary experiential travel packages, verified 4-star stays, and private chauffeured tours in ${currentName}.`,
     startingPrice: (typeof dbDest?.startingPrice === "string" && dbDest.startingPrice.trim())
       ? dbDest.startingPrice.trim()
@@ -680,57 +681,14 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
               />
             )}
 
-            {/* ── 3. OVERVIEW & TRAVEL ESSENTIALS ── */}
-            <section className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-              <div className="space-y-2">
-                <h2 className="text-xl font-black text-slate-900">
-                  Experience {current.name} with Be My Traveller
-                </h2>
-                <p className="text-slate-700 leading-relaxed text-sm">
-                  {current.overview}
-                </p>
-              </div>
-
-              {/* Highlight Tags */}
-              {current.highlights && (Array.isArray(current.highlights) ? current.highlights.length > 0 : Boolean(current.highlights)) && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {(Array.isArray(current.highlights)
-                    ? current.highlights
-                    : String(current.highlights).split(",")
-                  ).map((h: string, i: number) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200/70 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-2xs"
-                    >
-                      <span className="text-amber-500">✨</span> {h.trim()}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Fast Facts Grid: Weather & How to Reach */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-100">
-                {current.weather && (
-                  <div className="flex items-start gap-2.5 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                    <span className="text-lg shrink-0">⛅</span>
-                    <div>
-                      <strong className="text-slate-900 block font-bold">Weather &amp; Climate</strong>
-                      <span className="text-slate-600 mt-0.5 block">{current.weather}</span>
-                    </div>
-                  </div>
-                )}
-
-                {current.howToReach && (
-                  <div className="flex items-start gap-2.5 text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-100">
-                    <span className="text-lg shrink-0">✈️</span>
-                    <div>
-                      <strong className="text-slate-900 block font-bold">How to Reach</strong>
-                      <span className="text-slate-600 mt-0.5 block">{current.howToReach}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
+            {/* ── 3. OVERVIEW & TRAVEL ESSENTIALS (with Read More / Read Less) ── */}
+            <DestinationOverviewStory
+              destinationName={current.name}
+              story={current.overview}
+              highlights={current.highlights}
+              weather={current.weather}
+              howToReach={current.howToReach}
+            />
 
             {/* ── 4. ATTRACTIONS & SIGHTSEEING HIGHLIGHTS (from /admin/content/attractions) ── */}
             {current.attractions && current.attractions.length > 0 && (
@@ -929,10 +887,12 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
                   <div>
                     <label className="text-xs font-bold text-slate-600 block mb-1">Duration</label>
                     <select className="w-full text-xs font-semibold p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800">
-                      <option>4N / 5D</option>
-                      <option>5N / 6D</option>
-                      <option>6N / 7D</option>
-                      <option>7N+ Custom</option>
+                      <option>2N / 3D (Weekend Getaway)</option>
+                      <option>3N / 4D (Short Break)</option>
+                      <option>4N / 5D (Popular)</option>
+                      <option>5N / 6D (Recommended)</option>
+                      <option>6N / 7D (Extended Circuit)</option>
+                      <option>7N+ Custom Itinerary</option>
                     </select>
                   </div>
                   <div>

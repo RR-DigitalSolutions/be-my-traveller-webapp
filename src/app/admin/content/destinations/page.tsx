@@ -157,6 +157,11 @@ export default function AdminDestinationsPage() {
     a: "",
   });
 
+  // FAQ Schema paste & import state
+  const [schemaInput, setSchemaInput] = useState("");
+  const [schemaStatus, setSchemaStatus] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showSchemaBox, setShowSchemaBox] = useState(false);
+
   const fetchDestinations = useCallback(async () => {
     setLoading(true);
     try {
@@ -271,6 +276,74 @@ export default function AdminDestinationsPage() {
       ...prev,
       faqs: prev.faqs.filter((_, i) => i !== index),
     }));
+  };
+
+  const handleImportSchema = (mode: "append" | "replace") => {
+    setSchemaStatus(null);
+    if (!schemaInput.trim()) {
+      setSchemaStatus({ message: "Please paste your Schema.org FAQPage JSON or JSON array first.", type: "error" });
+      return;
+    }
+
+    let clean = schemaInput.trim();
+    clean = clean.replace(/<script[^>]*>/gi, "").replace(/<\/script>/gi, "").trim();
+
+    let items: FaqItem[] = [];
+
+    try {
+      const parsed = JSON.parse(clean);
+
+      let mainEntity = parsed.mainEntity;
+      if (!mainEntity && Array.isArray(parsed["@graph"])) {
+        const faqPage = parsed["@graph"].find((node: any) => node["@type"] === "FAQPage");
+        if (faqPage) mainEntity = faqPage.mainEntity;
+      }
+
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) {
+          const q = item.q || item.question || item.name;
+          const a = item.a || item.answer || item.acceptedAnswer?.text || item.text;
+          if (q && a) items.push({ q: String(q).trim(), a: String(a).trim() });
+        }
+      } else if (Array.isArray(mainEntity)) {
+        for (const entity of mainEntity) {
+          const q = entity.name || entity.question || entity.q;
+          const a = entity.acceptedAnswer?.text || entity.acceptedAnswer?.answer || entity.answer || entity.a;
+          if (q && a) {
+            items.push({ q: String(q).trim(), a: String(a).trim() });
+          }
+        }
+      }
+    } catch {
+      // Regex fallback for text formats: Q: ... A: ...
+      const regex = /(?:Q|Question|Q\.)\s*[:.-]?\s*([\s\S]+?)\s*(?:A|Answer|A\.)\s*[:.-]?\s*([\s\S]+?)(?=(?:Q|Question|Q\.)\s*[:.-]?|$)/gi;
+      let match;
+      while ((match = regex.exec(clean)) !== null) {
+        if (match[1] && match[2]) {
+          items.push({ q: match[1].trim(), a: match[2].trim() });
+        }
+      }
+    }
+
+    if (items.length === 0) {
+      setSchemaStatus({
+        message: "Could not find any valid FAQs in the pasted schema. Ensure it follows FAQPage JSON-LD schema or Q&A format.",
+        type: "error",
+      });
+      return;
+    }
+
+    if (mode === "replace") {
+      setFormData((prev) => ({ ...prev, faqs: items }));
+    } else {
+      setFormData((prev) => ({ ...prev, faqs: [...prev.faqs, ...items] }));
+    }
+
+    setSchemaStatus({
+      message: `🎉 Successfully imported ${items.length} FAQ${items.length > 1 ? "s" : ""} from schema!`,
+      type: "success",
+    });
+    setSchemaInput("");
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -986,6 +1059,83 @@ export default function AdminDestinationsPage() {
                     <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
                       {formData.faqs.length} FAQs
                     </span>
+                  </div>
+
+                  {/* Option to Paste FAQ Schema */}
+                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-amber-400 text-sm">📋</span>
+                        <div>
+                          <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                            Paste &amp; Import FAQ Schema (JSON-LD)
+                          </h4>
+                          <p className="text-[11px] text-slate-400">
+                            Paste Schema.org FAQPage JSON, Google Rich Snippet code, or JSON array to auto-generate FAQs.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowSchemaBox(!showSchemaBox)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs border border-slate-700 cursor-pointer transition"
+                      >
+                        {showSchemaBox ? "▲ Hide Schema Box" : "▼ Paste Schema"}
+                      </button>
+                    </div>
+
+                    {showSchemaBox && (
+                      <div className="space-y-3 pt-2 border-t border-slate-800/80 animate-in fade-in duration-200">
+                        <textarea
+                          rows={6}
+                          value={schemaInput}
+                          onChange={(e) => setSchemaInput(e.target.value)}
+                          placeholder={`Paste your FAQPage schema here, for example:\n{\n  "@context": "https://schema.org",\n  "@type": "FAQPage",\n  "mainEntity": [\n    {\n      "@type": "Question",\n      "name": "What is the best time to visit?",\n      "acceptedAnswer": {\n        "@type": "Answer",\n        "text": "March to June is the ideal time."\n      }\n    }\n  ]\n}`}
+                          className="w-full px-3 py-2.5 font-mono text-xs bg-slate-900 border border-slate-800 rounded-xl text-amber-200/90 focus:outline-hidden focus:border-amber-500 leading-relaxed"
+                        />
+
+                        {schemaStatus && (
+                          <div
+                            className={`p-3 rounded-xl text-xs font-bold ${
+                              schemaStatus.type === "success"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                : "bg-red-500/10 text-red-400 border border-red-500/30"
+                            }`}
+                          >
+                            {schemaStatus.message}
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => handleImportSchema("append")}
+                            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs cursor-pointer shadow-md flex items-center gap-1.5"
+                          >
+                            <span>⚡</span> Import &amp; Append FAQs
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleImportSchema("replace")}
+                            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-rose-950/60 text-slate-200 hover:text-rose-300 font-bold text-xs border border-slate-700 hover:border-rose-800/60 cursor-pointer transition flex items-center gap-1.5"
+                          >
+                            <span>🔄</span> Replace All FAQs with Schema
+                          </button>
+                          {schemaInput && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSchemaInput("");
+                                setSchemaStatus(null);
+                              }}
+                              className="px-3 py-2 rounded-xl bg-slate-900 text-slate-400 hover:text-slate-200 text-xs font-bold cursor-pointer"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Add New FAQ */}
