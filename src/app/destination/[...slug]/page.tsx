@@ -315,7 +315,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       stateSlug: d.stateSlug || currentStateSlug,
       count: `${d.displayOrder ? d.displayOrder + 4 : 8} Tours`,
       img: d.coverImageStr || d.coverImage || "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80",
-      price: d.fastFacts?.startingPrice || d.startingPrice || "₹14,999",
+      price: (typeof d.startingPrice === "string" && d.startingPrice.trim()) ? d.startingPrice.trim() : (d.fastFacts?.startingPrice || "₹14,999"),
       tag: d.tagline || d.region || (isCountryLevel ? "State of India" : "Scenic Spot"),
     };
   });
@@ -378,11 +378,24 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       dbDest?.overview ||
       dbDest?.shortDescription ||
       `Explore extraordinary experiential travel packages, verified 4-star stays, and private chauffeured tours in ${currentName}.`,
-    startingPrice: dbDest?.fastFacts?.startingPrice || dbDest?.startingPrice || "₹14,999",
-    idealDuration: dbDest?.fastFacts?.idealDuration || dbDest?.idealDuration || "4 to 6 Days",
-    bestTime: dbDest?.fastFacts?.bestTime || dbDest?.bestTimeToVisit || dbDest?.bestTime || "Year-Round",
-    weather: dbDest?.fastFacts?.weather || dbDest?.weather || "Pleasant Climate",
-    howToReach: dbDest?.fastFacts?.howToReach || dbDest?.howToReach || "Easily accessible via nearest airport, train station, and national highway network.",
+    startingPrice: (typeof dbDest?.startingPrice === "string" && dbDest.startingPrice.trim())
+      ? dbDest.startingPrice.trim()
+      : (dbDest?.fastFacts?.startingPrice || "₹14,999"),
+    idealDuration: (typeof dbDest?.idealDuration === "string" && dbDest.idealDuration.trim())
+      ? dbDest.idealDuration.trim()
+      : (dbDest?.fastFacts?.idealDuration || "4 to 6 Days"),
+    bestTime: (typeof dbDest?.bestTimeToVisit === "string" && dbDest.bestTimeToVisit.trim())
+      ? dbDest.bestTimeToVisit.trim()
+      : (dbDest?.fastFacts?.bestTime || (typeof dbDest?.bestTimeToVisit === "object" ? dbDest.bestTimeToVisit?.summary : "") || "Year-Round"),
+    weather: (typeof dbDest?.weather === "string" && dbDest.weather.trim())
+      ? dbDest.weather.trim()
+      : (dbDest?.fastFacts?.weather || ""),
+    howToReach: (typeof dbDest?.howToReach === "string" && dbDest.howToReach.trim())
+      ? dbDest.howToReach.trim()
+      : (dbDest?.fastFacts?.howToReach || ""),
+    verifiedStays: (typeof dbDest?.verifiedStays === "string" && dbDest.verifiedStays.trim())
+      ? dbDest.verifiedStays.trim()
+      : (dbDest?.fastFacts?.verifiedStays || "4★ / 5★ Handpicked Stays"),
     highlights: dbDest?.highlights || [],
     childPlaces: mappedDbChildPlaces,
     attractions: resolvedAttractions,
@@ -611,7 +624,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           </div>
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Verified Stays</span>
-            <span className="text-emerald-600 font-bold text-xs">4★ / 5★ Handpicked Stays</span>
+            <span className="text-emerald-600 font-bold text-xs">{current.verifiedStays}</span>
           </div>
         </div>
       </div>

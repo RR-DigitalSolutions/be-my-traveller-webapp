@@ -610,6 +610,22 @@ export class LeadService {
 
     await lead.save();
 
+    // If lead has an attached quote, automatically create active Booking for Hotel, Transport & Accounts desks
+    if (lead.quoteIds && lead.quoteIds.length > 0) {
+      try {
+        const { BookingService } = await import("@/domains/booking/booking.service");
+        const latestQuoteId = lead.quoteIds[lead.quoteIds.length - 1];
+        await BookingService.createBookingFromQuote({
+          quoteId: latestQuoteId.toString(),
+          userId: params.userId,
+          userEmail: params.userEmail,
+          notes: `Converted from Lead ${lead.name}`,
+        });
+      } catch (bkErr) {
+        console.warn("[Convert Lead] Auto booking creation:", bkErr);
+      }
+    }
+
     // Notify Operations team
     await NotificationService.notifyDepartment(
       Department.OPERATIONS,
@@ -617,7 +633,7 @@ export class LeadService {
       `Lead ${lead.name} has been confirmed and converted. Ready for operational desk fulfillment.`,
       {
         type: "BOOKING_CONFIRMED",
-        link: `/admin/leads?search=${encodeURIComponent(lead.name)}`,
+        link: `/admin/bookings`,
       }
     );
 

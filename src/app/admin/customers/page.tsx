@@ -20,69 +20,22 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Populate customers list from live and default database records
     const loadCustomers = async () => {
       setLoading(true);
       try {
-        const defaultCustomers: CustomerItem[] = [
-          {
-            name: "Vikram Malhotra",
-            phone: "+91 98200 45678",
-            email: "vikram.m@gmail.com",
-            city: "Mumbai",
-            totalBookings: 3,
-            totalSpend: 245000,
-            lastTrip: "Kashmir Luxury Tour (Oct 2026)",
-            status: "VIP",
-          },
-          {
-            name: "Ananya Deshmukh",
-            phone: "+91 97112 34567",
-            email: "ananya.d@outlook.com",
-            city: "Delhi NCR",
-            totalBookings: 2,
-            totalSpend: 185000,
-            lastTrip: "Himachal Explorer (Nov 2026)",
-            status: "ACTIVE",
-          },
-          {
-            name: "Rahul & Sneha Kapoor",
-            phone: "+91 98450 12345",
-            email: "rahul.kapoor@techcorp.in",
-            city: "Bengaluru",
-            totalBookings: 1,
-            totalSpend: 188000,
-            lastTrip: "Bali Honeymoon Villa (Dec 2026)",
-            status: "ACTIVE",
-          },
-          {
-            name: "Dr. Priya Sundaram",
-            phone: "+91 94440 88990",
-            email: "priya.s@apollohealth.org",
-            city: "Chennai",
-            totalBookings: 4,
-            totalSpend: 395000,
-            lastTrip: "Dubai & Abu Dhabi Ultra Explorer",
-            status: "VIP",
-          },
-          {
-            name: "Siddharth Oberoi",
-            phone: "+91 98100 77123",
-            email: "sid.oberoi@globalventures.com",
-            city: "Gurugram",
-            totalBookings: 2,
-            totalSpend: 160000,
-            lastTrip: "Rajasthan Royal Palaces Tour",
-            status: "ACTIVE",
-          },
-        ];
-        setCustomers(defaultCustomers);
+        const res = await fetch(`/api/v1/admin/customers?search=${encodeURIComponent(search)}`);
+        const json = await res.json();
+        if (json.customers) {
+          setCustomers(json.customers);
+        }
+      } catch (err) {
+        console.error("Failed to load customers:", err);
       } finally {
         setLoading(false);
       }
     };
     loadCustomers();
-  }, []);
+  }, [search]);
 
   const filtered = customers.filter(
     (c) =>

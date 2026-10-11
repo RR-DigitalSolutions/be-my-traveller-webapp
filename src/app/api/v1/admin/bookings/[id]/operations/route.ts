@@ -152,6 +152,34 @@ export async function POST(
         return NextResponse.json({ success: true, voucher });
       }
 
+      // 6. RECORD TRIP FEEDBACK
+      case "RECORD_FEEDBACK": {
+        const updated = await BookingService.recordTripFeedback({
+          bookingId,
+          rating: Number(payload?.rating) || 5,
+          feedbackText: payload?.feedbackText || "Wonderful trip experience!",
+          notes: payload?.notes,
+          userId,
+          userEmail,
+        });
+        return NextResponse.json({ success: true, booking: updated, message: "Guest feedback recorded" });
+      }
+
+      // 7. COMPLETE TRIP & CLOSE BOOKING (ARCHIVE TO CUSTOMERS DIRECTORY)
+      case "CLOSE_TRIP_COMPLETED": {
+        const updated = await BookingService.completeTripAndCloseBooking({
+          bookingId,
+          userId,
+          userEmail,
+          adminNotes: payload?.adminNotes,
+        });
+        return NextResponse.json({
+          success: true,
+          booking: updated,
+          message: "Trip completed! Booking closed and customer profile synced.",
+        });
+      }
+
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

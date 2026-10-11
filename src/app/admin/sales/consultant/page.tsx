@@ -398,15 +398,24 @@ export default function ConsultantDashboardPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setLogModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-bold transition-colors cursor-pointer"
-                      >
-                        Log Activity
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href="/admin/quotes"
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition-colors inline-flex items-center gap-1"
+                          title="Build Itinerary Proposal in Quotation Engine"
+                        >
+                          <span>📝</span> Build Quote
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setLogModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-bold transition-colors cursor-pointer"
+                        >
+                          Log Activity
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -468,4 +468,106 @@ export class BookingService {
     await booking.save();
     return booking;
   }
+
+  /**
+   * 6. RECORD TRIP FEEDBACK FROM TRAVELER
+   */
+  static async recordTripFeedback(params: {
+    bookingId: string;
+    rating: number;
+    feedbackText: string;
+    notes?: string;
+    userId: string;
+    userEmail: string;
+  }): Promise<IBooking> {
+    await connectDB();
+    const booking = await BookingModel.findById(params.bookingId);
+    if (!booking) throw new Error("Booking not found");
+
+    booking.internalNotes = `${booking.internalNotes || ""}\n[Guest Feedback ${params.rating}★]: ${params.feedbackText} ${params.notes ? `(${params.notes})` : ""}`.trim();
+    await booking.save();
+
+    // Log to Lead communications if attached
+    if (booking.lead) {
+      await LeadModel.findByIdAndUpdate(booking.lead, {
+        $push: {
+          communications: {
+            type: "NOTE",
+            summary: `⭐ Guest Trip Feedback: ${params.rating}/5 Stars`,
+            details: params.feedbackText,
+            performedByName: params.userEmail,
+            timestamp: new Date(),
+          },
+        },
+      });
+    }
+
+    return booking;
+  }
+
+  /**
+   * 7. CLOSE BOOKING & MARK TRIP COMPLETED
+   * Updates booking status to COMPLETED, marks operations completed,
+   * increments Customer lifetime stats & syncs to Customer directory,
+   * and sets Lead to TRAVEL_COMPLETED.
+   */
+  static async completeTripAndCloseBooking(params: {
+    bookingId: string;
+    userId: string;
+    userEmail: string;
+    adminNotes?: string;
+  }): Promise<IBooking> {
+    await connectDB();
+    const booking = await BookingModel.findById(params.bookingId);
+    if (!booking) throw new Error("Booking not found");
+
+    booking.status = "COMPLETED";
+    booking.transportStatus = "COMPLETED";
+    if (params.adminNotes) {
+      booking.operationsNotes = `${booking.operationsNotes || ""}\n[Trip Closure]: ${params.adminNotes}`.trim();
+    }
+    await booking.save();
+
+    // Sync Customer Profile
+    if (booking.customer) {
+      const cust = await CustomerModel.findById(booking.customer);
+      if (cust) {
+        cust.totalBookings = (cust.totalBookings || 0) + 1;
+        cust.totalSpend = (cust.totalSpend || 0) + (booking.totalAmount || 0);
+        if (!cust.tags.includes("COMPLETED_TRIP")) cust.tags.push("COMPLETED_TRIP");
+        if (cust.totalBookings >= 2 && !cust.tags.includes("REPEAT_CLIENT")) cust.tags.push("REPEAT_CLIENT");
+        if (cust.totalSpend >= 200000 && !cust.tags.includes("VIP")) cust.tags.push("VIP");
+        cust.preferences = {
+          ...cust.preferences,
+          specialRequirements: `${booking.packageName || booking.destination} (${new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" })})`,
+        };
+        await cust.save();
+      }
+    }
+
+    // Sync Lead Status
+    if (booking.lead) {
+      await LeadModel.findByIdAndUpdate(booking.lead, {
+        $set: { status: "TRAVEL_COMPLETED" },
+        $push: {
+          communications: {
+            type: "STATUS_CHANGE",
+            summary: `🎉 Trip Completed & Booking Closed`,
+            details: `Trip for ${booking.bookingNumber} successfully concluded and archived to Customer directory.`,
+            performedByName: params.userEmail,
+            timestamp: new Date(),
+          },
+        },
+      });
+    }
+
+    await NotificationService.notifyDepartment(
+      Department.MANAGEMENT,
+      `Trip Completed: ${booking.bookingNumber}`,
+      `Tour for ${booking.packageName || booking.destination} has been closed by admin. Customer profile updated in directory.`,
+      { type: "BOOKING_CONFIRMED", link: `/admin/customers` }
+    );
+
+    return booking;
+  }
 }

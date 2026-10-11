@@ -37,6 +37,15 @@ interface DestinationItem {
   bestTimeToVisit?: string;
   weather?: string;
   howToReach?: string;
+  verifiedStays?: string;
+  fastFacts?: {
+    startingPrice?: string;
+    idealDuration?: string;
+    bestTime?: string;
+    weather?: string;
+    howToReach?: string;
+    verifiedStays?: string;
+  };
   shortDescription?: string;
   highlights?: string[];
   attractions?: AttractionItem[];
@@ -127,6 +136,7 @@ export default function AdminDestinationsPage() {
     bestTimeToVisit: "October to March",
     weather: "Summer: 12°C to 25°C · Winter: -5°C to 10°C",
     howToReach: "Nearest airport or railhead connected with private cabs and luxury Volvo coaches.",
+    verifiedStays: "4★ / 5★ Handpicked Stays",
     shortDescription: "",
     highlights: "",
     attractions: [] as AttractionItem[],
@@ -346,12 +356,13 @@ export default function AdminDestinationsPage() {
       stateId: dest.stateId || "",
       region: dest.region || "North India",
       displayOrder: dest.displayOrder || 1,
-      startingPrice: dest.startingPrice || "₹14,999",
+      startingPrice: dest.startingPrice || dest.fastFacts?.startingPrice || "₹14,999",
       tagline: dest.tagline || "",
-      idealDuration: dest.idealDuration || "4 to 6 Days",
-      bestTimeToVisit: dest.bestTimeToVisit || "October to March",
-      weather: dest.weather || "Pleasant & Mountainous",
-      howToReach: dest.howToReach || "",
+      idealDuration: dest.idealDuration || dest.fastFacts?.idealDuration || "4 to 6 Days",
+      bestTimeToVisit: (typeof dest.bestTimeToVisit === "string" && dest.bestTimeToVisit) ? dest.bestTimeToVisit : (dest.fastFacts?.bestTime || "October to March"),
+      weather: (typeof dest.weather === "string" && dest.weather) ? dest.weather : (dest.fastFacts?.weather || "Pleasant & Mountainous"),
+      howToReach: (typeof dest.howToReach === "string" && dest.howToReach) ? dest.howToReach : (dest.fastFacts?.howToReach || ""),
+      verifiedStays: dest.verifiedStays || dest.fastFacts?.verifiedStays || "4★ / 5★ Handpicked Stays",
       shortDescription: dest.shortDescription || "",
       highlights: Array.isArray(dest.highlights) ? dest.highlights.join(", ") : (dest.highlights || ""),
       attractions: Array.isArray(dest.attractions) ? dest.attractions : [],
@@ -385,6 +396,7 @@ export default function AdminDestinationsPage() {
       bestTimeToVisit: "October to March",
       weather: "Summer: 12°C to 25°C · Winter: -5°C to 10°C",
       howToReach: "Nearest airport or railhead connected with private cabs and luxury Volvo coaches.",
+      verifiedStays: "4★ / 5★ Handpicked Stays",
       shortDescription: "",
       highlights: "",
       attractions: [],
@@ -860,7 +872,7 @@ export default function AdminDestinationsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-slate-300">Starting Price</label>
                       <input
@@ -890,6 +902,17 @@ export default function AdminDestinationsPage() {
                         value={formData.bestTimeToVisit}
                         onChange={(e) => setFormData({ ...formData, bestTimeToVisit: e.target.value })}
                         placeholder="e.g. October to June (Peak Snow Dec-Feb)"
+                        className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-300">Verified Stays</label>
+                      <input
+                        type="text"
+                        value={formData.verifiedStays}
+                        onChange={(e) => setFormData({ ...formData, verifiedStays: e.target.value })}
+                        placeholder="e.g. 4★ / 5★ Handpicked Stays"
                         className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
                       />
                     </div>

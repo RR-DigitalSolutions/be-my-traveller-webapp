@@ -104,6 +104,10 @@ export default function AdminBookingsPage() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [supplierPayModalOpen, setSupplierPayModalOpen] = useState(false);
   const [voucherModalOpen, setVoucherModalOpen] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackText, setFeedbackText] = useState("Wonderful trip experience! Everything was seamless and well coordinated.");
+  const [feedbackNotes, setFeedbackNotes] = useState("");
 
   // Modal Form States
   const [hotelForm, setHotelForm] = useState({
@@ -330,6 +334,62 @@ export default function AdminBookingsPage() {
       }
     } catch (err) {
       console.error("Voucher error:", err);
+    }
+  };
+
+  const handleRecordFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBooking) return;
+    try {
+      const res = await fetch(`/api/v1/admin/bookings/${selectedBooking._id}/operations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "RECORD_FEEDBACK",
+          payload: {
+            rating: feedbackRating,
+            feedbackText,
+            notes: feedbackNotes,
+          },
+        }),
+      });
+      if (res.ok) {
+        setFeedbackModalOpen(false);
+        alert("⭐ Guest feedback recorded successfully!");
+        await fetchBookings();
+      }
+    } catch (err) {
+      console.error("Feedback record error:", err);
+    }
+  };
+
+  const handleCompleteTrip = async () => {
+    if (!selectedBooking) return;
+    if (
+      !confirm(
+        `Are you ready to mark trip ${selectedBooking.bookingNumber} as COMPLETED? This will close the booking and archive traveler details to the Customers directory.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/admin/bookings/${selectedBooking._id}/operations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "CLOSE_TRIP_COMPLETED",
+          payload: {
+            adminNotes: "Trip concluded with verified guest satisfaction.",
+          },
+        }),
+      });
+      if (res.ok) {
+        alert("🎉 Trip completed and booking closed! Customer record synced to /admin/customers directory.");
+        await fetchBookings();
+        setSelectedBooking(null);
+      }
+    } catch (err) {
+      console.error("Complete trip error:", err);
     }
   };
 
@@ -677,6 +737,60 @@ export default function AdminBookingsPage() {
                       </strong>{" "}
                       ({selectedBooking.nights} Nights)
                     </p>
+                  </div>
+
+                  {/* Trip Lifecycle & Guest Feedback */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-slate-800 to-slate-800/60 border border-amber-500/30 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-black text-amber-400 text-xs uppercase tracking-wider">
+                          Trip Lifecycle &amp; Guest Feedback
+                        </h4>
+                        <p className="text-slate-400 text-[11px] mt-0.5">
+                          Collect guest rating on last day &amp; close trip to archive to Customer directory.
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          selectedBooking.status === "COMPLETED"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                        }`}
+                      >
+                        {selectedBooking.status}
+                      </span>
+                    </div>
+
+                    {selectedBooking.internalNotes && selectedBooking.internalNotes.includes("[Guest Feedback") && (
+                      <div className="p-3 rounded-xl bg-slate-900 border border-slate-700 text-xs text-amber-300 font-medium">
+                        {selectedBooking.internalNotes
+                          .split("\n")
+                          .filter((l) => l.includes("[Guest Feedback"))
+                          .join("\n")}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <button
+                        onClick={() => setFeedbackModalOpen(true)}
+                        className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-black transition cursor-pointer"
+                      >
+                        ⭐ Record Guest Feedback
+                      </button>
+
+                      {selectedBooking.status !== "COMPLETED" ? (
+                        <button
+                          onClick={handleCompleteTrip}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md transition cursor-pointer"
+                        >
+                          🎉 Complete Trip &amp; Close Booking
+                        </button>
+                      ) : (
+                        <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                          ✓ Trip Completed &amp; Customer Profile Synced to Directory
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1239,6 +1353,97 @@ export default function AdminBookingsPage() {
                   className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black cursor-pointer"
                 >
                   Submit for Approval
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4.5: GUEST FEEDBACK RECORDING */}
+      {feedbackModalOpen && selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <span>⭐</span> Record Guest Tour Feedback
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {selectedBooking.customer?.name} • Ref: {selectedBooking.bookingNumber}
+                </p>
+              </div>
+              <button
+                onClick={() => setFeedbackModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleRecordFeedback} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1.5 font-bold uppercase tracking-wider text-[11px]">
+                  Tour Experience Rating
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setFeedbackRating(star)}
+                      className={`flex-1 py-2 rounded-xl text-center font-black text-sm border transition cursor-pointer ${
+                        feedbackRating >= star
+                          ? "bg-amber-500/20 text-amber-400 border-amber-500/50"
+                          : "bg-slate-800/50 text-slate-500 border-slate-800 hover:text-slate-300"
+                      }`}
+                    >
+                      {star} ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-bold uppercase tracking-wider text-[11px]">
+                  Guest Review / Testimonial
+                </label>
+                <textarea
+                  rows={3}
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Enter guest feedback, highlights, or review..."
+                  className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 text-white text-xs focus:ring-1 focus:ring-amber-500 outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-bold uppercase tracking-wider text-[11px]">
+                  Operations / Chauffeur / Hotel Notes (Internal)
+                </label>
+                <input
+                  type="text"
+                  value={feedbackNotes}
+                  onChange={(e) => setFeedbackNotes(e.target.value)}
+                  placeholder="e.g. Chauffeur commended, hotel check-in smooth..."
+                  className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl p-2.5 text-white text-xs focus:ring-1 focus:ring-amber-500 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setFeedbackModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer shadow-lg shadow-amber-500/20"
+                >
+                  ⭐ Save Feedback
                 </button>
               </div>
             </form>

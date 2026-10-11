@@ -111,6 +111,34 @@ export async function PATCH(
       updateDoc.coverImageStr = body.coverImage;
     }
 
+    // Keep fastFacts and root attributes 100% in sync so changes reflect immediately across all frontend components
+    const existingDoc = Types.ObjectId.isValid(id)
+      ? await db.collection("destinations").findOne({ _id: new Types.ObjectId(id) })
+      : await db.collection("destinations").findOne({ slug: id });
+
+    const newStartingPrice = body.startingPrice ?? existingDoc?.startingPrice ?? existingDoc?.fastFacts?.startingPrice ?? "₹14,999";
+    const newIdealDuration = body.idealDuration ?? existingDoc?.idealDuration ?? existingDoc?.fastFacts?.idealDuration ?? "4 to 6 Days";
+    const newBestTime = body.bestTimeToVisit ?? existingDoc?.bestTimeToVisit ?? existingDoc?.fastFacts?.bestTime ?? "October to March";
+    const newWeather = body.weather ?? existingDoc?.weather ?? existingDoc?.fastFacts?.weather ?? "Pleasant Climate";
+    const newHowToReach = body.howToReach ?? existingDoc?.howToReach ?? existingDoc?.fastFacts?.howToReach ?? "";
+    const newVerifiedStays = body.verifiedStays ?? existingDoc?.verifiedStays ?? existingDoc?.fastFacts?.verifiedStays ?? "4★ / 5★ Handpicked Stays";
+
+    updateDoc.startingPrice = newStartingPrice;
+    updateDoc.idealDuration = newIdealDuration;
+    updateDoc.bestTimeToVisit = newBestTime;
+    updateDoc.weather = newWeather;
+    updateDoc.howToReach = newHowToReach;
+    updateDoc.verifiedStays = newVerifiedStays;
+
+    updateDoc.fastFacts = {
+      startingPrice: newStartingPrice,
+      idealDuration: newIdealDuration,
+      bestTime: newBestTime,
+      weather: newWeather,
+      howToReach: newHowToReach,
+      verifiedStays: newVerifiedStays,
+    };
+
     if (Types.ObjectId.isValid(id)) {
       await db.collection("destinations").updateOne(
         { _id: new Types.ObjectId(id) },

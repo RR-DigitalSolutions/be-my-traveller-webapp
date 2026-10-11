@@ -42,6 +42,9 @@ export interface IDestination extends Document {
   region?: string; // e.g. "North India", "South India", "Asia & Middle East", "Europe", etc.
   displayOrder: number;
   startingPrice?: string;
+  idealDuration?: string;
+  verifiedStays?: string;
+  fastFacts?: Record<string, unknown>;
 
   // Content
   tagline?: string;
@@ -121,6 +124,9 @@ const DestinationSchema = new Schema<IDestination>(
     region: { type: String, trim: true },
     displayOrder: { type: Number, default: 0 },
     startingPrice: { type: String, default: "₹14,999" },
+    idealDuration: { type: String, default: "4 to 6 Days" },
+    verifiedStays: { type: String, default: "4★ / 5★ Handpicked Stays" },
+    fastFacts: { type: Schema.Types.Mixed },
 
     tagline: { type: String, maxlength: 200 },
     shortDescription: { type: String, required: true, maxlength: 500 },
