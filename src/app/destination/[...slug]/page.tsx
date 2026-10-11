@@ -155,15 +155,41 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       }
       // ── Hierarchy Level 2: STATE -> Fetch Cities belonging to this State ──
       else if (isStateLevel) {
+        const stateSlugs = Array.from(
+          new Set(
+            [
+              targetSlug,
+              STATE_SLUG_MAP[targetSlug],
+              targetSlug.replace(/-pradesh$/, ""),
+              `${targetSlug}-pradesh`,
+              dbDest?.slug,
+              dbDest?.stateSlug,
+            ].filter(Boolean) as string[]
+          )
+        );
+
+        const stateIds: any[] = [];
+        if (parentId) {
+          stateIds.push(parentId);
+          stateIds.push(String(parentId));
+          if (Types.ObjectId.isValid(String(parentId))) {
+            stateIds.push(new Types.ObjectId(String(parentId)));
+          }
+        }
+
+        const stateCleanName = (dbDest?.name || targetSlug)
+          .replace(/-/g, " ")
+          .replace(/ (pradesh|backwaters|coastal|paradise)$/i, "");
+
         dbChildDestinations = await db
           .collection("destinations")
           .find({
-            type: { $in: ["CITY", "AREA"] },
+            type: { $in: ["CITY", "AREA", "ISLAND"] },
             ...(parentId ? { _id: { $ne: parentId } } : {}),
             $or: [
-              ...(parentId ? [{ stateId: parentId }] : []),
-              { stateSlug: targetSlug },
-              { stateName: { $regex: new RegExp(`^${(dbDest?.name || targetSlug).replace(/-/g, " ")}`, "i") } },
+              ...(stateIds.length > 0 ? [{ stateId: { $in: stateIds } }] : []),
+              { stateSlug: { $in: stateSlugs } },
+              { stateName: { $regex: new RegExp(`^${stateCleanName}`, "i") } },
             ],
             status: { $ne: "DRAFT" },
           })
@@ -172,16 +198,43 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       }
       // ── Hierarchy Level 3: CITY -> Fetch Sibling Cities in the same State ──
       else {
-        const parentStateSlug = parsed.stateSlug || dbDest?.stateSlug || "uttarakhand";
+        const rawParentState = parsed.stateSlug || dbDest?.stateSlug || "uttarakhand";
+        const stateSlugs = Array.from(
+          new Set(
+            [
+              rawParentState,
+              STATE_SLUG_MAP[rawParentState],
+              rawParentState.replace(/-pradesh$/, ""),
+              `${rawParentState}-pradesh`,
+              dbDest?.stateSlug,
+            ].filter(Boolean) as string[]
+          )
+        );
+
+        const stateIds: any[] = [];
+        const rawStateId = dbDest?.stateId;
+        if (rawStateId) {
+          stateIds.push(rawStateId);
+          stateIds.push(String(rawStateId));
+          if (Types.ObjectId.isValid(String(rawStateId))) {
+            stateIds.push(new Types.ObjectId(String(rawStateId)));
+          }
+        }
+
+        const stateCleanName = (dbDest?.stateName || rawParentState)
+          .replace(/-/g, " ")
+          .replace(/ (pradesh|backwaters|coastal|paradise)$/i, "");
+
         dbChildDestinations = await db
           .collection("destinations")
           .find({
-            type: { $in: ["CITY", "AREA"] },
+            type: { $in: ["CITY", "AREA", "ISLAND"] },
             slug: { $nin: [targetSlug, `${targetSlug}-tour-packages`] },
             ...(parentId ? { _id: { $ne: parentId } } : {}),
             $or: [
-              ...(dbDest?.stateId ? [{ stateId: dbDest.stateId }] : []),
-              { stateSlug: parentStateSlug },
+              ...(stateIds.length > 0 ? [{ stateId: { $in: stateIds } }] : []),
+              { stateSlug: { $in: stateSlugs } },
+              { stateName: { $regex: new RegExp(`^${stateCleanName}`, "i") } },
             ],
             status: { $ne: "DRAFT" },
           })
@@ -335,18 +388,33 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
   }));
 
   // 5. Packages Resolution: 100% Dynamic from DB collection (/admin/products/packages)
-  const resolvedPackages = dbPackages.map((p: any) => ({
-    slug: p.slug,
-    title: p.title || p.name,
-    route: p.route || p.tagline || `${p.nights || 5}N Tour Package`,
-    nights: p.nights ? `${p.nights} Nights / ${p.days || p.nights + 1} Days` : "5 Nights / 6 Days",
-    price: p.price || `₹${Number(p.startingPrice || 14999).toLocaleString("en-IN")}`,
-    originalPrice: p.originalPrice || `₹${Number((p.startingPrice || 14999) * 1.3).toLocaleString("en-IN")}`,
-    rating: p.rating || 4.9,
-    reviews: p.reviews || 140,
-    img: p.coverImage || dbDest?.coverImageStr || dbDest?.coverImage || "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&auto=format&fit=crop&q=80",
-    inclusions: p.inclusions || ["4★ Hotel Stays", "Private AC Cab", "Daily Breakfast & Dinner"],
-  }));
+  const resolvedPackages = dbPackages.map((p: any) => {
+    const rawPrice = p.price ?? (p.startingPrice ? `₹${Number(p.startingPrice).toLocaleString("en-IN")}` : "₹14,999");
+    const formattedPrice = typeof rawPrice === "number" ? `₹${rawPrice.toLocaleString("en-IN")}` : String(rawPrice);
+
+    const rawOrig = p.originalPrice ?? (p.startingPrice ? `₹${Math.round(Number(p.startingPrice) * 1.3).toLocaleString("en-IN")}` : "₹19,499");
+    const formattedOrig = typeof rawOrig === "number" ? `₹${rawOrig.toLocaleString("en-IN")}` : String(rawOrig);
+
+    let formattedNights = "5 Nights / 6 Days";
+    if (typeof p.nights === "string" && p.nights.trim()) {
+      formattedNights = p.nights.includes("Night") ? p.nights : `${p.nights} Nights / ${p.days || 6} Days`;
+    } else if (typeof p.nights === "number") {
+      formattedNights = `${p.nights} Nights / ${p.days || p.nights + 1} Days`;
+    }
+
+    return {
+      slug: p.slug,
+      title: p.title || p.name,
+      route: p.route || p.tagline || formattedNights,
+      nights: formattedNights,
+      price: formattedPrice,
+      originalPrice: formattedOrig,
+      rating: p.rating || 4.9,
+      reviews: p.reviews || 140,
+      img: p.coverImage || p.coverImageStr || dbDest?.coverImageStr || dbDest?.coverImage || "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&auto=format&fit=crop&q=80",
+      inclusions: p.inclusions || ["4★ Hotel Stays", "Private AC Cab", "Daily Breakfast & Dinner"],
+    };
+  });
 
   // 6. Activities Resolution: 100% Dynamic from Activities collection (/admin/content/activities)
   const resolvedActivities = dbActivities.map((act: any) => ({

@@ -56,13 +56,15 @@ export function buildDestinationUrl(options: {
   if (options.place && options.state) {
     const stateClean = stripPackageSuffix(options.state);
     const placeClean = stripPackageSuffix(options.place);
-    return `/destination/${country}/${stateClean}/${placeClean}-tour-packages`;
+    const canonicalState = STATE_SLUG_MAP[stateClean] || stateClean;
+    return `/destination/${country}/${canonicalState}/${placeClean}-tour-packages`;
   }
 
   // Level 2: State under Country
   if (options.state) {
     const stateClean = stripPackageSuffix(options.state);
-    return `/destination/${country}/${stateClean}-tour-packages`;
+    const canonicalState = STATE_SLUG_MAP[stateClean] || stateClean;
+    return `/destination/${country}/${canonicalState}-tour-packages`;
   }
 
   // Level 1: Country

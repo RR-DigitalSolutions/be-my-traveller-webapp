@@ -8,8 +8,8 @@ export interface PackageItem {
   title: string;
   route: string;
   nights: string;
-  price: string;
-  originalPrice: string;
+  price: string | number;
+  originalPrice: string | number;
   rating: number;
   reviews: number;
   img: string;
@@ -32,17 +32,21 @@ export default function DestinationPackageGrid({
   const [selectedBudget, setSelectedBudget] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<string>("FEATURED");
 
-  // Helper to extract raw numeric price
-  const parsePrice = (priceStr: string): number => {
-    if (!priceStr) return 0;
-    const num = priceStr.replace(/[^0-9]/g, "");
+  // Helper to extract raw numeric price safely (supports number or string)
+  const parsePrice = (priceVal: any): number => {
+    if (priceVal === null || priceVal === undefined) return 0;
+    if (typeof priceVal === "number") return isNaN(priceVal) ? 0 : priceVal;
+    const str = String(priceVal);
+    const num = str.replace(/[^0-9]/g, "");
     return parseInt(num, 10) || 0;
   };
 
-  // Helper to extract number of nights
-  const parseNights = (nightsStr: string): number => {
-    if (!nightsStr) return 0;
-    const match = nightsStr.match(/(\d+)\s*N/i);
+  // Helper to extract number of nights safely
+  const parseNights = (nightsVal: any): number => {
+    if (nightsVal === null || nightsVal === undefined) return 0;
+    if (typeof nightsVal === "number") return nightsVal;
+    const str = String(nightsVal);
+    const match = str.match(/(\d+)\s*N/i) || str.match(/(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   };
 
@@ -301,7 +305,7 @@ export default function DestinationPackageGrid({
                     <div>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-slate-400 line-through">
-                          {pkg.originalPrice}
+                          {typeof pkg.originalPrice === "number" ? `₹${pkg.originalPrice.toLocaleString("en-IN")}` : pkg.originalPrice}
                         </span>
                         <span className="text-[9.5px] font-black uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
                           {discountPercent}% OFF
@@ -309,7 +313,7 @@ export default function DestinationPackageGrid({
                       </div>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-xl font-black text-slate-900 tracking-tight">
-                          {pkg.price}
+                          {typeof pkg.price === "number" ? `₹${pkg.price.toLocaleString("en-IN")}` : pkg.price}
                         </span>
                         <span className="text-[10.5px] text-slate-500 font-medium">
                           / person
