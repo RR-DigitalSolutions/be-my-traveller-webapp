@@ -925,9 +925,9 @@ export default function AdminQuotesPage() {
   // Cancellation Policies Visibility Toggle (Show / Hide on PDF)
   const [showCancellationPolicies, setShowCancellationPolicies] = useState(true);
 
-  // Primary Package Tier Selection & Selective Alternative Options
+  // Primary Package Tier Selection & Tier Options (All 3 Shown in Quote by default)
   const [selectedTier, setSelectedTier] = useState<"deluxe" | "superDeluxe" | "luxury">("superDeluxe");
-  const [showDeluxeOption, setShowDeluxeOption] = useState(false);
+  const [showDeluxeOption, setShowDeluxeOption] = useState(true);
   const [showSuperDeluxeOption, setShowSuperDeluxeOption] = useState(true);
   const [showLuxuryOption, setShowLuxuryOption] = useState(true);
 
@@ -948,24 +948,19 @@ export default function AdminQuotesPage() {
       setHotelTier(deluxeHotel);
       setCabType(deluxeCab);
       setNetCost(deluxeNetCost);
-      setShowDeluxeOption(true);
-      setShowSuperDeluxeOption(true); // Offer 1 upgrade to Super Deluxe
-      setShowLuxuryOption(false);
     } else if (tier === "superDeluxe") {
       setHotelTier(superDeluxeHotel);
       setCabType(superDeluxeCab);
       setNetCost(superDeluxeNetCost);
-      setShowDeluxeOption(false);
-      setShowSuperDeluxeOption(true);
-      setShowLuxuryOption(true); // Offer 1 upgrade to Luxury
     } else if (tier === "luxury") {
       setHotelTier(luxuryHotel);
       setCabType(luxuryCab);
       setNetCost(luxuryNetCost);
-      setShowDeluxeOption(false);
-      setShowSuperDeluxeOption(true); // Offer 1 downgrade to Super Deluxe
-      setShowLuxuryOption(true);
     }
+    // Always show all three options in Quote
+    setShowDeluxeOption(true);
+    setShowSuperDeluxeOption(true);
+    setShowLuxuryOption(true);
   };
 
   // Computed Totals (primary / default)
@@ -1144,9 +1139,10 @@ export default function AdminQuotesPage() {
     setWelcomeMessage(q.welcomeMessage !== undefined ? q.welcomeMessage : DEFAULT_WELCOME_MESSAGE);
     setShowCancellationPolicies(q.showCancellationPolicies !== false);
     setSelectedTier(q.selectedTier || "superDeluxe");
-    setShowDeluxeOption(q.tierOptions?.showDeluxe !== undefined ? q.tierOptions.showDeluxe : false);
-    setShowSuperDeluxeOption(q.tierOptions?.showSuperDeluxe !== undefined ? q.tierOptions.showSuperDeluxe : true);
-    setShowLuxuryOption(q.tierOptions?.showLuxury !== undefined ? q.tierOptions.showLuxury : true);
+    // Ensure all 3 options are shown simultaneously in quote comparison
+    setShowDeluxeOption(true);
+    setShowSuperDeluxeOption(true);
+    setShowLuxuryOption(true);
     setModalOpen(true);
   };
 
@@ -1175,7 +1171,7 @@ export default function AdminQuotesPage() {
     setWelcomeMessage(DEFAULT_WELCOME_MESSAGE);
     setShowCancellationPolicies(true);
     setSelectedTier("superDeluxe");
-    setShowDeluxeOption(false);
+    setShowDeluxeOption(true);
     setShowSuperDeluxeOption(true);
     setShowLuxuryOption(true);
     setDeluxeHotel("3★ Standard Deluxe Hotels");
@@ -1350,6 +1346,12 @@ export default function AdminQuotesPage() {
       dayWiseSummary +
       `\n\n💰 *TOTAL PACKAGE PRICE:* ${formatINR(q.totalAmount)} (All-Inclusive)\n` +
       (q.costing?.perPersonCost ? `👤 *Per Person Cost:* ${formatINR(q.costing.perPersonCost)}\n` : "") +
+      (q.pricingTiers
+        ? `\n💎 *ALL 3 PACKAGE TIER OPTIONS AVAILABLE:*\n` +
+          `• *Deluxe:* ${formatINR(q.pricingTiers.deluxe?.totalAmount || 0)} (${q.pricingTiers.deluxe?.hotelTier || "3★ Deluxe"} | ${q.pricingTiers.deluxe?.cabType || "Dedicated Cab"})\n` +
+          `• *Super Deluxe:* ${formatINR(q.pricingTiers.superDeluxe?.totalAmount || 0)} (${q.pricingTiers.superDeluxe?.hotelTier || "4★ Premium"} | ${q.pricingTiers.superDeluxe?.cabType || "Private AC Cab"})\n` +
+          `• *Luxury:* ${formatINR(q.pricingTiers.luxury?.totalAmount || 0)} (${q.pricingTiers.luxury?.hotelTier || "5★ Luxury"} | ${q.pricingTiers.luxury?.cabType || "Premium Cab"})\n`
+        : "") +
       `\n✅ *KEY INCLUSIONS:*\n` +
       (q.inclusions && q.inclusions.length > 0
         ? q.inclusions.slice(0, 5).map((inc) => `✓ ${inc}`).join("\n")
@@ -1455,10 +1457,10 @@ export default function AdminQuotesPage() {
     const tiers = q.pricingTiers;
     const baseTierKey = q.selectedTier || "superDeluxe";
 
-    // Determine active tiers to display
-    const showDeluxe = q.tierOptions ? !!q.tierOptions.showDeluxe : (baseTierKey === "deluxe");
-    const showSuperDeluxe = q.tierOptions ? !!q.tierOptions.showSuperDeluxe : (baseTierKey === "superDeluxe" || !q.tierOptions);
-    const showLuxury = q.tierOptions ? !!q.tierOptions.showLuxury : (baseTierKey === "luxury" || !q.tierOptions);
+    // Determine active tiers to display (All 3 shown by default)
+    const showDeluxe = q.tierOptions?.showDeluxe !== false;
+    const showSuperDeluxe = q.tierOptions?.showSuperDeluxe !== false;
+    const showLuxury = q.tierOptions?.showLuxury !== false;
 
     const activeTierKeys: Array<"deluxe" | "superDeluxe" | "luxury"> = [];
     if (showDeluxe && tiers?.deluxe) activeTierKeys.push("deluxe");
@@ -1467,11 +1469,11 @@ export default function AdminQuotesPage() {
 
     if (tiers && tiers[baseTierKey] && !activeTierKeys.includes(baseTierKey)) {
       activeTierKeys.push(baseTierKey);
-      activeTierKeys.sort((a, b) => {
-        const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
-        return order[a] - order[b];
-      });
     }
+    activeTierKeys.sort((a, b) => {
+      const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
+      return order[a] - order[b];
+    });
 
     const baseTotal = (tiers && tiers[baseTierKey]?.totalAmount) || q.totalAmount || 0;
 
@@ -2229,9 +2231,9 @@ export default function AdminQuotesPage() {
               {/* ── Package Tier Options (Quoted Base Tier + Upgrade/Downgrade Alternatives) (Moved Below Day-by-Day) ── */}
               {previewQuote.pricingTiers && (() => {
                 const baseTierKey = previewQuote.selectedTier || "superDeluxe";
-                const showDeluxe = previewQuote.tierOptions ? !!previewQuote.tierOptions.showDeluxe : baseTierKey === "deluxe";
-                const showSuperDeluxe = previewQuote.tierOptions ? !!previewQuote.tierOptions.showSuperDeluxe : (baseTierKey === "superDeluxe" || !previewQuote.tierOptions);
-                const showLuxury = previewQuote.tierOptions ? !!previewQuote.tierOptions.showLuxury : (baseTierKey === "luxury" || !previewQuote.tierOptions);
+                const showDeluxe = previewQuote.tierOptions?.showDeluxe !== false;
+                const showSuperDeluxe = previewQuote.tierOptions?.showSuperDeluxe !== false;
+                const showLuxury = previewQuote.tierOptions?.showLuxury !== false;
 
                 const activeKeys: Array<"deluxe" | "superDeluxe" | "luxury"> = [];
                 if (showDeluxe && previewQuote.pricingTiers.deluxe) activeKeys.push("deluxe");
@@ -2240,11 +2242,11 @@ export default function AdminQuotesPage() {
 
                 if (previewQuote.pricingTiers[baseTierKey] && !activeKeys.includes(baseTierKey)) {
                   activeKeys.push(baseTierKey);
-                  activeKeys.sort((a, b) => {
-                    const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
-                    return order[a] - order[b];
-                  });
                 }
+                activeKeys.sort((a, b) => {
+                  const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
+                  return order[a] - order[b];
+                });
 
                 const baseTotal = (previewQuote.pricingTiers[baseTierKey]?.totalAmount) || previewQuote.totalAmount || 0;
 
@@ -2894,134 +2896,167 @@ export default function AdminQuotesPage() {
                   </div>
                 </div>
 
-                {/* 2. Selective Alternative Options to Show to Client */}
-                <div className="pt-3 border-t border-slate-800 space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <h5 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <span>🎯</span> 2. Choose Alternative Option to Show on Voucher (Upgrade or Downgrade)
-                    </h5>
-                    <span className="text-[10px] text-slate-400">
-                      Show smart alternative(s) alongside the quoted package
-                    </span>
+                {/* 2. Package Tier Options to Show on Voucher (All 3 Options Included for Comparison) */}
+                <div className="pt-3 border-t border-slate-800 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h5 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>💎</span> 2. Package Tier Options on Voucher (All 3 Tiers for Guest Comparison)
+                      </h5>
+                      <span className="text-[10px] text-slate-400">
+                        Selected base quote + upgrade &amp; alternative options shown side-by-side on quote
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowDeluxeOption(true);
+                          setShowSuperDeluxeOption(true);
+                          setShowLuxuryOption(true);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-[10px] font-bold cursor-pointer transition flex items-center gap-1"
+                        title="Include all 3 options on voucher"
+                      >
+                        <span>✓</span> Show All 3 Options in Quote
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {/* If selectedTier is Super Deluxe */}
-                    {selectedTier === "superDeluxe" && (
-                      <>
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showDeluxeOption ? "border-amber-500/50 bg-amber-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                    {/* Deluxe Tier Option */}
+                    <div className={`p-3 rounded-xl border transition ${
+                      selectedTier === "deluxe"
+                        ? "border-amber-500 bg-amber-500/15 shadow-sm"
+                        : showDeluxeOption
+                        ? "border-amber-500/40 bg-slate-800/80"
+                        : "border-slate-800 bg-slate-900/40 opacity-60"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            checked={showDeluxeOption}
+                            checked={selectedTier === "deluxe" || showDeluxeOption}
+                            disabled={selectedTier === "deluxe"}
                             onChange={(e) => setShowDeluxeOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-amber-500 w-4 h-4 cursor-pointer"
+                            className="rounded accent-amber-500 w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
+                            id="opt-deluxe"
                           />
-                          <div className="text-xs">
-                            <span className="font-bold text-amber-300 block">Offer Downgrade: Deluxe Tier</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              Value saver alternative (Save {formatINR(Math.max(0, superDeluxeTotal - deluxeTotal))})
-                            </span>
-                          </div>
-                        </label>
+                          <label htmlFor="opt-deluxe" className="font-bold text-xs text-amber-300 cursor-pointer">
+                            ✦ Deluxe Tier
+                          </label>
+                        </div>
+                        {selectedTier === "deluxe" ? (
+                          <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[9px]">
+                            BASE
+                          </span>
+                        ) : showDeluxeOption ? (
+                          <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[9px]">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <p className="font-black text-white">{formatINR(deluxeTotal)}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {selectedTier === "deluxe"
+                            ? "Client's quoted base package"
+                            : `Value saver (Save ${formatINR(Math.max(0, (selectedTier === "superDeluxe" ? superDeluxeTotal : luxuryTotal) - deluxeTotal))})`}
+                        </p>
+                      </div>
+                    </div>
 
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showLuxuryOption ? "border-purple-500/50 bg-purple-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
+                    {/* Super Deluxe Tier Option */}
+                    <div className={`p-3 rounded-xl border transition ${
+                      selectedTier === "superDeluxe"
+                        ? "border-sky-500 bg-sky-500/15 shadow-sm"
+                        : showSuperDeluxeOption
+                        ? "border-sky-500/40 bg-slate-800/80"
+                        : "border-slate-800 bg-slate-900/40 opacity-60"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            checked={showLuxuryOption}
-                            onChange={(e) => setShowLuxuryOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-purple-500 w-4 h-4 cursor-pointer"
-                          />
-                          <div className="text-xs">
-                            <span className="font-bold text-purple-300 block">Offer Upgrade: Luxury Tier (Recommended)</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              Premium upgrade (+{formatINR(Math.max(0, luxuryTotal - superDeluxeTotal))} total)
-                            </span>
-                          </div>
-                        </label>
-                      </>
-                    )}
-
-                    {/* If selectedTier is Deluxe */}
-                    {selectedTier === "deluxe" && (
-                      <>
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showSuperDeluxeOption ? "border-sky-500/50 bg-sky-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={showSuperDeluxeOption}
+                            checked={selectedTier === "superDeluxe" || showSuperDeluxeOption}
+                            disabled={selectedTier === "superDeluxe"}
                             onChange={(e) => setShowSuperDeluxeOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-sky-500 w-4 h-4 cursor-pointer"
+                            className="rounded accent-sky-500 w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
+                            id="opt-superDeluxe"
                           />
-                          <div className="text-xs">
-                            <span className="font-bold text-sky-300 block">Offer Upgrade: Super Deluxe (Recommended)</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              Popular 4★ upgrade (+{formatINR(Math.max(0, superDeluxeTotal - deluxeTotal))} total)
-                            </span>
-                          </div>
-                        </label>
+                          <label htmlFor="opt-superDeluxe" className="font-bold text-xs text-sky-300 cursor-pointer">
+                            ★ Super Deluxe
+                          </label>
+                        </div>
+                        {selectedTier === "superDeluxe" ? (
+                          <span className="px-2 py-0.5 rounded bg-sky-500 text-white font-black text-[9px]">
+                            BASE
+                          </span>
+                        ) : showSuperDeluxeOption ? (
+                          <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold text-[9px]">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <p className="font-black text-white">{formatINR(superDeluxeTotal)}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {selectedTier === "superDeluxe"
+                            ? "Client's quoted base package"
+                            : selectedTier === "deluxe"
+                            ? `Popular 4★ upgrade (+${formatINR(Math.max(0, superDeluxeTotal - deluxeTotal))})`
+                            : `Value saver (Save ${formatINR(Math.max(0, luxuryTotal - superDeluxeTotal))})`}
+                        </p>
+                      </div>
+                    </div>
 
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showLuxuryOption ? "border-purple-500/50 bg-purple-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
+                    {/* Luxury Tier Option */}
+                    <div className={`p-3 rounded-xl border transition ${
+                      selectedTier === "luxury"
+                        ? "border-purple-500 bg-purple-500/15 shadow-sm"
+                        : showLuxuryOption
+                        ? "border-purple-500/40 bg-slate-800/80"
+                        : "border-slate-800 bg-slate-900/40 opacity-60"
+                    }`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            checked={showLuxuryOption}
+                            checked={selectedTier === "luxury" || showLuxuryOption}
+                            disabled={selectedTier === "luxury"}
                             onChange={(e) => setShowLuxuryOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-purple-500 w-4 h-4 cursor-pointer"
+                            className="rounded accent-purple-500 w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
+                            id="opt-luxury"
                           />
-                          <div className="text-xs">
-                            <span className="font-bold text-purple-300 block">Offer High-End Upgrade: Luxury Tier</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              5★ VIP upgrade (+{formatINR(Math.max(0, luxuryTotal - deluxeTotal))} total)
-                            </span>
-                          </div>
-                        </label>
-                      </>
-                    )}
-
-                    {/* If selectedTier is Luxury */}
-                    {selectedTier === "luxury" && (
-                      <>
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showSuperDeluxeOption ? "border-sky-500/50 bg-sky-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={showSuperDeluxeOption}
-                            onChange={(e) => setShowSuperDeluxeOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-sky-500 w-4 h-4 cursor-pointer"
-                          />
-                          <div className="text-xs">
-                            <span className="font-bold text-sky-300 block">Offer Downgrade: Super Deluxe (Recommended)</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              Value alternative (Save {formatINR(Math.max(0, luxuryTotal - superDeluxeTotal))})
-                            </span>
-                          </div>
-                        </label>
-
-                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
-                          showDeluxeOption ? "border-amber-500/50 bg-amber-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={showDeluxeOption}
-                            onChange={(e) => setShowDeluxeOption(e.target.checked)}
-                            className="mt-0.5 rounded accent-amber-500 w-4 h-4 cursor-pointer"
-                          />
-                          <div className="text-xs">
-                            <span className="font-bold text-amber-300 block">Offer Economy Downgrade: Deluxe Tier</span>
-                            <span className="text-slate-400 block text-[11px]">
-                              Budget saver (Save {formatINR(Math.max(0, luxuryTotal - deluxeTotal))})
-                            </span>
-                          </div>
-                        </label>
-                      </>
-                    )}
+                          <label htmlFor="opt-luxury" className="font-bold text-xs text-purple-300 cursor-pointer">
+                            ♛ Luxury Tier
+                          </label>
+                        </div>
+                        {selectedTier === "luxury" ? (
+                          <span className="px-2 py-0.5 rounded bg-purple-500 text-white font-black text-[9px]">
+                            BASE
+                          </span>
+                        ) : showLuxuryOption ? (
+                          <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold text-[9px]">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div className="mt-2 text-xs">
+                        <p className="font-black text-white">{formatINR(luxuryTotal)}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {selectedTier === "luxury"
+                            ? "Client's quoted base package"
+                            : `5★ VIP upgrade (+${formatINR(Math.max(0, luxuryTotal - (selectedTier === "deluxe" ? deluxeTotal : superDeluxeTotal)))} total)`}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -3052,7 +3087,14 @@ export default function AdminQuotesPage() {
                             ON VOUCHER
                           </span>
                         ) : (
-                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowDeluxeOption(true)}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold cursor-pointer"
+                            title="Click to show on voucher"
+                          >
+                            + SHOW ON VOUCHER
+                          </button>
                         )}
                       </div>
                       <div>
@@ -3109,7 +3151,14 @@ export default function AdminQuotesPage() {
                             ON VOUCHER
                           </span>
                         ) : (
-                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowSuperDeluxeOption(true)}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 font-bold cursor-pointer"
+                            title="Click to show on voucher"
+                          >
+                            + SHOW ON VOUCHER
+                          </button>
                         )}
                       </div>
                       <div>
@@ -3166,7 +3215,14 @@ export default function AdminQuotesPage() {
                             ON VOUCHER
                           </span>
                         ) : (
-                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowLuxuryOption(true)}
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold cursor-pointer"
+                            title="Click to show on voucher"
+                          >
+                            + SHOW ON VOUCHER
+                          </button>
                         )}
                       </div>
                       <div>
