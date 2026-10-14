@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { formatINR } from "@/lib/utils";
 
 export interface IQuoteDay {
   dayNumber: number;
   title: string;
   city: string;
+  cityImageUrl?: string;
   hotelName: string;
   roomCategory: string;
   mealPlan: "EP" | "CP" | "MAP" | "AP";
@@ -52,11 +53,55 @@ export interface QuoteItem {
   assignedToName?: string;
   notes?: string;
   paymentPolicies?: string[];
+  cancellationPolicies?: string[];
+  importantInfo?: string[];
   pricingTiers?: {
     deluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
     superDeluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
     luxury: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
   };
+}
+
+export interface DestinationOption {
+  _id: string;
+  name: string;
+  slug: string;
+  type?: string;
+  stateName?: string;
+  countryName?: string;
+  region?: string;
+  coverImageStr?: string;
+  coverImage?: string | { url?: string };
+  gallery?: Array<string | { url?: string }>;
+}
+
+export function getDestinationImageUrl(d?: DestinationOption | null, cityName?: string): string {
+  if (d) {
+    if (typeof d.coverImage === "string" && d.coverImage.trim()) return d.coverImage;
+    if (typeof d.coverImage === "object" && d.coverImage?.url) return d.coverImage.url;
+    if (d.coverImageStr && d.coverImageStr.trim()) return d.coverImageStr;
+    if (Array.isArray(d.gallery) && d.gallery.length > 0) {
+      const g = d.gallery[0];
+      if (typeof g === "string") return g;
+      if (typeof g === "object" && g?.url) return g.url;
+    }
+  }
+  const c = (cityName || "").toLowerCase();
+  if (c.includes("srinagar") || c.includes("dal lake")) return "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("gulmarg")) return "https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("pahalgam")) return "https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("manali")) return "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("shimla")) return "https://images.unsplash.com/photo-1597074866923-dc0589150358?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("dharamshala") || c.includes("mcleodganj")) return "https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("kerala") || c.includes("munnar") || c.includes("alleppey") || c.includes("kochi")) return "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("goa")) return "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("leh") || c.includes("ladakh") || c.includes("nubra") || c.includes("pangong")) return "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("jaipur") || c.includes("rajasthan") || c.includes("udaipur") || c.includes("jodhpur")) return "https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("nainital") || c.includes("corbett") || c.includes("mussoorie") || c.includes("rishikesh")) return "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("bali") || c.includes("ubud") || c.includes("seminyak")) return "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("dubai") || c.includes("abu dhabi")) return "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80";
+  if (c.includes("phuket") || c.includes("bangkok") || c.includes("thailand") || c.includes("krabi")) return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80";
+  return "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80";
 }
 
 interface InboundLeadOption {
@@ -73,14 +118,30 @@ interface InboundLeadOption {
   assignedTo?: { name?: string };
 }
 
-const DEFAULT_PAYMENT_POLICIES: string[] = [
+export const DEFAULT_PAYMENT_POLICIES: string[] = [
   "50% advance payment required at time of booking confirmation.",
   "Remaining 50% balance due 7 days before travel commencement.",
   "Accepted via NEFT / RTGS / UPI / Credit & Debit Cards (2% processing fee on card payments).",
   "GST @5% applicable on total tour value. Tax Invoice issued upon full payment.",
-  "Cancellation: 25% charge if cancelled 15+ days prior | 50% for 7–14 days prior | 100% under 7 days.",
-  "No refund for unused services, early check-out, or no-shows.",
   "This proposal is valid for 7 days from the date of issue.",
+];
+
+export const DEFAULT_CANCELLATION_POLICIES: string[] = [
+  "30+ days prior to departure: 10% of total tour package deducted as administrative booking charges.",
+  "15 to 29 days prior to departure: 25% of total package cost deducted.",
+  "7 to 14 days prior to departure: 50% of total package cost deducted.",
+  "Less than 7 days prior or No-Show: 100% non-refundable under all circumstances.",
+  "Peak Season / Holiday departures (Diwali, Christmas, New Year) are 100% non-refundable upon confirmation.",
+  "Flight & train cancellations follow respective airline / railway fare policies.",
+  "Refunds, when approved, are credited to original payment method within 7–10 working banking days.",
+];
+
+export const DEFAULT_IMPORTANT_INFO: string[] = [
+  "Valid Govt. Photo ID (Aadhaar / Voter ID / Passport) is strictly mandatory for all guests at hotel check-in and transit.",
+  "Standard hotel check-in is 14:00 hrs & check-out is 11:00 hrs (early check-in subject to room availability).",
+  "AC in vehicles will be switched off on hilly / steep ghat roads as per mountain road safety regulations.",
+  "Any sightseeing unutilized due to traffic jams, bad weather, or sudden local road closures is non-refundable.",
+  "24x7 Dedicated On-Trip Concierge & Emergency Support: +91 8091638090.",
 ];
 
 export const ITINERARY_TEMPLATES: Record<
@@ -552,6 +613,237 @@ function formatTravelDates(td: string | { from?: string | Date; to?: string | Da
   return String(td);
 }
 
+interface CityPickerInputProps {
+  value: string;
+  imageUrl?: string;
+  destinations: DestinationOption[];
+  onSelect: (cityName: string, imageUrl?: string) => void;
+  onClearImage?: () => void;
+  onCustomImage?: (url: string) => void;
+}
+
+function CityPickerInput({
+  value,
+  imageUrl,
+  destinations,
+  onSelect,
+  onClearImage,
+  onCustomImage,
+}: CityPickerInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [showUrlPrompt, setShowUrlPrompt] = useState(false);
+  const [customUrl, setCustomUrl] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = (search || value || "").toLowerCase().trim();
+    if (!q) return destinations.slice(0, 15);
+    return destinations
+      .filter((d) => {
+        const nameMatch = d.name?.toLowerCase().includes(q);
+        const stateMatch = d.stateName?.toLowerCase().includes(q);
+        const slugMatch = d.slug?.toLowerCase().includes(q);
+        return nameMatch || stateMatch || slugMatch;
+      })
+      .slice(0, 20);
+  }, [destinations, search, value]);
+
+  const activeImage = imageUrl || (value ? getDestinationImageUrl(null, value) : "");
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div className="flex items-center justify-between mb-0.5">
+        <label className="text-[10px] text-slate-400 font-bold">City / Location</label>
+        {activeImage && (
+          <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span>📷</span> Image linked
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => {
+              onSelect(e.target.value, imageUrl);
+              setSearch(e.target.value);
+              setIsOpen(true);
+            }}
+            onFocus={() => {
+              setSearch(value);
+              setIsOpen(true);
+            }}
+            placeholder="Type or pick destination..."
+            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 pr-7"
+          />
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-[10px] cursor-pointer"
+            title="Toggle destinations dropdown"
+          >
+            ▼
+          </button>
+        </div>
+
+        {/* Thumbnail Preview Badge */}
+        {activeImage ? (
+          <div className="relative group shrink-0">
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-amber-500/60 bg-slate-800 shadow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={activeImage}
+                alt={value || "place"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+            {onClearImage && (
+              <button
+                type="button"
+                onClick={onClearImage}
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center text-[9px] font-bold shadow hover:bg-rose-500 cursor-pointer"
+                title="Remove image"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowUrlPrompt((prev) => !prev)}
+            className="px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[10px] text-amber-400 font-bold shrink-0 cursor-pointer"
+            title="Paste custom image URL"
+          >
+            + 📷
+          </button>
+        )}
+      </div>
+
+      {/* Custom URL prompt */}
+      {showUrlPrompt && (
+        <div className="mt-1.5 p-2 rounded-xl bg-slate-900 border border-amber-500/40 shadow-xl space-y-1.5 z-40 relative">
+          <span className="text-[10px] text-slate-300 font-bold block">Custom Place Image URL:</span>
+          <div className="flex gap-1.5">
+            <input
+              type="url"
+              placeholder="https://images.unsplash.com/..."
+              value={customUrl}
+              onChange={(e) => setCustomUrl(e.target.value)}
+              className="flex-1 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[11px] text-white"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (customUrl.trim() && onCustomImage) {
+                  onCustomImage(customUrl.trim());
+                  setShowUrlPrompt(false);
+                  setCustomUrl("");
+                }
+              }}
+              className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[10px] cursor-pointer"
+            >
+              Set
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowUrlPrompt(false)}
+              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-400 text-[10px] cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Autocomplete Dropdown */}
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full mt-1 max-h-56 overflow-y-auto rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-50 divide-y divide-slate-800">
+          <div className="p-1.5 bg-slate-950 sticky top-0 flex items-center justify-between text-[10px] text-slate-400 px-2 font-bold border-b border-slate-800">
+            <span>Choose from /admin/content/destinations ({filtered.length})</span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="text-slate-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+          {filtered.length > 0 ? (
+            filtered.map((dest) => {
+              const img = getDestinationImageUrl(dest, dest.name);
+              return (
+                <button
+                  key={dest._id || dest.slug}
+                  type="button"
+                  onClick={() => {
+                    onSelect(dest.name, img);
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left p-2 hover:bg-amber-500/10 flex items-center gap-2.5 transition cursor-pointer group"
+                >
+                  <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-800 shrink-0 border border-slate-700 group-hover:border-amber-500/50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img}
+                      alt={dest.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white group-hover:text-amber-300 truncate">
+                        {dest.name}
+                      </span>
+                      {dest.type && (
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400 font-medium">
+                          {dest.type}
+                        </span>
+                      )}
+                    </div>
+                    {(dest.stateName || dest.countryName) && (
+                      <span className="text-[10px] text-slate-400 truncate block">
+                        {dest.stateName ? `${dest.stateName}, ` : ""}{dest.countryName || "India"}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-amber-400 text-xs opacity-0 group-hover:opacity-100 transition font-bold shrink-0">
+                    Select ➔
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <div className="p-3 text-center text-xs text-slate-400">
+              No matching destination found. You can keep &quot;{value}&quot; as custom place.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminQuotesPage() {
   const [quotes, setQuotes] = useState<QuoteItem[]>([]);
   const [search, setSearch] = useState("");
@@ -563,6 +855,9 @@ export default function AdminQuotesPage() {
   const [copiedMsg, setCopiedMsg] = useState<string | null>(null);
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Destinations list from /admin/content/destinations for dynamic city selector
+  const [adminDestinations, setAdminDestinations] = useState<DestinationOption[]>([]);
 
   // Inbound Leads list for 1-click import
   const [inboundLeads, setInboundLeads] = useState<InboundLeadOption[]>([]);
@@ -607,14 +902,20 @@ export default function AdminQuotesPage() {
   const [paymentPolicies, setPaymentPolicies] = useState<string[]>([...DEFAULT_PAYMENT_POLICIES]);
   const [newPolicy, setNewPolicy] = useState("");
 
+  // Cancellation Policies & Important Information
+  const [cancellationPolicies, setCancellationPolicies] = useState<string[]>([...DEFAULT_CANCELLATION_POLICIES]);
+  const [newCancelPolicy, setNewCancelPolicy] = useState("");
+  const [importantInfo, setImportantInfo] = useState<string[]>([...DEFAULT_IMPORTANT_INFO]);
+  const [newInfoNote, setNewInfoNote] = useState("");
+
   // Three-Tier Pricing (Deluxe / Super Deluxe / Luxury)
-  const [deluxeHotel, setDeluxeHotel] = useState("3\u2605 Standard Deluxe Hotels");
+  const [deluxeHotel, setDeluxeHotel] = useState("3★ Standard Deluxe Hotels");
   const [deluxeCab, setDeluxeCab] = useState("Shared AC Cab / Tempo Traveller");
   const [deluxeNetCost, setDeluxeNetCost] = useState(45000);
-  const [superDeluxeHotel, setSuperDeluxeHotel] = useState("4\u2605 Premium Resorts & Hotels");
+  const [superDeluxeHotel, setSuperDeluxeHotel] = useState("4★ Premium Resorts & Hotels");
   const [superDeluxeCab, setSuperDeluxeCab] = useState("Private AC Innova / Ertiga");
   const [superDeluxeNetCost, setSuperDeluxeNetCost] = useState(65000);
-  const [luxuryHotel, setLuxuryHotel] = useState("5\u2605 Luxury Resorts & Boutique Hotels");
+  const [luxuryHotel, setLuxuryHotel] = useState("5★ Luxury Resorts & Boutique Hotels");
   const [luxuryCab, setLuxuryCab] = useState("Private Innova Crysta / Toyota Fortuner");
   const [luxuryNetCost, setLuxuryNetCost] = useState(95000);
 
@@ -657,6 +958,19 @@ export default function AdminQuotesPage() {
     }
   }, [search]);
 
+  // Load Admin Destinations from /api/v1/admin/destinations for dynamic city selector
+  const fetchAdminDestinations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/admin/destinations");
+      const data = await res.json();
+      if (data.destinations && Array.isArray(data.destinations)) {
+        setAdminDestinations(data.destinations);
+      }
+    } catch (err) {
+      console.error("Failed to load admin destinations:", err);
+    }
+  }, []);
+
   // Load Inbound Leads to enable 1-click import into builder
   const fetchInboundLeads = useCallback(async () => {
     try {
@@ -673,7 +987,8 @@ export default function AdminQuotesPage() {
   useEffect(() => {
     fetchQuotes();
     fetchInboundLeads();
-  }, [fetchQuotes, fetchInboundLeads]);
+    fetchAdminDestinations();
+  }, [fetchQuotes, fetchInboundLeads, fetchAdminDestinations]);
 
   // Handle auto-import from Inbound Lead
   const handleSelectLead = (leadId: string) => {
@@ -764,14 +1079,16 @@ export default function AdminQuotesPage() {
       setConsultantEmail(q.assignedSalesPerson.email || "bookings@bemytraveller.com");
     }
     setPaymentPolicies(q.paymentPolicies?.length ? [...q.paymentPolicies] : [...DEFAULT_PAYMENT_POLICIES]);
+    setCancellationPolicies(q.cancellationPolicies?.length ? [...q.cancellationPolicies] : [...DEFAULT_CANCELLATION_POLICIES]);
+    setImportantInfo(q.importantInfo?.length ? [...q.importantInfo] : [...DEFAULT_IMPORTANT_INFO]);
     if (q.pricingTiers) {
-      setDeluxeHotel(q.pricingTiers.deluxe.hotelTier || "3\u2605 Standard Deluxe Hotels");
+      setDeluxeHotel(q.pricingTiers.deluxe.hotelTier || "3★ Standard Deluxe Hotels");
       setDeluxeCab(q.pricingTiers.deluxe.cabType || "Shared AC Cab / Tempo Traveller");
       setDeluxeNetCost(q.pricingTiers.deluxe.netCost || 45000);
-      setSuperDeluxeHotel(q.pricingTiers.superDeluxe.hotelTier || "4\u2605 Premium Resorts & Hotels");
+      setSuperDeluxeHotel(q.pricingTiers.superDeluxe.hotelTier || "4★ Premium Resorts & Hotels");
       setSuperDeluxeCab(q.pricingTiers.superDeluxe.cabType || "Private AC Innova / Ertiga");
       setSuperDeluxeNetCost(q.pricingTiers.superDeluxe.netCost || 65000);
-      setLuxuryHotel(q.pricingTiers.luxury.hotelTier || "5\u2605 Luxury Resorts & Boutique Hotels");
+      setLuxuryHotel(q.pricingTiers.luxury.hotelTier || "5★ Luxury Resorts & Boutique Hotels");
       setLuxuryCab(q.pricingTiers.luxury.cabType || "Private Innova Crysta / Toyota Fortuner");
       setLuxuryNetCost(q.pricingTiers.luxury.netCost || 95000);
     }
@@ -798,13 +1115,15 @@ export default function AdminQuotesPage() {
     setNetCost(65000);
     setMarkupPercent(20);
     setPaymentPolicies([...DEFAULT_PAYMENT_POLICIES]);
-    setDeluxeHotel("3\u2605 Standard Deluxe Hotels");
+    setCancellationPolicies([...DEFAULT_CANCELLATION_POLICIES]);
+    setImportantInfo([...DEFAULT_IMPORTANT_INFO]);
+    setDeluxeHotel("3★ Standard Deluxe Hotels");
     setDeluxeCab("Shared AC Cab / Tempo Traveller");
     setDeluxeNetCost(45000);
-    setSuperDeluxeHotel("4\u2605 Premium Resorts & Hotels");
+    setSuperDeluxeHotel("4★ Premium Resorts & Hotels");
     setSuperDeluxeCab("Private AC Innova / Ertiga");
     setSuperDeluxeNetCost(65000);
-    setLuxuryHotel("5\u2605 Luxury Resorts & Boutique Hotels");
+    setLuxuryHotel("5★ Luxury Resorts & Boutique Hotels");
     setLuxuryCab("Private Innova Crysta / Toyota Fortuner");
     setLuxuryNetCost(95000);
     setModalOpen(true);
@@ -813,12 +1132,15 @@ export default function AdminQuotesPage() {
   // Add Day
   const handleAddDay = () => {
     const nextDayNum = itineraryDays.length + 1;
+    const lastCity = itineraryDays[itineraryDays.length - 1]?.city || "Destination";
+    const lastImg = itineraryDays[itineraryDays.length - 1]?.cityImageUrl || getDestinationImageUrl(null, lastCity);
     setItineraryDays([
       ...itineraryDays,
       {
         dayNumber: nextDayNum,
         title: `Day ${nextDayNum} Sightseeing & Scenic Excursion`,
-        city: itineraryDays[itineraryDays.length - 1]?.city || "Destination",
+        city: lastCity,
+        cityImageUrl: lastImg,
         hotelName: itineraryDays[itineraryDays.length - 1]?.hotelName || "4★ Deluxe Hotel",
         roomCategory: "Deluxe Premium Room",
         mealPlan: "MAP",
@@ -890,6 +1212,8 @@ export default function AdminQuotesPage() {
         role: "Senior Holiday Specialist",
       },
       paymentPolicies,
+      cancellationPolicies,
+      importantInfo,
       pricingTiers: {
         deluxe: { hotelTier: deluxeHotel, cabType: deluxeCab, netCost: deluxeNetCost, totalAmount: deluxeTotal, perPersonCost: deluxePerPerson },
         superDeluxe: { hotelTier: superDeluxeHotel, cabType: superDeluxeCab, netCost: superDeluxeNetCost, totalAmount: superDeluxeTotal, perPersonCost: superDeluxePerPerson },
@@ -1112,32 +1436,51 @@ export default function AdminQuotesPage() {
       </div>` : "";
 
     const dayHtml = Array.isArray(q.itinerary) && q.itinerary.length > 0
-      ? q.itinerary.map(day => `
-        <div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;page-break-inside:avoid;">
-          <div style="background:#f8f3e8;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;">
+      ? q.itinerary.map(day => {
+          const dayImg = day.cityImageUrl || getDestinationImageUrl(null, day.city);
+          return `
+        <div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;page-break-inside:avoid;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+          <div style="background:#f8f3e8;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #fde68a;">
             <div style="display:flex;align-items:center;gap:10px;">
-              <span style="background:#d97706;color:#fff;width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">${day.dayNumber}</span>
+              <span style="background:#d97706;color:#fff;width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0;">${day.dayNumber}</span>
               <span style="font-weight:800;font-size:13px;color:#111;">${day.title}</span>
             </div>
-            <span style="font-size:12px;color:#d97706;font-weight:700;">${day.city}</span>
+            <span style="font-size:11px;color:#d97706;font-weight:800;background:#fef3c7;padding:2px 8px;border-radius:12px;">📍 ${day.city}</span>
           </div>
-          <div style="padding:10px 14px;background:#fff;">
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;font-size:11px;">
-              <div><span style="color:#888;font-weight:600;">Hotel: </span><strong>${day.hotelName||"4\u2605 Hotel"}</strong>${day.roomCategory ? " &bull; "+day.roomCategory : ""}</div>
-              <div><span style="color:#888;font-weight:600;">Meal: </span><span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:700;">${day.mealPlan==="MAP"?"MAP (Bkft+Dinner)":day.mealPlan==="CP"?"CP (Bkft)":day.mealPlan==="AP"?"AP (All Meals)":"EP (Room Only)"}</span></div>
-              <div><span style="color:#888;font-weight:600;">Vehicle: </span><strong>${day.vehicleType||q.cabType}</strong></div>
+          <div style="padding:12px 14px;background:#fff;display:flex;gap:14px;align-items:flex-start;">
+            ${dayImg ? `
+            <div style="width:130px;height:95px;border-radius:6px;overflow:hidden;flex-shrink:0;background:#f3f4f6;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+              <img src="${dayImg}" alt="${day.city}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'" />
+            </div>` : ""}
+            <div style="flex:1;min-width:0;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;font-size:11px;background:#f9fafb;padding:6px 10px;border-radius:6px;">
+                <div><span style="color:#6b7280;font-weight:600;">🏨 Hotel: </span><strong>${day.hotelName||"4★ Hotel"}</strong>${day.roomCategory ? " • "+day.roomCategory : ""}</div>
+                <div><span style="color:#6b7280;font-weight:600;">🍽️ Meal: </span><span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:700;color:#92400e;">${day.mealPlan==="MAP"?"MAP (Bkft+Dinner)":day.mealPlan==="CP"?"CP (Bkft)":day.mealPlan==="AP"?"AP (All Meals)":"EP (Room Only)"}</span></div>
+                <div><span style="color:#6b7280;font-weight:600;">🚗 Cab: </span><strong>${day.vehicleType||q.cabType}</strong></div>
+              </div>
+              ${day.activities ? `<p style="font-size:11.5px;color:#374151;line-height:1.55;margin:0;">${day.activities}</p>` : ""}
             </div>
-            ${day.activities ? `<p style="font-size:12px;color:#374151;line-height:1.6;margin:0;">${day.activities}</p>` : ""}
           </div>
-        </div>`).join("") : "<p style=\"color:#888;font-size:12px;\">Standard itinerary applies.</p>";
+        </div>`;
+        }).join("") : "<p style=\"color:#888;font-size:12px;\">Standard itinerary applies.</p>";
 
     const inclHtml = q.inclusions?.length
-      ? q.inclusions.map(i => `<li style="padding:3px 0;color:#065f46;">\u2713 ${i}</li>`).join("")
-      : `<li style="padding:3px 0;">\u2713 4\u2605 Hotel Accommodations</li><li style="padding:3px 0;">\u2713 Daily Breakfast & Dinner</li><li style="padding:3px 0;">\u2713 Private Cab & Transfers</li>`;
+      ? q.inclusions.map(i => `<li style="padding:3px 0;color:#065f46;">✓ ${i}</li>`).join("")
+      : `<li style="padding:3px 0;">✓ 4★ Hotel Accommodations</li><li style="padding:3px 0;">✓ Daily Breakfast & Dinner</li><li style="padding:3px 0;">✓ Private Cab & Transfers</li>`;
     const exclHtml = q.exclusions?.length
-      ? q.exclusions.map(i => `<li style="padding:3px 0;color:#991b1b;">\u2715 ${i}</li>`).join("")
-      : `<li style="padding:3px 0;">\u2715 Airfare / Train Tickets</li><li style="padding:3px 0;">\u2715 Personal Expenses</li>`;
-    const polHtml = policies.map(p => `<li style="padding:4px 0;color:#374151;">\u2022 ${p}</li>`).join("");
+      ? q.exclusions.map(i => `<li style="padding:3px 0;color:#991b1b;">✕ ${i}</li>`).join("")
+      : `<li style="padding:3px 0;">✕ Airfare / Train Tickets</li><li style="padding:3px 0;">✕ Personal Expenses</li>`;
+    const polHtml = policies.map(p => `<li style="padding:4px 0;color:#374151;">• ${p}</li>`).join("");
+
+    const cancelPolicies = Array.isArray(q.cancellationPolicies) && q.cancellationPolicies.length > 0
+      ? q.cancellationPolicies
+      : DEFAULT_CANCELLATION_POLICIES;
+    const cancelPolHtml = cancelPolicies.map(p => `<li style="padding:3px 0;color:#374151;">• ${p}</li>`).join("");
+
+    const infoList = Array.isArray(q.importantInfo) && q.importantInfo.length > 0
+      ? q.importantInfo
+      : DEFAULT_IMPORTANT_INFO;
+    const infoHtml = infoList.map(inf => `<li style="padding:3px 0;color:#374151;">• ${inf}</li>`).join("");
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -1205,8 +1548,34 @@ export default function AdminQuotesPage() {
 
   <!-- PAYMENT POLICIES -->
   <div style="padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
-    <h3 style="color:#92400e;border-bottom:1px solid #fcd34d;padding-bottom:5px;margin-bottom:8px;">\u{1F4CB} Payment & Booking Policies</h3>
+    <h3 style="color:#92400e;border-bottom:1px solid #fcd34d;padding-bottom:5px;margin-bottom:8px;">📋 Payment & Booking Policies</h3>
     <ul style="font-size:12px;">${polHtml}</ul>
+  </div>
+
+  <!-- CANCELLATION & REFUND POLICIES -->
+  <div style="padding:14px;background:#fff5f5;border:1px solid #fecdd3;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
+    <h3 style="color:#991b1b;border-bottom:1px solid #fca5a5;padding-bottom:5px;margin-bottom:8px;">🛑 Cancellation & Refund Policies</h3>
+    <table style="width:100%;margin-bottom:10px;font-size:11px;border-collapse:collapse;">
+      <thead>
+        <tr style="background:#fee2e2;color:#991b1b;text-align:left;">
+          <th style="padding:6px 10px;border:1px solid #fca5a5;">Cancellation Timeline Prior to Departure</th>
+          <th style="padding:6px 10px;border:1px solid #fca5a5;text-align:right;">Cancellation Charges</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:5px 10px;border:1px solid #fed7aa;background:#fff;">30 days or more prior to departure</td><td style="padding:5px 10px;border:1px solid #fed7aa;text-align:right;font-weight:700;color:#92400e;">10% Administrative Fee</td></tr>
+        <tr><td style="padding:5px 10px;border:1px solid #fed7aa;background:#fff;">15 to 29 days prior to departure</td><td style="padding:5px 10px;border:1px solid #fed7aa;text-align:right;font-weight:700;color:#c2410c;">25% of Package Cost</td></tr>
+        <tr><td style="padding:5px 10px;border:1px solid #fed7aa;background:#fff;">7 to 14 days prior to departure</td><td style="padding:5px 10px;border:1px solid #fed7aa;text-align:right;font-weight:700;color:#b91c1c;">50% of Package Cost</td></tr>
+        <tr><td style="padding:5px 10px;border:1px solid #fed7aa;background:#fff;">Less than 7 days prior or No Show</td><td style="padding:5px 10px;border:1px solid #fed7aa;text-align:right;font-weight:800;color:#7f1d1d;">100% Non-Refundable</td></tr>
+      </tbody>
+    </table>
+    <ul style="font-size:11.5px;line-height:1.6;color:#374151;">${cancelPolHtml}</ul>
+  </div>
+
+  <!-- IMPORTANT TRAVEL GUIDELINES -->
+  <div style="padding:14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
+    <h3 style="color:#0369a1;border-bottom:1px solid #7dd3fc;padding-bottom:5px;margin-bottom:8px;">ℹ️ Important Travel Guidelines & Information</h3>
+    <ul style="font-size:11.5px;line-height:1.6;color:#374151;">${infoHtml}</ul>
   </div>
 
   <!-- ASSIGNED SPECIALIST -->
@@ -1622,7 +1991,9 @@ export default function AdminQuotesPage() {
                 </h4>
                 <div className="space-y-3">
                   {Array.isArray(previewQuote.itinerary) && previewQuote.itinerary.length > 0 ? (
-                    previewQuote.itinerary.map((day) => (
+                    previewQuote.itinerary.map((day) => {
+                      const dayImg = day.cityImageUrl || getDestinationImageUrl(null, day.city);
+                      return (
                       <div
                         key={day.dayNumber}
                         className="p-4 rounded-xl bg-slate-800/40 border border-slate-700/70 space-y-2.5"
@@ -1634,39 +2005,57 @@ export default function AdminQuotesPage() {
                             </span>
                             <span>{day.title}</span>
                           </div>
-                          <span className="text-xs text-amber-400 font-semibold">{day.city}</span>
+                          <span className="text-xs text-amber-400 font-semibold">📍 {day.city}</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-300 py-1">
-                          <div>
-                            <span className="text-slate-500 font-medium">Hotel Stay: </span>
-                            <span className="text-slate-200 font-semibold">{day.hotelName || "4★ Hotel"}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-500 font-medium">Meal Plan: </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 font-bold">
-                              {day.mealPlan === "MAP"
-                                ? "MAP (Breakfast + Dinner)"
-                                : day.mealPlan === "CP"
-                                ? "CP (Breakfast Only)"
-                                : day.mealPlan === "AP"
-                                ? "AP (All Meals Included)"
-                                : "EP (Room Only)"}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-slate-500 font-medium">Vehicle: </span>
-                            <span className="text-slate-200 font-semibold">
-                              {day.vehicleType || previewQuote.cabType}
-                            </span>
+                        <div className="flex flex-col sm:flex-row gap-3 items-start">
+                          {dayImg && (
+                            <div className="w-full sm:w-28 h-20 rounded-lg overflow-hidden shrink-0 border border-slate-700 bg-slate-800 shadow">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={dayImg}
+                                alt={day.city}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1 space-y-2 min-w-0">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-300 py-1 bg-slate-800/40 px-2.5 rounded-lg border border-slate-700/50">
+                              <div>
+                                <span className="text-slate-500 font-medium">Hotel Stay: </span>
+                                <span className="text-slate-200 font-semibold">{day.hotelName || "4★ Hotel"}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 font-medium">Meal Plan: </span>
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 font-bold">
+                                  {day.mealPlan === "MAP"
+                                    ? "MAP (Breakfast + Dinner)"
+                                    : day.mealPlan === "CP"
+                                    ? "CP (Breakfast Only)"
+                                    : day.mealPlan === "AP"
+                                    ? "AP (All Meals Included)"
+                                    : "EP (Room Only)"}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 font-medium">Vehicle: </span>
+                                <span className="text-slate-200 font-semibold">
+                                  {day.vehicleType || previewQuote.cabType}
+                                </span>
+                              </div>
+                            </div>
+
+                            {day.activities && (
+                              <p className="text-xs text-slate-300 leading-relaxed pt-0.5">{day.activities}</p>
+                            )}
                           </div>
                         </div>
-
-                        {day.activities && (
-                          <p className="text-xs text-slate-300 leading-relaxed pt-1">{day.activities}</p>
-                        )}
                       </div>
-                    ))
+                    );
+                  })
                   ) : (
                     <div className="p-4 rounded-xl bg-slate-800/40 border border-slate-700 text-xs text-slate-400 text-center">
                       Standard sequential itinerary applies for this proposal.
@@ -1777,13 +2166,61 @@ export default function AdminQuotesPage() {
               {/* ── Payment & Booking Policies ── */}
               <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/25 space-y-2">
                 <h5 className="font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <span>📋</span> Payment & Booking Policies
+                  <span>📋</span> Payment &amp; Booking Policies
                 </h5>
                 <ul className="space-y-1.5 text-slate-300 text-xs">
                   {(previewQuote.paymentPolicies?.length ? previewQuote.paymentPolicies : DEFAULT_PAYMENT_POLICIES).map((policy, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <span className="text-amber-400 font-bold shrink-0">•</span>
                       <span>{policy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* ── Cancellation & Refund Policies ── */}
+              <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/25 space-y-2.5">
+                <h5 className="font-bold text-rose-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <span>🛑</span> Cancellation &amp; Refund Policies
+                </h5>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] pb-1 border-b border-rose-500/20 text-slate-300">
+                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                    <span className="block text-slate-400">30+ Days Prior</span>
+                    <strong className="text-amber-400 font-black">10% Fee</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                    <span className="block text-slate-400">15–29 Days</span>
+                    <strong className="text-amber-500 font-black">25% Charge</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                    <span className="block text-slate-400">7–14 Days</span>
+                    <strong className="text-rose-400 font-black">50% Charge</strong>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                    <span className="block text-slate-400">&lt; 7 Days / No-Show</span>
+                    <strong className="text-rose-500 font-black">100% Non-Refundable</strong>
+                  </div>
+                </div>
+                <ul className="space-y-1.5 text-slate-300 text-xs">
+                  {(previewQuote.cancellationPolicies?.length ? previewQuote.cancellationPolicies : DEFAULT_CANCELLATION_POLICIES).map((policy, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-rose-400 font-bold shrink-0">•</span>
+                      <span>{policy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* ── Important Travel Guidelines ── */}
+              <div className="p-4 rounded-xl bg-sky-500/5 border border-sky-500/25 space-y-2">
+                <h5 className="font-bold text-sky-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <span>ℹ️</span> Important Travel Guidelines &amp; Information
+                </h5>
+                <ul className="space-y-1.5 text-slate-300 text-xs">
+                  {(previewQuote.importantInfo?.length ? previewQuote.importantInfo : DEFAULT_IMPORTANT_INFO).map((info, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-sky-400 font-bold shrink-0">•</span>
+                      <span>{info}</span>
                     </li>
                   ))}
                 </ul>
@@ -2060,15 +2497,36 @@ export default function AdminQuotesPage() {
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                        <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">City / Location</label>
-                          <input
-                            type="text"
-                            value={day.city}
-                            onChange={(e) => handleUpdateDay(idx, "city", e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
-                          />
-                        </div>
+                        <CityPickerInput
+                          value={day.city}
+                          imageUrl={day.cityImageUrl}
+                          destinations={adminDestinations}
+                          onSelect={(selectedName, selectedImg) => {
+                            const updated = [...itineraryDays];
+                            updated[idx] = {
+                              ...updated[idx],
+                              city: selectedName,
+                              cityImageUrl: selectedImg || updated[idx].cityImageUrl,
+                            };
+                            setItineraryDays(updated);
+                          }}
+                          onClearImage={() => {
+                            const updated = [...itineraryDays];
+                            updated[idx] = {
+                              ...updated[idx],
+                              cityImageUrl: "",
+                            };
+                            setItineraryDays(updated);
+                          }}
+                          onCustomImage={(customUrl) => {
+                            const updated = [...itineraryDays];
+                            updated[idx] = {
+                              ...updated[idx],
+                              cityImageUrl: customUrl,
+                            };
+                            setItineraryDays(updated);
+                          }}
+                        />
                         <div>
                           <label className="text-[10px] text-slate-400 block mb-0.5">Hotel Name</label>
                           <input
@@ -2235,6 +2693,102 @@ export default function AdminQuotesPage() {
                     <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-800 px-2.5 py-1.5 rounded-lg">
                       <span>• {p}</span>
                       <button type="button" onClick={() => setPaymentPolicies(paymentPolicies.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-rose-400 text-[10px] cursor-pointer ml-2 shrink-0">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Cancellation & Refund Policies Builder ── */}
+              <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider block">🛑 Cancellation &amp; Refund Policies</span>
+                  <button
+                    type="button"
+                    onClick={() => setCancellationPolicies([...DEFAULT_CANCELLATION_POLICIES])}
+                    className="text-[10px] text-rose-400/80 hover:text-rose-300 underline cursor-pointer"
+                  >
+                    Reset Defaults
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add cancellation clause (e.g. 15–29 days prior: 25% charge)..."
+                    value={newCancelPolicy}
+                    onChange={(e) => setNewCancelPolicy(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newCancelPolicy.trim()) {
+                        e.preventDefault();
+                        setCancellationPolicies([...cancellationPolicies, newCancelPolicy.trim()]);
+                        setNewCancelPolicy("");
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-rose-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newCancelPolicy.trim()) {
+                        setCancellationPolicies([...cancellationPolicies, newCancelPolicy.trim()]);
+                        setNewCancelPolicy("");
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs cursor-pointer hover:bg-rose-500"
+                  >+</button>
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto pt-1">
+                  {cancellationPolicies.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-800 px-2.5 py-1.5 rounded-lg">
+                      <span>• {p}</span>
+                      <button type="button" onClick={() => setCancellationPolicies(cancellationPolicies.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-rose-400 text-[10px] cursor-pointer ml-2 shrink-0">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Important Travel Guidelines & Information Builder ── */}
+              <div className="p-4 rounded-2xl bg-sky-500/5 border border-sky-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-sky-300 uppercase tracking-wider block">ℹ️ Important Travel Guidelines &amp; Information</span>
+                  <button
+                    type="button"
+                    onClick={() => setImportantInfo([...DEFAULT_IMPORTANT_INFO])}
+                    className="text-[10px] text-sky-400/80 hover:text-sky-300 underline cursor-pointer"
+                  >
+                    Reset Defaults
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add travel note (e.g. Valid Govt ID mandatory at check-in)..."
+                    value={newInfoNote}
+                    onChange={(e) => setNewInfoNote(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newInfoNote.trim()) {
+                        e.preventDefault();
+                        setImportantInfo([...importantInfo, newInfoNote.trim()]);
+                        setNewInfoNote("");
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-sky-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newInfoNote.trim()) {
+                        setImportantInfo([...importantInfo, newInfoNote.trim()]);
+                        setNewInfoNote("");
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-bold text-xs cursor-pointer hover:bg-sky-500"
+                  >+</button>
+                </div>
+                <div className="space-y-1 max-h-36 overflow-y-auto pt-1">
+                  {importantInfo.map((info, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-800 px-2.5 py-1.5 rounded-lg">
+                      <span>• {info}</span>
+                      <button type="button" onClick={() => setImportantInfo(importantInfo.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-rose-400 text-[10px] cursor-pointer ml-2 shrink-0">✕</button>
                     </div>
                   ))}
                 </div>
