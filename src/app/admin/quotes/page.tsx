@@ -55,12 +55,23 @@ export interface QuoteItem {
   paymentPolicies?: string[];
   cancellationPolicies?: string[];
   importantInfo?: string[];
+  welcomeMessage?: string;
+  showCancellationPolicies?: boolean;
+  selectedTier?: "deluxe" | "superDeluxe" | "luxury";
+  tierOptions?: {
+    showDeluxe?: boolean;
+    showSuperDeluxe?: boolean;
+    showLuxury?: boolean;
+  };
   pricingTiers?: {
     deluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
     superDeluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
     luxury: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
   };
 }
+
+export const DEFAULT_WELCOME_MESSAGE =
+  "Dear Valued Guest, Greetings from Be My Traveller! Thank you for choosing us to plan your memorable journey. We are pleased to present your customized, handcrafted holiday proposal featuring verified accommodations, dedicated sanitized fleet, and curated day-wise sightseeing. Kindly review your tour program and options below.";
 
 export interface DestinationOption {
   _id: string;
@@ -908,6 +919,18 @@ export default function AdminQuotesPage() {
   const [importantInfo, setImportantInfo] = useState<string[]>([...DEFAULT_IMPORTANT_INFO]);
   const [newInfoNote, setNewInfoNote] = useState("");
 
+  // Welcome / Greetings Message
+  const [welcomeMessage, setWelcomeMessage] = useState(DEFAULT_WELCOME_MESSAGE);
+
+  // Cancellation Policies Visibility Toggle (Show / Hide on PDF)
+  const [showCancellationPolicies, setShowCancellationPolicies] = useState(true);
+
+  // Primary Package Tier Selection & Selective Alternative Options
+  const [selectedTier, setSelectedTier] = useState<"deluxe" | "superDeluxe" | "luxury">("superDeluxe");
+  const [showDeluxeOption, setShowDeluxeOption] = useState(false);
+  const [showSuperDeluxeOption, setShowSuperDeluxeOption] = useState(true);
+  const [showLuxuryOption, setShowLuxuryOption] = useState(true);
+
   // Three-Tier Pricing (Deluxe / Super Deluxe / Luxury)
   const [deluxeHotel, setDeluxeHotel] = useState("3★ Standard Deluxe Hotels");
   const [deluxeCab, setDeluxeCab] = useState("Shared AC Cab / Tempo Traveller");
@@ -918,6 +941,32 @@ export default function AdminQuotesPage() {
   const [luxuryHotel, setLuxuryHotel] = useState("5★ Luxury Resorts & Boutique Hotels");
   const [luxuryCab, setLuxuryCab] = useState("Private Innova Crysta / Toyota Fortuner");
   const [luxuryNetCost, setLuxuryNetCost] = useState(95000);
+
+  const handleSelectTier = (tier: "deluxe" | "superDeluxe" | "luxury") => {
+    setSelectedTier(tier);
+    if (tier === "deluxe") {
+      setHotelTier(deluxeHotel);
+      setCabType(deluxeCab);
+      setNetCost(deluxeNetCost);
+      setShowDeluxeOption(true);
+      setShowSuperDeluxeOption(true); // Offer 1 upgrade to Super Deluxe
+      setShowLuxuryOption(false);
+    } else if (tier === "superDeluxe") {
+      setHotelTier(superDeluxeHotel);
+      setCabType(superDeluxeCab);
+      setNetCost(superDeluxeNetCost);
+      setShowDeluxeOption(false);
+      setShowSuperDeluxeOption(true);
+      setShowLuxuryOption(true); // Offer 1 upgrade to Luxury
+    } else if (tier === "luxury") {
+      setHotelTier(luxuryHotel);
+      setCabType(luxuryCab);
+      setNetCost(luxuryNetCost);
+      setShowDeluxeOption(false);
+      setShowSuperDeluxeOption(true); // Offer 1 downgrade to Super Deluxe
+      setShowLuxuryOption(true);
+    }
+  };
 
   // Computed Totals (primary / default)
   const totalTravelers = useMemo(() => adultsCount + childrenCount, [adultsCount, childrenCount]);
@@ -1092,6 +1141,12 @@ export default function AdminQuotesPage() {
       setLuxuryCab(q.pricingTiers.luxury.cabType || "Private Innova Crysta / Toyota Fortuner");
       setLuxuryNetCost(q.pricingTiers.luxury.netCost || 95000);
     }
+    setWelcomeMessage(q.welcomeMessage !== undefined ? q.welcomeMessage : DEFAULT_WELCOME_MESSAGE);
+    setShowCancellationPolicies(q.showCancellationPolicies !== false);
+    setSelectedTier(q.selectedTier || "superDeluxe");
+    setShowDeluxeOption(q.tierOptions?.showDeluxe !== undefined ? q.tierOptions.showDeluxe : false);
+    setShowSuperDeluxeOption(q.tierOptions?.showSuperDeluxe !== undefined ? q.tierOptions.showSuperDeluxe : true);
+    setShowLuxuryOption(q.tierOptions?.showLuxury !== undefined ? q.tierOptions.showLuxury : true);
     setModalOpen(true);
   };
 
@@ -1117,6 +1172,12 @@ export default function AdminQuotesPage() {
     setPaymentPolicies([...DEFAULT_PAYMENT_POLICIES]);
     setCancellationPolicies([...DEFAULT_CANCELLATION_POLICIES]);
     setImportantInfo([...DEFAULT_IMPORTANT_INFO]);
+    setWelcomeMessage(DEFAULT_WELCOME_MESSAGE);
+    setShowCancellationPolicies(true);
+    setSelectedTier("superDeluxe");
+    setShowDeluxeOption(false);
+    setShowSuperDeluxeOption(true);
+    setShowLuxuryOption(true);
     setDeluxeHotel("3★ Standard Deluxe Hotels");
     setDeluxeCab("Shared AC Cab / Tempo Traveller");
     setDeluxeNetCost(45000);
@@ -1199,6 +1260,14 @@ export default function AdminQuotesPage() {
       itinerary: itineraryDays,
       inclusions,
       exclusions,
+      welcomeMessage,
+      showCancellationPolicies,
+      selectedTier,
+      tierOptions: {
+        showDeluxe: showDeluxeOption,
+        showSuperDeluxe: showSuperDeluxeOption,
+        showLuxury: showLuxuryOption,
+      },
       costing: {
         netCost,
         markupPercent,
@@ -1384,51 +1453,120 @@ export default function AdminQuotesPage() {
     const datesStr = formatTravelDates(q.travelDates);
     const policies = q.paymentPolicies?.length ? q.paymentPolicies : DEFAULT_PAYMENT_POLICIES;
     const tiers = q.pricingTiers;
+    const baseTierKey = q.selectedTier || "superDeluxe";
 
-    const tiersHtml = tiers ? `
-      <div style="margin-bottom:24px;">
+    // Determine active tiers to display
+    const showDeluxe = q.tierOptions ? !!q.tierOptions.showDeluxe : (baseTierKey === "deluxe");
+    const showSuperDeluxe = q.tierOptions ? !!q.tierOptions.showSuperDeluxe : (baseTierKey === "superDeluxe" || !q.tierOptions);
+    const showLuxury = q.tierOptions ? !!q.tierOptions.showLuxury : (baseTierKey === "luxury" || !q.tierOptions);
+
+    const activeTierKeys: Array<"deluxe" | "superDeluxe" | "luxury"> = [];
+    if (showDeluxe && tiers?.deluxe) activeTierKeys.push("deluxe");
+    if (showSuperDeluxe && tiers?.superDeluxe) activeTierKeys.push("superDeluxe");
+    if (showLuxury && tiers?.luxury) activeTierKeys.push("luxury");
+
+    if (tiers && tiers[baseTierKey] && !activeTierKeys.includes(baseTierKey)) {
+      activeTierKeys.push(baseTierKey);
+      activeTierKeys.sort((a, b) => {
+        const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
+        return order[a] - order[b];
+      });
+    }
+
+    const baseTotal = (tiers && tiers[baseTierKey]?.totalAmount) || q.totalAmount || 0;
+
+    const getTierMeta = (tKey: "deluxe" | "superDeluxe" | "luxury") => {
+      const isBase = tKey === baseTierKey;
+      if (tKey === "deluxe") {
+        const diff = (tiers?.deluxe?.totalAmount || 0) - baseTotal;
+        const badge = isBase
+          ? "✦ DELUXE (Quoted Base Package)"
+          : diff < 0
+          ? `✦ DELUXE (Budget Alternative — Save ₹${Math.abs(diff).toLocaleString("en-IN")})`
+          : "✦ DELUXE";
+        return {
+          title: badge,
+          thBg: isBase ? "#fef3c7" : "#fef9c3",
+          thColor: "#92400e",
+          border: isBase ? "2px solid #d97706" : "1px solid #ddd",
+          highlightBg: isBase ? "#fefce8" : "#fff",
+        };
+      } else if (tKey === "superDeluxe") {
+        const diff = (tiers?.superDeluxe?.totalAmount || 0) - baseTotal;
+        const badge = isBase
+          ? "★ SUPER DELUXE (Quoted Base Package)"
+          : diff > 0
+          ? `★ SUPER DELUXE (Upgrade Option — +₹${diff.toLocaleString("en-IN")})`
+          : `★ SUPER DELUXE (Value Saver — Save ₹${Math.abs(diff).toLocaleString("en-IN")})`;
+        return {
+          title: badge,
+          thBg: isBase ? "#eff6ff" : "#f0f9ff",
+          thColor: "#1d4ed8",
+          border: isBase ? "2px solid #2563eb" : "1px solid #ddd",
+          highlightBg: isBase ? "#eff6ff" : "#fff",
+        };
+      } else {
+        const diff = (tiers?.luxury?.totalAmount || 0) - baseTotal;
+        const badge = isBase
+          ? "♛ LUXURY (Quoted Base Package)"
+          : diff > 0
+          ? `♛ LUXURY (Premium Upgrade — +₹${diff.toLocaleString("en-IN")})`
+          : "♛ LUXURY";
+        return {
+          title: badge,
+          thBg: isBase ? "#faf5ff" : "#f5f3ff",
+          thColor: "#7c3aed",
+          border: isBase ? "2px solid #7c3aed" : "1px solid #ddd",
+          highlightBg: isBase ? "#faf5ff" : "#fff",
+        };
+      }
+    };
+
+    const tiersHtml = (tiers && activeTierKeys.length > 0) ? `
+      <div style="margin-bottom:24px;page-break-inside:avoid;">
         <h3 style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#92400e;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #d97706;">
-          \u{1F48E} Package Tier Selection — Please Choose Your Preferred Option
+          \u{1F48E} Package Tier Options — Quoted Tier &amp; Upgrade/Alternative Comparison
         </h3>
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
             <tr>
-              <th style="padding:10px 12px;text-align:left;background:#f8f3e8;border:1px solid #ddd;font-size:11px;font-weight:900;text-transform:uppercase;color:#666;">Category</th>
-              <th style="padding:10px 12px;text-align:center;background:#fef3c7;border:1px solid #ddd;font-size:11px;font-weight:900;color:#b45309;">\u2726 DELUXE</th>
-              <th style="padding:10px 12px;text-align:center;background:#eff6ff;border:2px solid #3b82f6;font-size:11px;font-weight:900;color:#1d4ed8;">\u2605 SUPER DELUXE (Recommended)</th>
-              <th style="padding:10px 12px;text-align:center;background:#faf5ff;border:1px solid #ddd;font-size:11px;font-weight:900;color:#7c3aed;">\u265B LUXURY</th>
+              <th style="padding:10px 12px;text-align:left;background:#f8f3e8;border:1px solid #ddd;font-size:11px;font-weight:900;text-transform:uppercase;color:#666;width:24%;">Category</th>
+              ${activeTierKeys.map(k => {
+                const meta = getTierMeta(k);
+                return `<th style="padding:10px 12px;text-align:center;background:${meta.thBg};border:${meta.border};font-size:11px;font-weight:900;color:${meta.thColor};">${meta.title}</th>`;
+              }).join("")}
             </tr>
           </thead>
           <tbody>
             <tr>
               <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Hotel / Stay</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.deluxe.hotelTier}</td>
-              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;background:#f0f7ff;">${tiers.superDeluxe.hotelTier}</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.luxury.hotelTier}</td>
+              ${activeTierKeys.map(k => {
+                const meta = getTierMeta(k);
+                return `<td style="padding:9px 12px;border:${meta.border};text-align:center;background:${meta.highlightBg};">${tiers[k].hotelTier}</td>`;
+              }).join("")}
             </tr>
             <tr>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Transport & Cab</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.deluxe.cabType}</td>
-              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;background:#f0f7ff;">${tiers.superDeluxe.cabType}</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.luxury.cabType}</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Transport &amp; Cab</td>
+              ${activeTierKeys.map(k => {
+                const meta = getTierMeta(k);
+                return `<td style="padding:9px 12px;border:${meta.border};text-align:center;background:${meta.highlightBg};">${tiers[k].cabType}</td>`;
+              }).join("")}
             </tr>
             <tr style="background:#fffbf0;">
               <td style="padding:10px 12px;border:1px solid #e5e7eb;font-weight:800;background:#fafafa;">Total Package Price</td>
-              <td style="padding:10px 12px;border:1px solid #e5e7eb;text-align:center;font-weight:900;font-size:15px;color:#b45309;">
-                \u20B9${(tiers.deluxe.totalAmount||0).toLocaleString("en-IN")}
-              </td>
-              <td style="padding:10px 12px;border:2px solid #3b82f6;text-align:center;font-weight:900;font-size:15px;color:#1d4ed8;background:#f0f7ff;">
-                \u20B9${(tiers.superDeluxe.totalAmount||0).toLocaleString("en-IN")}
-              </td>
-              <td style="padding:10px 12px;border:1px solid #e5e7eb;text-align:center;font-weight:900;font-size:15px;color:#7c3aed;">
-                \u20B9${(tiers.luxury.totalAmount||0).toLocaleString("en-IN")}
-              </td>
+              ${activeTierKeys.map(k => {
+                const meta = getTierMeta(k);
+                return `<td style="padding:10px 12px;border:${meta.border};text-align:center;font-weight:900;font-size:15px;color:${meta.thColor};background:${meta.highlightBg};">
+                  \u20B9${(tiers[k].totalAmount || 0).toLocaleString("en-IN")}
+                </td>`;
+              }).join("")}
             </tr>
             <tr>
               <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Per Person Cost</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;color:#92400e;">\u20B9${(tiers.deluxe.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
-              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;color:#1d4ed8;background:#f0f7ff;">\u20B9${(tiers.superDeluxe.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
-              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;color:#7c3aed;">\u20B9${(tiers.luxury.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
+              ${activeTierKeys.map(k => {
+                const meta = getTierMeta(k);
+                return `<td style="padding:9px 12px;border:${meta.border};text-align:center;color:${meta.thColor};background:${meta.highlightBg};">\u20B9${(tiers[k].perPersonCost || 0).toLocaleString("en-IN")}/pax</td>`;
+              }).join("")}
             </tr>
           </tbody>
         </table>
@@ -1525,14 +1663,25 @@ export default function AdminQuotesPage() {
     <div><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Package Price</p><p style="font-size:18px;font-weight:900;color:#d97706;">\u20B9${(q.totalAmount||0).toLocaleString("en-IN")}</p><p style="font-size:10px;color:#059669;font-weight:700;">All-Inclusive + GST</p></div>
   </div>
 
-  <!-- PRICING TIERS -->
-  ${tiersHtml}
+  <!-- WELCOME / GREETINGS MESSAGE -->
+  ${(q.welcomeMessage || DEFAULT_WELCOME_MESSAGE) ? `
+  <div style="padding:14px 18px;background:#fefce8;border:1px solid #fde047;border-left:5px solid #d97706;border-radius:6px;margin-bottom:22px;page-break-inside:avoid;">
+    <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#92400e;margin-bottom:4px;">
+      ✨ Greetings &amp; Holiday Welcome Note
+    </p>
+    <p style="font-size:12px;color:#451a03;line-height:1.6;margin:0;font-style:italic;">
+      "${q.welcomeMessage || DEFAULT_WELCOME_MESSAGE}"
+    </p>
+  </div>` : ""}
 
   <!-- DAY-BY-DAY -->
   <div style="margin-bottom:22px;">
-    <h3 style="border-bottom:2px solid #d97706;padding-bottom:6px;margin-bottom:12px;">\u{1F5D3}\uFE0F Day-by-Day Tour Program & Sightseeing</h3>
+    <h3 style="border-bottom:2px solid #d97706;padding-bottom:6px;margin-bottom:12px;">\u{1F5D3}\uFE0F Day-by-Day Tour Program &amp; Sightseeing</h3>
     ${dayHtml}
   </div>
+
+  <!-- PRICING TIERS / UPGRADE & DOWNGRADE (Moved Below Day-by-Day Itinerary) -->
+  ${tiersHtml}
 
   <!-- INCLUSIONS & EXCLUSIONS -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;">
@@ -1548,13 +1697,14 @@ export default function AdminQuotesPage() {
 
   <!-- PAYMENT POLICIES -->
   <div style="padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
-    <h3 style="color:#92400e;border-bottom:1px solid #fcd34d;padding-bottom:5px;margin-bottom:8px;">📋 Payment & Booking Policies</h3>
+    <h3 style="color:#92400e;border-bottom:1px solid #fcd34d;padding-bottom:5px;margin-bottom:8px;">📋 Payment &amp; Booking Policies</h3>
     <ul style="font-size:12px;">${polHtml}</ul>
   </div>
 
-  <!-- CANCELLATION & REFUND POLICIES -->
+  <!-- CANCELLATION & REFUND POLICIES (Show/Hide) -->
+  ${q.showCancellationPolicies !== false ? `
   <div style="padding:14px;background:#fff5f5;border:1px solid #fecdd3;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
-    <h3 style="color:#991b1b;border-bottom:1px solid #fca5a5;padding-bottom:5px;margin-bottom:8px;">🛑 Cancellation & Refund Policies</h3>
+    <h3 style="color:#991b1b;border-bottom:1px solid #fca5a5;padding-bottom:5px;margin-bottom:8px;">🛑 Cancellation &amp; Refund Policies</h3>
     <table style="width:100%;margin-bottom:10px;font-size:11px;border-collapse:collapse;">
       <thead>
         <tr style="background:#fee2e2;color:#991b1b;text-align:left;">
@@ -1570,7 +1720,7 @@ export default function AdminQuotesPage() {
       </tbody>
     </table>
     <ul style="font-size:11.5px;line-height:1.6;color:#374151;">${cancelPolHtml}</ul>
-  </div>
+  </div>` : ""}
 
   <!-- IMPORTANT TRAVEL GUIDELINES -->
   <div style="padding:14px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
@@ -1984,6 +2134,18 @@ export default function AdminQuotesPage() {
                 </div>
               </div>
 
+              {/* Welcome / Greetings Note */}
+              {(previewQuote.welcomeMessage || DEFAULT_WELCOME_MESSAGE) && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-amber-400 font-bold uppercase tracking-wider text-[10px]">✨ Holiday Welcome Note &amp; Greetings</span>
+                  </div>
+                  <p className="text-amber-100/90 leading-relaxed italic">
+                    &ldquo;{previewQuote.welcomeMessage || DEFAULT_WELCOME_MESSAGE}&rdquo;
+                  </p>
+                </div>
+              )}
+
               {/* Day-by-Day Timeline */}
               <div className="space-y-4">
                 <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
@@ -2064,6 +2226,103 @@ export default function AdminQuotesPage() {
                 </div>
               </div>
 
+              {/* ── Package Tier Options (Quoted Base Tier + Upgrade/Downgrade Alternatives) (Moved Below Day-by-Day) ── */}
+              {previewQuote.pricingTiers && (() => {
+                const baseTierKey = previewQuote.selectedTier || "superDeluxe";
+                const showDeluxe = previewQuote.tierOptions ? !!previewQuote.tierOptions.showDeluxe : baseTierKey === "deluxe";
+                const showSuperDeluxe = previewQuote.tierOptions ? !!previewQuote.tierOptions.showSuperDeluxe : (baseTierKey === "superDeluxe" || !previewQuote.tierOptions);
+                const showLuxury = previewQuote.tierOptions ? !!previewQuote.tierOptions.showLuxury : (baseTierKey === "luxury" || !previewQuote.tierOptions);
+
+                const activeKeys: Array<"deluxe" | "superDeluxe" | "luxury"> = [];
+                if (showDeluxe && previewQuote.pricingTiers.deluxe) activeKeys.push("deluxe");
+                if (showSuperDeluxe && previewQuote.pricingTiers.superDeluxe) activeKeys.push("superDeluxe");
+                if (showLuxury && previewQuote.pricingTiers.luxury) activeKeys.push("luxury");
+
+                if (previewQuote.pricingTiers[baseTierKey] && !activeKeys.includes(baseTierKey)) {
+                  activeKeys.push(baseTierKey);
+                  activeKeys.sort((a, b) => {
+                    const order = { deluxe: 1, superDeluxe: 2, luxury: 3 };
+                    return order[a] - order[b];
+                  });
+                }
+
+                const baseTotal = (previewQuote.pricingTiers[baseTierKey]?.totalAmount) || previewQuote.totalAmount || 0;
+
+                return (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                      <span>💎</span> Package Tier Options — Quoted Tier &amp; Upgrade/Alternative Comparison
+                    </h4>
+                    <div className={`grid grid-cols-1 ${activeKeys.length === 2 ? "sm:grid-cols-2" : activeKeys.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-1"} gap-3 text-xs`}>
+                      {activeKeys.map((k) => {
+                        const tier = previewQuote.pricingTiers![k];
+                        const isBase = k === baseTierKey;
+                        const diff = (tier.totalAmount || 0) - baseTotal;
+
+                        let tierName = "Deluxe";
+                        let borderClass = "border-amber-700/40 bg-amber-900/20";
+                        let textAccent = "text-amber-300";
+                        let badgeBg = "bg-amber-500 text-slate-950";
+
+                        if (k === "deluxe") {
+                          tierName = "Deluxe";
+                          borderClass = isBase ? "border-2 border-amber-500 bg-amber-500/10" : "border border-amber-700/40 bg-amber-900/20";
+                          textAccent = "text-amber-300";
+                          badgeBg = "bg-amber-500 text-slate-950";
+                        } else if (k === "superDeluxe") {
+                          tierName = "Super Deluxe";
+                          borderClass = isBase ? "border-2 border-sky-500 bg-sky-500/15" : "border border-sky-500/40 bg-sky-500/10";
+                          textAccent = "text-sky-300";
+                          badgeBg = "bg-sky-500 text-white";
+                        } else {
+                          tierName = "Luxury";
+                          borderClass = isBase ? "border-2 border-purple-500 bg-purple-500/15" : "border border-purple-500/40 bg-purple-500/10";
+                          textAccent = "text-purple-300";
+                          badgeBg = "bg-purple-500 text-white";
+                        }
+
+                        return (
+                          <div key={k} className={`p-4 rounded-xl ${borderClass} space-y-2 relative`}>
+                            {isBase ? (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <span className={`px-2.5 py-0.5 ${badgeBg} text-[9px] font-black uppercase rounded-full whitespace-nowrap shadow-sm`}>
+                                  ✓ Quoted Base Package
+                                </span>
+                              </div>
+                            ) : diff > 0 ? (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <span className="px-2.5 py-0.5 bg-emerald-500 text-slate-950 text-[9px] font-black uppercase rounded-full whitespace-nowrap shadow-sm">
+                                  ⬆ Upgrade Option (+{formatINR(diff)})
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <span className="px-2.5 py-0.5 bg-amber-500 text-slate-950 text-[9px] font-black uppercase rounded-full whitespace-nowrap shadow-sm">
+                                  ⬇ Value Saver (Save {formatINR(Math.abs(diff))})
+                                </span>
+                              </div>
+                            )}
+
+                            <div className="text-center mt-1">
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${textAccent} block`}>
+                                {k === "deluxe" ? "✦ Deluxe" : k === "superDeluxe" ? "★ Super Deluxe" : "♛ Luxury"}
+                              </span>
+                              <p className={`text-xl font-black ${textAccent} mt-1`}>{formatINR(tier.totalAmount || 0)}</p>
+                              <p className="text-[10px] text-slate-400">{formatINR(tier.perPersonCost || 0)}/pax</p>
+                            </div>
+                            <div className="border-t border-slate-700/50 pt-2 space-y-1">
+                              <p className="text-slate-200 leading-snug">🏨 {tier.hotelTier}</p>
+                              <p className="text-slate-300 leading-snug">🚗 {tier.cabType}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-slate-500 italic">* All prices inclusive of 5% GST. Contact your specialist to confirm your preferred tier and proceed with booking.</p>
+                  </div>
+                );
+              })()}
+
               {/* Inclusions & Exclusions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-2">
@@ -2112,57 +2371,6 @@ export default function AdminQuotesPage() {
                 </div>
               </div>
 
-              {/* ── 3-Tier Pricing Comparison (Deluxe / Super Deluxe / Luxury) ── */}
-              {previewQuote.pricingTiers && (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <span>💎</span> Package Tier Options — Client Choice
-                  </h4>
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    {/* Deluxe */}
-                    <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-700/40 space-y-2">
-                      <div className="text-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">✦ Deluxe</span>
-                        <p className="text-xl font-black text-amber-300 mt-1">{formatINR(previewQuote.pricingTiers.deluxe.totalAmount || 0)}</p>
-                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.deluxe.perPersonCost || 0)}/pax</p>
-                      </div>
-                      <div className="border-t border-amber-800/40 pt-2 space-y-1">
-                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.deluxe.hotelTier}</p>
-                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.deluxe.cabType}</p>
-                      </div>
-                    </div>
-                    {/* Super Deluxe */}
-                    <div className="p-4 rounded-xl bg-sky-500/10 border-2 border-sky-500/50 space-y-2 relative">
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="px-2 py-0.5 bg-sky-500 text-white text-[9px] font-black uppercase rounded-full whitespace-nowrap">Most Popular</span>
-                      </div>
-                      <div className="text-center mt-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">★ Super Deluxe</span>
-                        <p className="text-xl font-black text-sky-300 mt-1">{formatINR(previewQuote.pricingTiers.superDeluxe.totalAmount || 0)}</p>
-                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.superDeluxe.perPersonCost || 0)}/pax</p>
-                      </div>
-                      <div className="border-t border-sky-500/30 pt-2 space-y-1">
-                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.superDeluxe.hotelTier}</p>
-                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.superDeluxe.cabType}</p>
-                      </div>
-                    </div>
-                    {/* Luxury */}
-                    <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/40 space-y-2">
-                      <div className="text-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">♛ Luxury</span>
-                        <p className="text-xl font-black text-purple-300 mt-1">{formatINR(previewQuote.pricingTiers.luxury.totalAmount || 0)}</p>
-                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.luxury.perPersonCost || 0)}/pax</p>
-                      </div>
-                      <div className="border-t border-purple-500/30 pt-2 space-y-1">
-                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.luxury.hotelTier}</p>
-                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.luxury.cabType}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-slate-500 italic">* All prices inclusive of 5% GST. Contact your specialist to confirm your preferred tier and proceed with booking.</p>
-                </div>
-              )}
-
               {/* ── Payment & Booking Policies ── */}
               <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/25 space-y-2">
                 <h5 className="font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
@@ -2178,38 +2386,40 @@ export default function AdminQuotesPage() {
                 </ul>
               </div>
 
-              {/* ── Cancellation & Refund Policies ── */}
-              <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/25 space-y-2.5">
-                <h5 className="font-bold text-rose-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                  <span>🛑</span> Cancellation &amp; Refund Policies
-                </h5>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] pb-1 border-b border-rose-500/20 text-slate-300">
-                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
-                    <span className="block text-slate-400">30+ Days Prior</span>
-                    <strong className="text-amber-400 font-black">10% Fee</strong>
+              {/* ── Cancellation & Refund Policies (Show/Hide) ── */}
+              {previewQuote.showCancellationPolicies !== false && (
+                <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/25 space-y-2.5">
+                  <h5 className="font-bold text-rose-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    <span>🛑</span> Cancellation &amp; Refund Policies
+                  </h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] pb-1 border-b border-rose-500/20 text-slate-300">
+                    <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                      <span className="block text-slate-400">30+ Days Prior</span>
+                      <strong className="text-amber-400 font-black">10% Fee</strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                      <span className="block text-slate-400">15–29 Days</span>
+                      <strong className="text-amber-500 font-black">25% Charge</strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                      <span className="block text-slate-400">7–14 Days</span>
+                      <strong className="text-rose-400 font-black">50% Charge</strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
+                      <span className="block text-slate-400">&lt; 7 Days / No-Show</span>
+                      <strong className="text-rose-500 font-black">100% Non-Refundable</strong>
+                    </div>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
-                    <span className="block text-slate-400">15–29 Days</span>
-                    <strong className="text-amber-500 font-black">25% Charge</strong>
-                  </div>
-                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
-                    <span className="block text-slate-400">7–14 Days</span>
-                    <strong className="text-rose-400 font-black">50% Charge</strong>
-                  </div>
-                  <div className="p-2 rounded-lg bg-slate-900/60 border border-rose-500/20 text-center">
-                    <span className="block text-slate-400">&lt; 7 Days / No-Show</span>
-                    <strong className="text-rose-500 font-black">100% Non-Refundable</strong>
-                  </div>
+                  <ul className="space-y-1.5 text-slate-300 text-xs">
+                    {(previewQuote.cancellationPolicies?.length ? previewQuote.cancellationPolicies : DEFAULT_CANCELLATION_POLICIES).map((policy, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-rose-400 font-bold shrink-0">•</span>
+                        <span>{policy}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-1.5 text-slate-300 text-xs">
-                  {(previewQuote.cancellationPolicies?.length ? previewQuote.cancellationPolicies : DEFAULT_CANCELLATION_POLICIES).map((policy, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-rose-400 font-bold shrink-0">•</span>
-                      <span>{policy}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              )}
 
               {/* ── Important Travel Guidelines ── */}
               <div className="p-4 rounded-xl bg-sky-500/5 border border-sky-500/25 space-y-2">
@@ -2450,6 +2660,29 @@ export default function AdminQuotesPage() {
                 </div>
               </div>
 
+              {/* Welcome / Greetings Note Editor */}
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>✨</span> Welcome / Greetings Note (Appears on Voucher &amp; PDF below Client Summary)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setWelcomeMessage(DEFAULT_WELCOME_MESSAGE)}
+                    className="text-[10px] text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                  >
+                    Reset Default Greetings
+                  </button>
+                </div>
+                <textarea
+                  rows={3}
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  placeholder="Enter greeting / introductory message for the client..."
+                  className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-200 focus:outline-none focus:border-amber-500 leading-relaxed font-sans"
+                />
+              </div>
+
               {/* Day-by-Day Timeline Builder */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -2577,6 +2810,401 @@ export default function AdminQuotesPage() {
                 </div>
               </div>
 
+              {/* ── Package Type Selection & Upgrade/Downgrade Controls (Moved Below Day-Wise Itinerary) ── */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 border-2 border-amber-500/40 space-y-4 shadow-xl">
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                        PACKAGE TIER STRATEGY &amp; CLIENT UPGRADE CONTROLS
+                      </span>
+                      <h4 className="text-sm font-black text-white flex items-center gap-2 mt-0.5">
+                        <span>💎</span> 1. Select Client&apos;s Chosen Base Package Type
+                      </h4>
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Syncs base package hotel, transport &amp; pricing
+                    </span>
+                  </div>
+
+                  {/* Base Package Pill Selector */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTier("deluxe")}
+                      className={`p-3.5 rounded-xl text-left border-2 transition cursor-pointer ${
+                        selectedTier === "deluxe"
+                          ? "border-amber-500 bg-amber-500/15 shadow-md"
+                          : "border-slate-700 bg-slate-800/40 hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase text-amber-400">✦ Deluxe</span>
+                        {selectedTier === "deluxe" && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[9px]">
+                            ACTIVE BASE
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-white mt-1">{formatINR(deluxeTotal)}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{deluxeHotel}</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTier("superDeluxe")}
+                      className={`p-3.5 rounded-xl text-left border-2 transition cursor-pointer ${
+                        selectedTier === "superDeluxe"
+                          ? "border-sky-500 bg-sky-500/15 shadow-md"
+                          : "border-slate-700 bg-slate-800/40 hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase text-sky-400">★ Super Deluxe</span>
+                        {selectedTier === "superDeluxe" && (
+                          <span className="px-2 py-0.5 rounded-full bg-sky-500 text-white font-black text-[9px]">
+                            ACTIVE BASE
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-white mt-1">{formatINR(superDeluxeTotal)}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{superDeluxeHotel}</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTier("luxury")}
+                      className={`p-3.5 rounded-xl text-left border-2 transition cursor-pointer ${
+                        selectedTier === "luxury"
+                          ? "border-purple-500 bg-purple-500/15 shadow-md"
+                          : "border-slate-700 bg-slate-800/40 hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase text-purple-400">♛ Luxury</span>
+                        {selectedTier === "luxury" && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500 text-white font-black text-[9px]">
+                            ACTIVE BASE
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-black text-white mt-1">{formatINR(luxuryTotal)}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{luxuryHotel}</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Selective Alternative Options to Show to Client */}
+                <div className="pt-3 border-t border-slate-800 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <h5 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>🎯</span> 2. Choose Alternative Option to Show on Voucher (Upgrade or Downgrade)
+                    </h5>
+                    <span className="text-[10px] text-slate-400">
+                      Show smart alternative(s) alongside the quoted package
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* If selectedTier is Super Deluxe */}
+                    {selectedTier === "superDeluxe" && (
+                      <>
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showDeluxeOption ? "border-amber-500/50 bg-amber-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showDeluxeOption}
+                            onChange={(e) => setShowDeluxeOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-amber-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-amber-300 block">Offer Downgrade: Deluxe Tier</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              Value saver alternative (Save {formatINR(Math.max(0, superDeluxeTotal - deluxeTotal))})
+                            </span>
+                          </div>
+                        </label>
+
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showLuxuryOption ? "border-purple-500/50 bg-purple-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showLuxuryOption}
+                            onChange={(e) => setShowLuxuryOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-purple-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-purple-300 block">Offer Upgrade: Luxury Tier (Recommended)</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              Premium upgrade (+{formatINR(Math.max(0, luxuryTotal - superDeluxeTotal))} total)
+                            </span>
+                          </div>
+                        </label>
+                      </>
+                    )}
+
+                    {/* If selectedTier is Deluxe */}
+                    {selectedTier === "deluxe" && (
+                      <>
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showSuperDeluxeOption ? "border-sky-500/50 bg-sky-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showSuperDeluxeOption}
+                            onChange={(e) => setShowSuperDeluxeOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-sky-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-sky-300 block">Offer Upgrade: Super Deluxe (Recommended)</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              Popular 4★ upgrade (+{formatINR(Math.max(0, superDeluxeTotal - deluxeTotal))} total)
+                            </span>
+                          </div>
+                        </label>
+
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showLuxuryOption ? "border-purple-500/50 bg-purple-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showLuxuryOption}
+                            onChange={(e) => setShowLuxuryOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-purple-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-purple-300 block">Offer High-End Upgrade: Luxury Tier</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              5★ VIP upgrade (+{formatINR(Math.max(0, luxuryTotal - deluxeTotal))} total)
+                            </span>
+                          </div>
+                        </label>
+                      </>
+                    )}
+
+                    {/* If selectedTier is Luxury */}
+                    {selectedTier === "luxury" && (
+                      <>
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showSuperDeluxeOption ? "border-sky-500/50 bg-sky-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showSuperDeluxeOption}
+                            onChange={(e) => setShowSuperDeluxeOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-sky-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-sky-300 block">Offer Downgrade: Super Deluxe (Recommended)</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              Value alternative (Save {formatINR(Math.max(0, luxuryTotal - superDeluxeTotal))})
+                            </span>
+                          </div>
+                        </label>
+
+                        <label className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition ${
+                          showDeluxeOption ? "border-amber-500/50 bg-amber-500/10" : "border-slate-800 bg-slate-900/60 opacity-60"
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={showDeluxeOption}
+                            onChange={(e) => setShowDeluxeOption(e.target.checked)}
+                            className="mt-0.5 rounded accent-amber-500 w-4 h-4 cursor-pointer"
+                          />
+                          <div className="text-xs">
+                            <span className="font-bold text-amber-300 block">Offer Economy Downgrade: Deluxe Tier</span>
+                            <span className="text-slate-400 block text-[11px]">
+                              Budget saver (Save {formatINR(Math.max(0, luxuryTotal - deluxeTotal))})
+                            </span>
+                          </div>
+                        </label>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Detailed Specification & Pricing Inputs for all 3 Tiers */}
+                <div className="pt-3 border-t border-slate-800 space-y-3">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                    ⚙️ 3. Hotel &amp; Transport Specifications for Each Tier
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    {/* Deluxe Tier Card */}
+                    <div className={`p-3.5 rounded-xl border space-y-2 relative transition ${
+                      selectedTier === "deluxe"
+                        ? "bg-amber-900/30 border-2 border-amber-500"
+                        : showDeluxeOption
+                        ? "bg-slate-800/60 border-amber-500/30"
+                        : "bg-slate-900/40 border-slate-800 opacity-60"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block">
+                          ✦ Deluxe Tier
+                        </span>
+                        {selectedTier === "deluxe" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-black">
+                            BASE
+                          </span>
+                        ) : showDeluxeOption ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                        <input
+                          type="text"
+                          value={deluxeHotel}
+                          onChange={(e) => setDeluxeHotel(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                        <input
+                          type="text"
+                          value={deluxeCab}
+                          onChange={(e) => setDeluxeCab(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                        <input
+                          type="number"
+                          value={deluxeNetCost}
+                          onChange={(e) => setDeluxeNetCost(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white"
+                        />
+                      </div>
+                      <div className="pt-1 border-t border-slate-700/40 flex items-baseline justify-between">
+                        <span className="text-amber-400 font-black text-sm">{formatINR(deluxeTotal)}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">{formatINR(deluxePerPerson)}/pax</span>
+                      </div>
+                    </div>
+
+                    {/* Super Deluxe Tier Card */}
+                    <div className={`p-3.5 rounded-xl border space-y-2 relative transition ${
+                      selectedTier === "superDeluxe"
+                        ? "bg-sky-500/15 border-2 border-sky-500"
+                        : showSuperDeluxeOption
+                        ? "bg-slate-800/60 border-sky-500/30"
+                        : "bg-slate-900/40 border-slate-800 opacity-60"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block">
+                          ★ Super Deluxe
+                        </span>
+                        {selectedTier === "superDeluxe" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500 text-white font-black">
+                            BASE
+                          </span>
+                        ) : showSuperDeluxeOption ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                        <input
+                          type="text"
+                          value={superDeluxeHotel}
+                          onChange={(e) => setSuperDeluxeHotel(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                        <input
+                          type="text"
+                          value={superDeluxeCab}
+                          onChange={(e) => setSuperDeluxeCab(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                        <input
+                          type="number"
+                          value={superDeluxeNetCost}
+                          onChange={(e) => setSuperDeluxeNetCost(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white"
+                        />
+                      </div>
+                      <div className="pt-1 border-t border-slate-700/40 flex items-baseline justify-between">
+                        <span className="text-sky-400 font-black text-sm">{formatINR(superDeluxeTotal)}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">{formatINR(superDeluxePerPerson)}/pax</span>
+                      </div>
+                    </div>
+
+                    {/* Luxury Tier Card */}
+                    <div className={`p-3.5 rounded-xl border space-y-2 relative transition ${
+                      selectedTier === "luxury"
+                        ? "bg-purple-500/15 border-2 border-purple-500"
+                        : showLuxuryOption
+                        ? "bg-slate-800/60 border-purple-500/30"
+                        : "bg-slate-900/40 border-slate-800 opacity-60"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider block">
+                          ♛ Luxury Tier
+                        </span>
+                        {selectedTier === "luxury" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500 text-white font-black">
+                            BASE
+                          </span>
+                        ) : showLuxuryOption ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">
+                            ON VOUCHER
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-500">HIDDEN</span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                        <input
+                          type="text"
+                          value={luxuryHotel}
+                          onChange={(e) => setLuxuryHotel(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                        <input
+                          type="text"
+                          value={luxuryCab}
+                          onChange={(e) => setLuxuryCab(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                        <input
+                          type="number"
+                          value={luxuryNetCost}
+                          onChange={(e) => setLuxuryNetCost(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white"
+                        />
+                      </div>
+                      <div className="pt-1 border-t border-slate-700/40 flex items-baseline justify-between">
+                        <span className="text-purple-400 font-black text-sm">{formatINR(luxuryTotal)}</span>
+                        <span className="text-[10px] text-slate-400 font-normal">{formatINR(luxuryPerPerson)}/pax</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Inclusions & Exclusions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Inclusions */}
@@ -2700,8 +3328,26 @@ export default function AdminQuotesPage() {
 
               {/* ── Cancellation & Refund Policies Builder ── */}
               <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider block">🛑 Cancellation &amp; Refund Policies</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider block">
+                      🛑 Cancellation &amp; Refund Policies
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] font-bold text-rose-300 cursor-pointer ml-3 bg-rose-950/40 px-2 py-0.5 rounded-lg border border-rose-500/30">
+                      <input
+                        type="checkbox"
+                        checked={showCancellationPolicies}
+                        onChange={(e) => setShowCancellationPolicies(e.target.checked)}
+                        className="rounded accent-rose-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span>Show on PDF Voucher</span>
+                    </label>
+                    {!showCancellationPolicies && (
+                      <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[9px] font-black uppercase">
+                        Hidden from PDF
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => setCancellationPolicies([...DEFAULT_CANCELLATION_POLICIES])}
@@ -2792,47 +3438,6 @@ export default function AdminQuotesPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-
-              {/* ── Multi-Tier Pricing (Deluxe / Super Deluxe / Luxury) ── */}
-              <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-3">
-                <span className="text-[11px] font-bold text-white uppercase tracking-wider block">💎 Multi-Tier Pricing Options (Client Choice on Voucher)</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  {/* Deluxe Tier */}
-                  <div className="p-3 rounded-xl bg-amber-900/20 border border-amber-700/30 space-y-2">
-                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block">✦ Deluxe Tier</span>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
-                      <input type="text" value={deluxeHotel} onChange={(e) => setDeluxeHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
-                      <input type="text" value={deluxeCab} onChange={(e) => setDeluxeCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
-                      <input type="number" value={deluxeNetCost} onChange={(e) => setDeluxeNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white" /></div>
-                    <p className="text-amber-400 font-black text-sm">{formatINR(deluxeTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(deluxePerPerson)}/pax)</span></p>
-                  </div>
-                  {/* Super Deluxe Tier */}
-                  <div className="p-3 rounded-xl bg-sky-500/10 border-2 border-sky-500/40 space-y-2">
-                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block">★ Super Deluxe (Default)</span>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
-                      <input type="text" value={superDeluxeHotel} onChange={(e) => setSuperDeluxeHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
-                      <input type="text" value={superDeluxeCab} onChange={(e) => setSuperDeluxeCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
-                      <input type="number" value={superDeluxeNetCost} onChange={(e) => setSuperDeluxeNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs font-bold text-white" /></div>
-                    <p className="text-sky-400 font-black text-sm">{formatINR(superDeluxeTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(superDeluxePerPerson)}/pax)</span></p>
-                  </div>
-                  {/* Luxury Tier */}
-                  <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 space-y-2">
-                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider block">♛ Luxury Tier</span>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
-                      <input type="text" value={luxuryHotel} onChange={(e) => setLuxuryHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
-                      <input type="text" value={luxuryCab} onChange={(e) => setLuxuryCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs text-white" /></div>
-                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
-                      <input type="number" value={luxuryNetCost} onChange={(e) => setLuxuryNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs font-bold text-white" /></div>
-                    <p className="text-purple-400 font-black text-sm">{formatINR(luxuryTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(luxuryPerPerson)}/pax)</span></p>
-                  </div>
-                </div>
-                <p className="text-[10px] text-slate-500 italic">Markup % and GST from the Costing Calculator below are applied to all tiers automatically.</p>
               </div>
 
               {/* Costing Engine & Assigned Specialist */}
