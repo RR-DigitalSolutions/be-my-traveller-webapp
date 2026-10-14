@@ -51,6 +51,12 @@ export interface QuoteItem {
   };
   assignedToName?: string;
   notes?: string;
+  paymentPolicies?: string[];
+  pricingTiers?: {
+    deluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
+    superDeluxe: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
+    luxury: { hotelTier: string; cabType: string; netCost: number; totalAmount: number; perPersonCost: number };
+  };
 }
 
 interface InboundLeadOption {
@@ -66,6 +72,16 @@ interface InboundLeadOption {
   specialRequirements?: string;
   assignedTo?: { name?: string };
 }
+
+const DEFAULT_PAYMENT_POLICIES: string[] = [
+  "50% advance payment required at time of booking confirmation.",
+  "Remaining 50% balance due 7 days before travel commencement.",
+  "Accepted via NEFT / RTGS / UPI / Credit & Debit Cards (2% processing fee on card payments).",
+  "GST @5% applicable on total tour value. Tax Invoice issued upon full payment.",
+  "Cancellation: 25% charge if cancelled 15+ days prior | 50% for 7–14 days prior | 100% under 7 days.",
+  "No refund for unused services, early check-out, or no-shows.",
+  "This proposal is valid for 7 days from the date of issue.",
+];
 
 export const ITINERARY_TEMPLATES: Record<
   string,
@@ -587,7 +603,22 @@ export default function AdminQuotesPage() {
   const [consultantPhone, setConsultantPhone] = useState("+91 8091638090");
   const [consultantEmail, setConsultantEmail] = useState("bookings@bemytraveller.com");
 
-  // Computed Totals
+  // Payment Policies
+  const [paymentPolicies, setPaymentPolicies] = useState<string[]>([...DEFAULT_PAYMENT_POLICIES]);
+  const [newPolicy, setNewPolicy] = useState("");
+
+  // Three-Tier Pricing (Deluxe / Super Deluxe / Luxury)
+  const [deluxeHotel, setDeluxeHotel] = useState("3\u2605 Standard Deluxe Hotels");
+  const [deluxeCab, setDeluxeCab] = useState("Shared AC Cab / Tempo Traveller");
+  const [deluxeNetCost, setDeluxeNetCost] = useState(45000);
+  const [superDeluxeHotel, setSuperDeluxeHotel] = useState("4\u2605 Premium Resorts & Hotels");
+  const [superDeluxeCab, setSuperDeluxeCab] = useState("Private AC Innova / Ertiga");
+  const [superDeluxeNetCost, setSuperDeluxeNetCost] = useState(65000);
+  const [luxuryHotel, setLuxuryHotel] = useState("5\u2605 Luxury Resorts & Boutique Hotels");
+  const [luxuryCab, setLuxuryCab] = useState("Private Innova Crysta / Toyota Fortuner");
+  const [luxuryNetCost, setLuxuryNetCost] = useState(95000);
+
+  // Computed Totals (primary / default)
   const totalTravelers = useMemo(() => adultsCount + childrenCount, [adultsCount, childrenCount]);
   const grossBeforeTax = useMemo(
     () => Math.round(netCost * (1 + markupPercent / 100)),
@@ -599,6 +630,14 @@ export default function AdminQuotesPage() {
     () => (totalTravelers > 0 ? Math.round(computedTotalAmount / totalTravelers) : computedTotalAmount),
     [computedTotalAmount, totalTravelers]
   );
+
+  // Computed Tier Totals
+  const deluxeTotal = useMemo(() => Math.round(deluxeNetCost * (1 + markupPercent / 100) * (applyGst ? 1.05 : 1)), [deluxeNetCost, markupPercent, applyGst]);
+  const superDeluxeTotal = useMemo(() => Math.round(superDeluxeNetCost * (1 + markupPercent / 100) * (applyGst ? 1.05 : 1)), [superDeluxeNetCost, markupPercent, applyGst]);
+  const luxuryTotal = useMemo(() => Math.round(luxuryNetCost * (1 + markupPercent / 100) * (applyGst ? 1.05 : 1)), [luxuryNetCost, markupPercent, applyGst]);
+  const deluxePerPerson = useMemo(() => (totalTravelers > 0 ? Math.round(deluxeTotal / totalTravelers) : deluxeTotal), [deluxeTotal, totalTravelers]);
+  const superDeluxePerPerson = useMemo(() => (totalTravelers > 0 ? Math.round(superDeluxeTotal / totalTravelers) : superDeluxeTotal), [superDeluxeTotal, totalTravelers]);
+  const luxuryPerPerson = useMemo(() => (totalTravelers > 0 ? Math.round(luxuryTotal / totalTravelers) : luxuryTotal), [luxuryTotal, totalTravelers]);
 
   const showNotification = (msg: string) => {
     setActionNotice(msg);
@@ -708,7 +747,7 @@ export default function AdminQuotesPage() {
     setAdultsCount(q.travellers?.adults || 2);
     setChildrenCount(q.travellers?.children || 0);
     setInfantsCount(q.travellers?.infants || 0);
-    setHotelTier(q.hotelTier || "4★ Deluxe");
+    setHotelTier(q.hotelTier || "4\u2605 Deluxe");
     setCabType(q.cabType || "Private AC Vehicle");
     setItineraryDays(
       Array.isArray(q.itinerary) && q.itinerary.length > 0
@@ -723,6 +762,18 @@ export default function AdminQuotesPage() {
       setConsultantName(q.assignedSalesPerson.name || "Senior Holiday Specialist");
       setConsultantPhone(q.assignedSalesPerson.phone || "+91 8091638090");
       setConsultantEmail(q.assignedSalesPerson.email || "bookings@bemytraveller.com");
+    }
+    setPaymentPolicies(q.paymentPolicies?.length ? [...q.paymentPolicies] : [...DEFAULT_PAYMENT_POLICIES]);
+    if (q.pricingTiers) {
+      setDeluxeHotel(q.pricingTiers.deluxe.hotelTier || "3\u2605 Standard Deluxe Hotels");
+      setDeluxeCab(q.pricingTiers.deluxe.cabType || "Shared AC Cab / Tempo Traveller");
+      setDeluxeNetCost(q.pricingTiers.deluxe.netCost || 45000);
+      setSuperDeluxeHotel(q.pricingTiers.superDeluxe.hotelTier || "4\u2605 Premium Resorts & Hotels");
+      setSuperDeluxeCab(q.pricingTiers.superDeluxe.cabType || "Private AC Innova / Ertiga");
+      setSuperDeluxeNetCost(q.pricingTiers.superDeluxe.netCost || 65000);
+      setLuxuryHotel(q.pricingTiers.luxury.hotelTier || "5\u2605 Luxury Resorts & Boutique Hotels");
+      setLuxuryCab(q.pricingTiers.luxury.cabType || "Private Innova Crysta / Toyota Fortuner");
+      setLuxuryNetCost(q.pricingTiers.luxury.netCost || 95000);
     }
     setModalOpen(true);
   };
@@ -746,6 +797,16 @@ export default function AdminQuotesPage() {
     setExclusions([...ITINERARY_TEMPLATES.KASHMIR.exclusions]);
     setNetCost(65000);
     setMarkupPercent(20);
+    setPaymentPolicies([...DEFAULT_PAYMENT_POLICIES]);
+    setDeluxeHotel("3\u2605 Standard Deluxe Hotels");
+    setDeluxeCab("Shared AC Cab / Tempo Traveller");
+    setDeluxeNetCost(45000);
+    setSuperDeluxeHotel("4\u2605 Premium Resorts & Hotels");
+    setSuperDeluxeCab("Private AC Innova / Ertiga");
+    setSuperDeluxeNetCost(65000);
+    setLuxuryHotel("5\u2605 Luxury Resorts & Boutique Hotels");
+    setLuxuryCab("Private Innova Crysta / Toyota Fortuner");
+    setLuxuryNetCost(95000);
     setModalOpen(true);
   };
 
@@ -827,6 +888,12 @@ export default function AdminQuotesPage() {
         phone: consultantPhone,
         email: consultantEmail,
         role: "Senior Holiday Specialist",
+      },
+      paymentPolicies,
+      pricingTiers: {
+        deluxe: { hotelTier: deluxeHotel, cabType: deluxeCab, netCost: deluxeNetCost, totalAmount: deluxeTotal, perPersonCost: deluxePerPerson },
+        superDeluxe: { hotelTier: superDeluxeHotel, cabType: superDeluxeCab, netCost: superDeluxeNetCost, totalAmount: superDeluxeTotal, perPersonCost: superDeluxePerPerson },
+        luxury: { hotelTier: luxuryHotel, cabType: luxuryCab, netCost: luxuryNetCost, totalAmount: luxuryTotal, perPersonCost: luxuryPerPerson },
       },
       status: "SENT",
     };
@@ -986,6 +1053,192 @@ export default function AdminQuotesPage() {
     navigator.clipboard.writeText(text);
     setCopiedMsg(q._id);
     setTimeout(() => setCopiedMsg(null), 2000);
+  };
+
+  // ── Professional A4 Voucher Print (opens in new window → browser PDF) ──
+  const handlePrintVoucher = (q: QuoteItem) => {
+    const datesStr = formatTravelDates(q.travelDates);
+    const policies = q.paymentPolicies?.length ? q.paymentPolicies : DEFAULT_PAYMENT_POLICIES;
+    const tiers = q.pricingTiers;
+
+    const tiersHtml = tiers ? `
+      <div style="margin-bottom:24px;">
+        <h3 style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#92400e;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #d97706;">
+          \u{1F48E} Package Tier Selection — Please Choose Your Preferred Option
+        </h3>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th style="padding:10px 12px;text-align:left;background:#f8f3e8;border:1px solid #ddd;font-size:11px;font-weight:900;text-transform:uppercase;color:#666;">Category</th>
+              <th style="padding:10px 12px;text-align:center;background:#fef3c7;border:1px solid #ddd;font-size:11px;font-weight:900;color:#b45309;">\u2726 DELUXE</th>
+              <th style="padding:10px 12px;text-align:center;background:#eff6ff;border:2px solid #3b82f6;font-size:11px;font-weight:900;color:#1d4ed8;">\u2605 SUPER DELUXE (Recommended)</th>
+              <th style="padding:10px 12px;text-align:center;background:#faf5ff;border:1px solid #ddd;font-size:11px;font-weight:900;color:#7c3aed;">\u265B LUXURY</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Hotel / Stay</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.deluxe.hotelTier}</td>
+              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;background:#f0f7ff;">${tiers.superDeluxe.hotelTier}</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.luxury.hotelTier}</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Transport & Cab</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.deluxe.cabType}</td>
+              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;background:#f0f7ff;">${tiers.superDeluxe.cabType}</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;">${tiers.luxury.cabType}</td>
+            </tr>
+            <tr style="background:#fffbf0;">
+              <td style="padding:10px 12px;border:1px solid #e5e7eb;font-weight:800;background:#fafafa;">Total Package Price</td>
+              <td style="padding:10px 12px;border:1px solid #e5e7eb;text-align:center;font-weight:900;font-size:15px;color:#b45309;">
+                \u20B9${(tiers.deluxe.totalAmount||0).toLocaleString("en-IN")}
+              </td>
+              <td style="padding:10px 12px;border:2px solid #3b82f6;text-align:center;font-weight:900;font-size:15px;color:#1d4ed8;background:#f0f7ff;">
+                \u20B9${(tiers.superDeluxe.totalAmount||0).toLocaleString("en-IN")}
+              </td>
+              <td style="padding:10px 12px;border:1px solid #e5e7eb;text-align:center;font-weight:900;font-size:15px;color:#7c3aed;">
+                \u20B9${(tiers.luxury.totalAmount||0).toLocaleString("en-IN")}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;font-weight:700;background:#fafafa;">Per Person Cost</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;color:#92400e;">\u20B9${(tiers.deluxe.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
+              <td style="padding:9px 12px;border:2px solid #3b82f6;text-align:center;color:#1d4ed8;background:#f0f7ff;">\u20B9${(tiers.superDeluxe.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
+              <td style="padding:9px 12px;border:1px solid #e5e7eb;text-align:center;color:#7c3aed;">\u20B9${(tiers.luxury.perPersonCost||0).toLocaleString("en-IN")}/pax</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:10px;color:#9ca3af;margin-top:6px;font-style:italic;">* Prices include GST. Kindly reply to confirm your chosen tier and proceed with booking.</p>
+      </div>` : "";
+
+    const dayHtml = Array.isArray(q.itinerary) && q.itinerary.length > 0
+      ? q.itinerary.map(day => `
+        <div style="margin-bottom:14px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;page-break-inside:avoid;">
+          <div style="background:#f8f3e8;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="background:#d97706;color:#fff;width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">${day.dayNumber}</span>
+              <span style="font-weight:800;font-size:13px;color:#111;">${day.title}</span>
+            </div>
+            <span style="font-size:12px;color:#d97706;font-weight:700;">${day.city}</span>
+          </div>
+          <div style="padding:10px 14px;background:#fff;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px;font-size:11px;">
+              <div><span style="color:#888;font-weight:600;">Hotel: </span><strong>${day.hotelName||"4\u2605 Hotel"}</strong>${day.roomCategory ? " &bull; "+day.roomCategory : ""}</div>
+              <div><span style="color:#888;font-weight:600;">Meal: </span><span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:700;">${day.mealPlan==="MAP"?"MAP (Bkft+Dinner)":day.mealPlan==="CP"?"CP (Bkft)":day.mealPlan==="AP"?"AP (All Meals)":"EP (Room Only)"}</span></div>
+              <div><span style="color:#888;font-weight:600;">Vehicle: </span><strong>${day.vehicleType||q.cabType}</strong></div>
+            </div>
+            ${day.activities ? `<p style="font-size:12px;color:#374151;line-height:1.6;margin:0;">${day.activities}</p>` : ""}
+          </div>
+        </div>`).join("") : "<p style=\"color:#888;font-size:12px;\">Standard itinerary applies.</p>";
+
+    const inclHtml = q.inclusions?.length
+      ? q.inclusions.map(i => `<li style="padding:3px 0;color:#065f46;">\u2713 ${i}</li>`).join("")
+      : `<li style="padding:3px 0;">\u2713 4\u2605 Hotel Accommodations</li><li style="padding:3px 0;">\u2713 Daily Breakfast & Dinner</li><li style="padding:3px 0;">\u2713 Private Cab & Transfers</li>`;
+    const exclHtml = q.exclusions?.length
+      ? q.exclusions.map(i => `<li style="padding:3px 0;color:#991b1b;">\u2715 ${i}</li>`).join("")
+      : `<li style="padding:3px 0;">\u2715 Airfare / Train Tickets</li><li style="padding:3px 0;">\u2715 Personal Expenses</li>`;
+    const polHtml = policies.map(p => `<li style="padding:4px 0;color:#374151;">\u2022 ${p}</li>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Be My Traveller \u2014 Tour Proposal ${q.quoteNumber}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2937;background:#fff;font-size:13px;line-height:1.5;}
+    @page{size:A4;margin:16mm 14mm;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+    .wrap{max-width:750px;margin:0 auto;padding:20px;}
+    h3{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#92400e;margin-bottom:10px;}
+    ul{list-style:none;padding:0;}
+    table{width:100%;border-collapse:collapse;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <!-- HEADER -->
+  <div style="background:linear-gradient(135deg,#1e3a5f 0%,#d97706 100%);color:#fff;padding:22px 26px;border-radius:10px 10px 0 0;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <p style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;opacity:.8;">BE MY TRAVELLER HOLIDAYS</p>
+        <h1 style="font-size:20px;font-weight:900;margin-top:3px;">Handcrafted Holiday Itinerary Proposal</h1>
+        <p style="font-size:11px;opacity:.85;margin-top:3px;">Govt. Approved & Verified Travel Network \u2022 24/7 Concierge: +91 8091638090</p>
+      </div>
+      <div style="text-align:right;">
+        <span style="background:rgba(255,255,255,.9);color:#166534;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;">\u2713 Verified Itinerary</span>
+        <p style="margin-top:8px;font-size:11px;font-family:monospace;opacity:.9;">Ref: ${q.quoteNumber}</p>
+        <p style="font-size:10px;opacity:.8;">Date: ${new Date(q.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</p>
+      </div>
+    </div>
+  </div>
+  <div style="height:6px;background:linear-gradient(90deg,#d97706,#f59e0b);margin-bottom:22px;border-radius:0 0 4px 4px;"></div>
+
+  <!-- CLIENT SUMMARY -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:22px;font-size:12px;">
+    <div><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Traveler Name</p><p style="font-weight:700;">\u{1F464} ${q.customerName}</p><p style="font-size:11px;color:#6b7280;margin-top:2px;">\u{1F4F1} ${q.customerPhone}</p></div>
+    <div><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Destination</p><p style="font-weight:700;color:#d97706;">\u{1F4CD} ${q.destination}</p></div>
+    <div><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Travel Dates & Pax</p><p style="font-weight:700;">\u{1F4C5} ${datesStr}</p><p style="font-size:11px;color:#6b7280;margin-top:2px;">\u{1F465} ${q.paxCount}</p></div>
+    <div><p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Package Price</p><p style="font-size:18px;font-weight:900;color:#d97706;">\u20B9${(q.totalAmount||0).toLocaleString("en-IN")}</p><p style="font-size:10px;color:#059669;font-weight:700;">All-Inclusive + GST</p></div>
+  </div>
+
+  <!-- PRICING TIERS -->
+  ${tiersHtml}
+
+  <!-- DAY-BY-DAY -->
+  <div style="margin-bottom:22px;">
+    <h3 style="border-bottom:2px solid #d97706;padding-bottom:6px;margin-bottom:12px;">\u{1F5D3}\uFE0F Day-by-Day Tour Program & Sightseeing</h3>
+    ${dayHtml}
+  </div>
+
+  <!-- INCLUSIONS & EXCLUSIONS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;">
+    <div style="padding:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+      <h3 style="color:#166534;border-bottom:1px solid #86efac;padding-bottom:5px;margin-bottom:8px;">\u2713 100% Guaranteed Inclusions</h3>
+      <ul style="font-size:12px;">${inclHtml}</ul>
+    </div>
+    <div style="padding:14px;background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;">
+      <h3 style="color:#991b1b;border-bottom:1px solid #fca5a5;padding-bottom:5px;margin-bottom:8px;">\u2715 Package Exclusions</h3>
+      <ul style="font-size:12px;">${exclHtml}</ul>
+    </div>
+  </div>
+
+  <!-- PAYMENT POLICIES -->
+  <div style="padding:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;margin-bottom:22px;page-break-inside:avoid;">
+    <h3 style="color:#92400e;border-bottom:1px solid #fcd34d;padding-bottom:5px;margin-bottom:8px;">\u{1F4CB} Payment & Booking Policies</h3>
+    <ul style="font-size:12px;">${polHtml}</ul>
+  </div>
+
+  <!-- ASSIGNED SPECIALIST -->
+  <div style="padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <p style="font-size:9px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:3px;">Your Dedicated Trip Specialist</p>
+      <p style="font-weight:800;font-size:14px;">\u{1F464} ${q.assignedSalesPerson?.name||"Senior Holiday Specialist"}</p>
+      <p style="font-size:12px;color:#6b7280;margin-top:3px;">\u{1F4DE} ${q.assignedSalesPerson?.phone||"+91 8091638090"} \u00A0\u2022\u00A0 \u2709\uFE0F ${q.assignedSalesPerson?.email||"bookings@bemytraveller.com"}</p>
+    </div>
+    <div style="text-align:right;">
+      <p style="font-weight:800;color:#d97706;font-size:13px;">www.bemytraveller.com</p>
+      <p style="font-size:11px;color:#6b7280;margin-top:2px;">+91 8091638090</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:14px;border-top:2px solid #e5e7eb;">
+    Be My Traveller \u2022 Main Office: Manali & Delhi NCR \u2022 +91 8091638090 \u2022 info@bemytraveller.com \u2022 www.bemytraveller.com<br/>
+    <em style="font-size:9px;">System-generated proposal. Prices subject to availability at time of booking confirmation.</em>
+  </div>
+</div>
+</body>
+</html>`;
+
+    const pw = window.open("", "_blank", "width=1050,height=750");
+    if (!pw) {
+      alert("Please allow pop-ups in your browser to use Print / Save PDF.");
+      return;
+    }
+    pw.document.write(html);
+    pw.document.close();
+    pw.onload = () => { pw.focus(); pw.print(); };
   };
 
   const filteredQuotes = useMemo(() => {
@@ -1287,7 +1540,7 @@ export default function AdminQuotesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => handlePrintVoucher(previewQuote)}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white flex items-center gap-1 cursor-pointer"
                 >
                   <span>🖨️</span> Print / PDF
@@ -1468,6 +1721,72 @@ export default function AdminQuotesPage() {
                     )}
                   </ul>
                 </div>
+              </div>
+
+              {/* ── 3-Tier Pricing Comparison (Deluxe / Super Deluxe / Luxury) ── */}
+              {previewQuote.pricingTiers && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>💎</span> Package Tier Options — Client Choice
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    {/* Deluxe */}
+                    <div className="p-4 rounded-xl bg-amber-900/20 border border-amber-700/40 space-y-2">
+                      <div className="text-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">✦ Deluxe</span>
+                        <p className="text-xl font-black text-amber-300 mt-1">{formatINR(previewQuote.pricingTiers.deluxe.totalAmount || 0)}</p>
+                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.deluxe.perPersonCost || 0)}/pax</p>
+                      </div>
+                      <div className="border-t border-amber-800/40 pt-2 space-y-1">
+                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.deluxe.hotelTier}</p>
+                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.deluxe.cabType}</p>
+                      </div>
+                    </div>
+                    {/* Super Deluxe */}
+                    <div className="p-4 rounded-xl bg-sky-500/10 border-2 border-sky-500/50 space-y-2 relative">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <span className="px-2 py-0.5 bg-sky-500 text-white text-[9px] font-black uppercase rounded-full whitespace-nowrap">Most Popular</span>
+                      </div>
+                      <div className="text-center mt-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-sky-400 block">★ Super Deluxe</span>
+                        <p className="text-xl font-black text-sky-300 mt-1">{formatINR(previewQuote.pricingTiers.superDeluxe.totalAmount || 0)}</p>
+                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.superDeluxe.perPersonCost || 0)}/pax</p>
+                      </div>
+                      <div className="border-t border-sky-500/30 pt-2 space-y-1">
+                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.superDeluxe.hotelTier}</p>
+                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.superDeluxe.cabType}</p>
+                      </div>
+                    </div>
+                    {/* Luxury */}
+                    <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/40 space-y-2">
+                      <div className="text-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">♛ Luxury</span>
+                        <p className="text-xl font-black text-purple-300 mt-1">{formatINR(previewQuote.pricingTiers.luxury.totalAmount || 0)}</p>
+                        <p className="text-[10px] text-slate-400">{formatINR(previewQuote.pricingTiers.luxury.perPersonCost || 0)}/pax</p>
+                      </div>
+                      <div className="border-t border-purple-500/30 pt-2 space-y-1">
+                        <p className="text-slate-300 leading-snug">🏨 {previewQuote.pricingTiers.luxury.hotelTier}</p>
+                        <p className="text-slate-400 leading-snug">🚗 {previewQuote.pricingTiers.luxury.cabType}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-500 italic">* All prices inclusive of 5% GST. Contact your specialist to confirm your preferred tier and proceed with booking.</p>
+                </div>
+              )}
+
+              {/* ── Payment & Booking Policies ── */}
+              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/25 space-y-2">
+                <h5 className="font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                  <span>📋</span> Payment & Booking Policies
+                </h5>
+                <ul className="space-y-1.5 text-slate-300 text-xs">
+                  {(previewQuote.paymentPolicies?.length ? previewQuote.paymentPolicies : DEFAULT_PAYMENT_POLICIES).map((policy, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-amber-400 font-bold shrink-0">•</span>
+                      <span>{policy}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Assigned Specialist & Concierge Contact */}
@@ -1885,6 +2204,81 @@ export default function AdminQuotesPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* ── Payment Policies Builder ── */}
+              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2">
+                <span className="text-[11px] font-bold text-amber-300 uppercase tracking-wider block">📋 Payment & Booking Policies</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add or edit a payment policy clause..."
+                    value={newPolicy}
+                    onChange={(e) => setNewPolicy(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && newPolicy.trim()) {
+                        e.preventDefault();
+                        setPaymentPolicies([...paymentPolicies, newPolicy.trim()]);
+                        setNewPolicy("");
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { if (newPolicy.trim()) { setPaymentPolicies([...paymentPolicies, newPolicy.trim()]); setNewPolicy(""); } }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-xs cursor-pointer"
+                  >+</button>
+                </div>
+                <div className="space-y-1 max-h-40 overflow-y-auto pt-1">
+                  {paymentPolicies.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-800 px-2.5 py-1.5 rounded-lg">
+                      <span>• {p}</span>
+                      <button type="button" onClick={() => setPaymentPolicies(paymentPolicies.filter((_, idx) => idx !== i))} className="text-slate-500 hover:text-rose-400 text-[10px] cursor-pointer ml-2 shrink-0">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Multi-Tier Pricing (Deluxe / Super Deluxe / Luxury) ── */}
+              <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 space-y-3">
+                <span className="text-[11px] font-bold text-white uppercase tracking-wider block">💎 Multi-Tier Pricing Options (Client Choice on Voucher)</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  {/* Deluxe Tier */}
+                  <div className="p-3 rounded-xl bg-amber-900/20 border border-amber-700/30 space-y-2">
+                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-wider block">✦ Deluxe Tier</span>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                      <input type="text" value={deluxeHotel} onChange={(e) => setDeluxeHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                      <input type="text" value={deluxeCab} onChange={(e) => setDeluxeCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                      <input type="number" value={deluxeNetCost} onChange={(e) => setDeluxeNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white" /></div>
+                    <p className="text-amber-400 font-black text-sm">{formatINR(deluxeTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(deluxePerPerson)}/pax)</span></p>
+                  </div>
+                  {/* Super Deluxe Tier */}
+                  <div className="p-3 rounded-xl bg-sky-500/10 border-2 border-sky-500/40 space-y-2">
+                    <span className="text-[10px] font-black text-sky-400 uppercase tracking-wider block">★ Super Deluxe (Default)</span>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                      <input type="text" value={superDeluxeHotel} onChange={(e) => setSuperDeluxeHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                      <input type="text" value={superDeluxeCab} onChange={(e) => setSuperDeluxeCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                      <input type="number" value={superDeluxeNetCost} onChange={(e) => setSuperDeluxeNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-sky-500/40 text-xs font-bold text-white" /></div>
+                    <p className="text-sky-400 font-black text-sm">{formatINR(superDeluxeTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(superDeluxePerPerson)}/pax)</span></p>
+                  </div>
+                  {/* Luxury Tier */}
+                  <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 space-y-2">
+                    <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider block">♛ Luxury Tier</span>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Hotel / Accommodation</label>
+                      <input type="text" value={luxuryHotel} onChange={(e) => setLuxuryHotel(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Transport / Cab</label>
+                      <input type="text" value={luxuryCab} onChange={(e) => setLuxuryCab(e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs text-white" /></div>
+                    <div><label className="text-[10px] text-slate-400 block mb-0.5">Net Vendor Cost (₹)</label>
+                      <input type="number" value={luxuryNetCost} onChange={(e) => setLuxuryNetCost(Math.max(0, parseInt(e.target.value)||0))} className="w-full px-2.5 py-1.5 rounded-xl bg-slate-800 border border-purple-500/40 text-xs font-bold text-white" /></div>
+                    <p className="text-purple-400 font-black text-sm">{formatINR(luxuryTotal)} <span className="text-[10px] text-slate-400 font-normal">({formatINR(luxuryPerPerson)}/pax)</span></p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">Markup % and GST from the Costing Calculator below are applied to all tiers automatically.</p>
               </div>
 
               {/* Costing Engine & Assigned Specialist */}
