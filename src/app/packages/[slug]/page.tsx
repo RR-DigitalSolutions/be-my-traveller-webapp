@@ -51,6 +51,25 @@ const pkgRegistry: Record<string, PackageData> = {
       "Adventure activity fees (ATV, paragliding, skiing)",
       "5% GST applicable on total package amount",
     ],
+    paymentPolicies: [
+      "25% advance token payment at the time of booking confirmation",
+      "50% payment 15 days prior to arrival / hotel voucher release",
+      "Remaining 25% balance payment upon check-in on Day 1",
+      "Special peak session (Christmas, New Year & Long Weekends) may require 100% advance as per hotel rules",
+    ],
+    importantInfo: [
+      "Valid Government photo ID (Aadhaar / Passport / Voter ID) required for all travellers at check-in",
+      "AC will remain switched off during driving in high-altitude uphill mountain roads",
+      "Hotel standard check-in time is 12:00 PM / 02:00 PM and check-out is 10:00 AM / 11:00 AM",
+      "Vehicles are provided on point-to-point basis as per tour schedule, not on disposable 24/7 basis",
+      "Rohtang Pass & high mountain pass visits are subject to NGT green permits and climatic safety clearance",
+    ],
+    cancellationPolicies: [
+      "30+ days prior to departure: 10% administrative fee only",
+      "15 to 29 days prior to departure: 25% cancellation charge",
+      "7 to 14 days prior to departure: 50% cancellation charge",
+      "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
+    ],
     itinerary: [
       {
         day: 1,
@@ -178,6 +197,15 @@ async function getPackageData(slug: string): Promise<PackageData> {
         exclusions: Array.isArray(dbPkg.exclusions) && dbPkg.exclusions.length > 0
           ? dbPkg.exclusions
           : fallback.exclusions,
+        paymentPolicies: Array.isArray(dbPkg.paymentPolicies) && dbPkg.paymentPolicies.length > 0
+          ? dbPkg.paymentPolicies
+          : fallback.paymentPolicies,
+        importantInfo: Array.isArray(dbPkg.importantInfo) && dbPkg.importantInfo.length > 0
+          ? dbPkg.importantInfo
+          : fallback.importantInfo,
+        cancellationPolicies: Array.isArray(dbPkg.cancellationPolicies) && dbPkg.cancellationPolicies.length > 0
+          ? dbPkg.cancellationPolicies
+          : fallback.cancellationPolicies,
         itinerary: Array.isArray(dbPkg.itinerary) && dbPkg.itinerary.length > 0
           ? dbPkg.itinerary.map((d: any, i: number) => ({
               day: d.day || i + 1,

@@ -49,6 +49,9 @@ export interface PackageData {
   highlights: string[];
   inclusions: string[];
   exclusions: string[];
+  paymentPolicies?: string[];
+  importantInfo?: string[];
+  cancellationPolicies?: string[];
   itinerary: { day: number; title: string; desc: string; meals: string; hotel: string }[];
   hotelTiers: {
     standard: { title: string; pricePerAdult: number; desc: string };
@@ -544,6 +547,95 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            </section>
+
+            {/* ── Payment Policies ── */}
+            <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div>
+                  <span className="text-[10px] uppercase font-black tracking-widest text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
+                    Transparent Booking Terms
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+                    <span>💳</span> Payment &amp; Milestone Policies
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-bold self-start sm:self-auto">
+                  <span>🔒</span> 100% Safe &amp; Verified Transactions
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {(pkg.paymentPolicies && pkg.paymentPolicies.length > 0 ? pkg.paymentPolicies : [
+                  "25% advance token payment at the time of booking confirmation",
+                  "50% payment 15 days prior to arrival / hotel voucher release",
+                  "Remaining 25% balance payment upon check-in on Day 1",
+                  "Special peak session (Christmas, New Year & Long Weekends) may require 100% advance as per hotel rules",
+                ]).map((pol, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-800">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium leading-relaxed">{pol}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-500 italic pt-1">
+                * Payments can be made via UPI, NEFT/RTGS, Credit/Debit cards or Net Banking. Official GST invoice and vouchers issued instantly.
+              </p>
+            </section>
+
+            {/* ── Other Information & Tour Guidelines ── */}
+            <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="border-b border-slate-100 pb-3">
+                <span className="text-[10px] uppercase font-black tracking-widest text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                  Traveller Advisory
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+                  <span>ℹ️</span> Important Information &amp; Tour Guidelines
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                {(pkg.importantInfo && pkg.importantInfo.length > 0 ? pkg.importantInfo : [
+                  "Valid Government photo ID (Aadhaar / Passport / Voter ID) required for all travellers at check-in",
+                  "AC will remain switched off during driving in high-altitude uphill mountain roads",
+                  "Hotel standard check-in time is 12:00 PM / 02:00 PM and check-out is 10:00 AM / 11:00 AM",
+                  "Vehicles are provided on point-to-point basis as per tour schedule, not on disposable 24/7 basis",
+                  "Rohtang Pass & high mountain pass visits are subject to NGT green permits and climatic safety clearance",
+                ]).map((info, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-xs text-slate-700 bg-amber-50/50 p-3 rounded-xl border border-amber-200/60">
+                    <span className="text-amber-500 font-bold shrink-0 mt-0.5">📌</span>
+                    <span className="font-medium leading-relaxed">{info}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ── Cancellation & Refund Policies ── */}
+            <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="border-b border-slate-100 pb-3">
+                <span className="text-[10px] uppercase font-black tracking-widest text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md border border-purple-200">
+                  Peace of Mind Guarantee
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+                  <span>📋</span> Cancellation &amp; Refund Policies
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(pkg.cancellationPolicies && pkg.cancellationPolicies.length > 0 ? pkg.cancellationPolicies : [
+                  "30+ days prior to departure: 10% administrative fee only",
+                  "15 to 29 days prior to departure: 25% cancellation charge",
+                  "7 to 14 days prior to departure: 50% cancellation charge",
+                  "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
+                ]).map((cancelRule, i) => (
+                  <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-purple-50/40 border border-purple-200/60 text-xs text-slate-800">
+                    <span className="text-purple-600 font-black shrink-0 mt-0.5">•</span>
+                    <span className="font-medium leading-relaxed">{cancelRule}</span>
+                  </div>
+                ))}
               </div>
             </section>
 

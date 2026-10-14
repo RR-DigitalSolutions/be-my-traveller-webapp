@@ -147,6 +147,10 @@ export interface IPackage extends Document {
   inclusions: string[];
   exclusions: string[];
 
+  paymentPolicies?: string[];
+  importantInfo?: string[];
+  cancellationPolicies?: string[];
+
   cancellationPolicy?: Record<string, unknown>;
   termsAndConditions?: Record<string, unknown>;
 
@@ -271,6 +275,10 @@ const PackageSchema = new Schema<IPackage>(
 
     inclusions: [{ type: String }],
     exclusions: [{ type: String }],
+
+    paymentPolicies: [{ type: String }],
+    importantInfo: [{ type: String }],
+    cancellationPolicies: [{ type: String }],
 
     cancellationPolicy: { type: Schema.Types.Mixed },
     termsAndConditions: { type: Schema.Types.Mixed },

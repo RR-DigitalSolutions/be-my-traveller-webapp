@@ -82,6 +82,9 @@ interface IPackageItem {
     deluxe: HotelTier;
     luxury: HotelTier;
   };
+  paymentPolicies?: string[];
+  importantInfo?: string[];
+  cancellationPolicies?: string[];
   faqs?: FaqItem[];
   seo?: {
     metaTitle?: string;
@@ -289,6 +292,25 @@ export default function AdminPackagesPage() {
       "Adventure activity fees (ATV, paragliding, skiing)",
       "5% GST applicable on total package amount",
     ],
+    paymentPolicies: [
+      "25% advance token payment at the time of booking confirmation",
+      "50% payment 15 days prior to arrival / hotel voucher release",
+      "Remaining 25% balance payment upon check-in on Day 1",
+      "Special peak session (Christmas, New Year & Long Weekends) may require 100% advance as per hotel rules",
+    ],
+    importantInfo: [
+      "Valid Government photo ID (Aadhaar / Passport / Voter ID) required for all travellers at check-in",
+      "AC will remain switched off during driving in high-altitude uphill mountain roads",
+      "Hotel standard check-in time is 12:00 PM / 02:00 PM and check-out is 10:00 AM / 11:00 AM",
+      "Vehicles are provided on point-to-point basis as per tour schedule, not on disposable 24/7 basis",
+      "Rohtang Pass & high mountain pass visits are subject to NGT green permits and climatic safety clearance",
+    ],
+    cancellationPolicies: [
+      "30+ days prior to departure: 10% administrative fee only",
+      "15 to 29 days prior to departure: 25% cancellation charge",
+      "7 to 14 days prior to departure: 50% cancellation charge",
+      "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
+    ],
     hotelTiers: {
       standard: {
         title: "Deluxe 3★",
@@ -382,6 +404,9 @@ export default function AdminPackagesPage() {
   const [newHighlight, setNewHighlight] = useState("");
   const [newInclusion, setNewInclusion] = useState("");
   const [newExclusion, setNewExclusion] = useState("");
+  const [newPaymentPolicy, setNewPaymentPolicy] = useState("");
+  const [newImportantInfo, setNewImportantInfo] = useState("");
+  const [newCancellationPolicy, setNewCancellationPolicy] = useState("");
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
   const [newFaq, setNewFaq] = useState({ q: "", a: "" });
 
@@ -630,6 +655,25 @@ export default function AdminPackagesPage() {
       highlights: Array.isArray(pkg.highlights) ? pkg.highlights : [],
       inclusions: Array.isArray(pkg.inclusions) ? pkg.inclusions : [],
       exclusions: Array.isArray(pkg.exclusions) ? pkg.exclusions : [],
+      paymentPolicies: Array.isArray(pkg.paymentPolicies) && pkg.paymentPolicies.length > 0 ? pkg.paymentPolicies : [
+        "25% advance token payment at the time of booking confirmation",
+        "50% payment 15 days prior to arrival / hotel voucher release",
+        "Remaining 25% balance payment upon check-in on Day 1",
+        "Special peak session (Christmas, New Year & Long Weekends) may require 100% advance as per hotel rules",
+      ],
+      importantInfo: Array.isArray(pkg.importantInfo) && pkg.importantInfo.length > 0 ? pkg.importantInfo : [
+        "Valid Government photo ID (Aadhaar / Passport / Voter ID) required for all travellers at check-in",
+        "AC will remain switched off during driving in high-altitude uphill mountain roads",
+        "Hotel standard check-in time is 12:00 PM / 02:00 PM and check-out is 10:00 AM / 11:00 AM",
+        "Vehicles are provided on point-to-point basis as per tour schedule, not on disposable 24/7 basis",
+        "Rohtang Pass & high mountain pass visits are subject to NGT green permits and climatic safety clearance",
+      ],
+      cancellationPolicies: Array.isArray(pkg.cancellationPolicies) && pkg.cancellationPolicies.length > 0 ? pkg.cancellationPolicies : [
+        "30+ days prior to departure: 10% administrative fee only",
+        "15 to 29 days prior to departure: 25% cancellation charge",
+        "7 to 14 days prior to departure: 50% cancellation charge",
+        "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
+      ],
       hotelTiers: initHotelTiers,
       itinerary: Array.isArray(pkg.itinerary) && pkg.itinerary.length > 0 ? pkg.itinerary.map((d: any, i: number) => ({
         day: d.day || i + 1,
@@ -719,6 +763,25 @@ export default function AdminPackagesPage() {
         "Personal expenses (laundry, phone calls, room heaters)",
         "Adventure activity fees (ATV, paragliding, skiing)",
         "5% GST applicable on total package amount",
+      ],
+      paymentPolicies: [
+        "25% advance token payment at the time of booking confirmation",
+        "50% payment 15 days prior to arrival / hotel voucher release",
+        "Remaining 25% balance payment upon check-in on Day 1",
+        "Special peak session (Christmas, New Year & Long Weekends) may require 100% advance as per hotel rules",
+      ],
+      importantInfo: [
+        "Valid Government photo ID (Aadhaar / Passport / Voter ID) required for all travellers at check-in",
+        "AC will remain switched off during driving in high-altitude uphill mountain roads",
+        "Hotel standard check-in time is 12:00 PM / 02:00 PM and check-out is 10:00 AM / 11:00 AM",
+        "Vehicles are provided on point-to-point basis as per tour schedule, not on disposable 24/7 basis",
+        "Rohtang Pass & high mountain pass visits are subject to NGT green permits and climatic safety clearance",
+      ],
+      cancellationPolicies: [
+        "30+ days prior to departure: 10% administrative fee only",
+        "15 to 29 days prior to departure: 25% cancellation charge",
+        "7 to 14 days prior to departure: 50% cancellation charge",
+        "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
       ],
       hotelTiers: {
         standard: {
@@ -2417,6 +2480,177 @@ export default function AdminPackagesPage() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Policies */}
+                  <div className="p-4 bg-blue-950/20 border border-blue-900/40 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-blue-400 block flex items-center gap-1.5">
+                          <span>💳</span> Payment &amp; Milestone Policies
+                        </span>
+                        <span className="text-[10px] text-slate-400">Payment milestones displayed to guests on package detail page</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
+                        {formData.paymentPolicies?.length || 0} Milestones
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newPaymentPolicy}
+                        onChange={(e) => setNewPaymentPolicy(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (newPaymentPolicy.trim()) {
+                              setFormData((prev) => ({ ...prev, paymentPolicies: [...(prev.paymentPolicies || []), newPaymentPolicy.trim()] }));
+                              setNewPaymentPolicy("");
+                            }
+                          }
+                        }}
+                        placeholder="e.g. 25% advance token payment upon booking..."
+                        className="flex-1 px-3 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newPaymentPolicy.trim()) return;
+                          setFormData((prev) => ({ ...prev, paymentPolicies: [...(prev.paymentPolicies || []), newPaymentPolicy.trim()] }));
+                          setNewPaymentPolicy("");
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs cursor-pointer"
+                      >+ Add</button>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {(formData.paymentPolicies || []).map((pol, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-900/70 p-2 rounded-lg border border-slate-800/60">
+                          <span className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full bg-blue-600/40 text-blue-300 text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                            <span>{pol}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, paymentPolicies: (prev.paymentPolicies || []).filter((_, idx) => idx !== i) }))}
+                            className="text-red-400 hover:text-red-300 font-bold ml-2 cursor-pointer"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Important Information / Other Information Section */}
+                  <div className="p-4 bg-amber-950/20 border border-amber-900/40 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-amber-400 block flex items-center gap-1.5">
+                          <span>ℹ️</span> Other Information &amp; Tour Guidelines
+                        </span>
+                        <span className="text-[10px] text-slate-400">Important notices (ID proofs, mountain AC rules, check-in times)</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">
+                        {formData.importantInfo?.length || 0} Guidelines
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newImportantInfo}
+                        onChange={(e) => setNewImportantInfo(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (newImportantInfo.trim()) {
+                              setFormData((prev) => ({ ...prev, importantInfo: [...(prev.importantInfo || []), newImportantInfo.trim()] }));
+                              setNewImportantInfo("");
+                            }
+                          }
+                        }}
+                        placeholder="e.g. Valid Govt ID proof required at hotel check-in..."
+                        className="flex-1 px-3 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newImportantInfo.trim()) return;
+                          setFormData((prev) => ({ ...prev, importantInfo: [...(prev.importantInfo || []), newImportantInfo.trim()] }));
+                          setNewImportantInfo("");
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs cursor-pointer"
+                      >+ Add</button>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {(formData.importantInfo || []).map((info, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-900/70 p-2 rounded-lg border border-slate-800/60">
+                          <span className="flex items-center gap-2">
+                            <span className="text-amber-400 font-bold">📌</span>
+                            <span>{info}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, importantInfo: (prev.importantInfo || []).filter((_, idx) => idx !== i) }))}
+                            className="text-red-400 hover:text-red-300 font-bold ml-2 cursor-pointer"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cancellation & Refund Policies */}
+                  <div className="p-4 bg-purple-950/20 border border-purple-900/40 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-purple-400 block flex items-center gap-1.5">
+                          <span>📋</span> Cancellation &amp; Refund Policies
+                        </span>
+                        <span className="text-[10px] text-slate-400">Clear cancellation slabs displayed to guests</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">
+                        {formData.cancellationPolicies?.length || 0} Terms
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCancellationPolicy}
+                        onChange={(e) => setNewCancellationPolicy(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (newCancellationPolicy.trim()) {
+                              setFormData((prev) => ({ ...prev, cancellationPolicies: [...(prev.cancellationPolicies || []), newCancellationPolicy.trim()] }));
+                              setNewCancellationPolicy("");
+                            }
+                          }
+                        }}
+                        placeholder="e.g. 30+ days prior to departure: 10% fee only..."
+                        className="flex-1 px-3 py-1.5 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newCancellationPolicy.trim()) return;
+                          setFormData((prev) => ({ ...prev, cancellationPolicies: [...(prev.cancellationPolicies || []), newCancellationPolicy.trim()] }));
+                          setNewCancellationPolicy("");
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer"
+                      >+ Add</button>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {(formData.cancellationPolicies || []).map((pol, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-slate-300 bg-slate-900/70 p-2 rounded-lg border border-slate-800/60">
+                          <span className="flex items-center gap-2">
+                            <span className="text-purple-400 font-bold">•</span>
+                            <span>{pol}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, cancellationPolicies: (prev.cancellationPolicies || []).filter((_, idx) => idx !== i) }))}
+                            className="text-red-400 hover:text-red-300 font-bold ml-2 cursor-pointer"
+                          >✕</button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

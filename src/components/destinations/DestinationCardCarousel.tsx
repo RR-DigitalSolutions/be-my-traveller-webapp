@@ -122,38 +122,41 @@ export default function DestinationCardCarousel({
               href={item.url}
               className="group w-[230px] sm:w-[260px] shrink-0 snap-start rounded-xl overflow-hidden bg-white border border-slate-200 shadow-xs hover:shadow-md hover:border-amber-500/60 transition-all flex flex-col"
             >
-              {/* Image & Badges */}
-              <div className="relative h-36 w-full overflow-hidden bg-slate-900">
+              {/* Clean Image View with only top tours badge */}
+              <div className="relative h-40 w-full overflow-hidden bg-slate-900">
                 <img
                   src={item.img}
                   alt={item.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/80 text-amber-400 text-[10px] font-black uppercase backdrop-blur-xs">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/85 text-amber-400 text-[10px] font-black uppercase tracking-wider backdrop-blur-xs shadow-xs">
                   {item.count}
                 </span>
-                {item.tag && (
-                  <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-white/95 text-slate-900 text-[9.5px] font-extrabold backdrop-blur-xs shadow-xs">
-                    {item.tag}
-                  </span>
-                )}
               </div>
 
-              {/* Text info */}
-              <div className="p-3.5 space-y-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-amber-600 transition-colors line-clamp-1">
-                    {item.name}
-                  </h3>
-                  <span className="text-xs text-amber-600 font-extrabold group-hover:translate-x-0.5 transition-transform">
-                    →
-                  </span>
+              {/* Text info on White Strip */}
+              <div className="p-3.5 space-y-1.5 bg-white flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-amber-600 transition-colors line-clamp-1">
+                      {item.name}
+                    </h3>
+                    <span className="text-xs text-amber-600 font-extrabold group-hover:translate-x-1 transition-transform shrink-0">
+                      →
+                    </span>
+                  </div>
+                  {item.tag && (
+                    <p className="text-[10px] text-slate-500 font-medium line-clamp-1 leading-snug mt-0.5" title={item.tag}>
+                      {item.tag}
+                    </p>
+                  )}
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Starting from <strong className="text-slate-900">{item.price}</strong>
-                </p>
+                <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                  <span>Starting from</span>
+                  <strong className="text-slate-900 font-extrabold">{item.price}</strong>
+                </div>
               </div>
             </Link>
           ))}

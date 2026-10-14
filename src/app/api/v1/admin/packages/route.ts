@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
         : (body.highlights ? String(body.highlights).split(",").map((s: string) => s.trim()).filter(Boolean) : []),
       inclusions: Array.isArray(body.inclusions) ? body.inclusions : [],
       exclusions: Array.isArray(body.exclusions) ? body.exclusions : [],
+      paymentPolicies: Array.isArray(body.paymentPolicies) ? body.paymentPolicies : [],
+      importantInfo: Array.isArray(body.importantInfo) ? body.importantInfo : [],
+      cancellationPolicies: Array.isArray(body.cancellationPolicies) ? body.cancellationPolicies : [],
       itinerary: Array.isArray(body.itinerary) ? body.itinerary : [],
       hotelTiers: body.hotelTiers || {
         standard: { title: "Deluxe 3★", pricePerAdult: standardTierPrice, desc: "Cozy verified boutique stays" },
