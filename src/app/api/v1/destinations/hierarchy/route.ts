@@ -47,7 +47,7 @@ export async function GET() {
       .toArray();
 
     const countries = allDests.filter((d) => d.type === "COUNTRY");
-    const states = allDests.filter((d) => d.type === "STATE" || d.type === "ISLAND");
+    const states = allDests.filter((d) => d.type === "STATE" || d.type === "ISLAND" || d.type === "UNION_TERRITORY");
     const cities = allDests.filter((d) => d.type === "CITY" || d.type === "AREA");
 
     // Build nested tree structure

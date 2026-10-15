@@ -85,7 +85,7 @@ export async function PATCH(
         if (parentState) {
           updateDoc.stateSlug = parentState.slug;
           updateDoc.stateName = parentState.name;
-          if (parentState.countryId) {
+          if (!body.countryId && parentState.countryId) {
             updateDoc.countryId = parentState.countryId;
             updateDoc.countrySlug = parentState.countrySlug;
             updateDoc.countryName = parentState.countryName;
@@ -154,6 +154,24 @@ export async function PATCH(
     const updatedDestination = Types.ObjectId.isValid(id)
       ? await db.collection("destinations").findOne({ _id: new Types.ObjectId(id) })
       : await db.collection("destinations").findOne({ slug: id });
+
+    // If state/UT country was changed, cascade country updates to child places
+    if (
+      updatedDestination &&
+      (updatedDestination.type === "STATE" || updatedDestination.type === "UNION_TERRITORY" || updatedDestination.type === "ISLAND") &&
+      updateDoc.countryId
+    ) {
+      await db.collection("destinations").updateMany(
+        { stateId: updatedDestination._id },
+        {
+          $set: {
+            countryId: updateDoc.countryId,
+            countrySlug: updateDoc.countrySlug,
+            countryName: updateDoc.countryName,
+          },
+        }
+      );
+    }
 
     return NextResponse.json({ success: true, destination: updatedDestination, message: "Destination updated successfully" });
   } catch (error) {

@@ -90,15 +90,9 @@ export default function AdminDestinationsPage() {
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [loading, setLoading] = useState(true);
 
-  // Master lists for cascading dropdowns
-  const [masterCountries, setMasterCountries] = useState<Array<{ _id: string; name: string; slug: string }>>([
-    { _id: "india", name: "India", slug: "india" },
-    { _id: "uae", name: "United Arab Emirates", slug: "uae" },
-    { _id: "indonesia", name: "Indonesia", slug: "indonesia" },
-    { _id: "switzerland", name: "Switzerland", slug: "switzerland" },
-    { _id: "thailand", name: "Thailand", slug: "thailand" },
-  ]);
-  const [masterStates, setMasterStates] = useState<Array<{ _id: string; name: string; slug: string; countryName?: string; countryId?: string; region?: string }>>([]);
+  // Master lists for cascading dropdowns (loaded dynamically from hierarchy API)
+  const [masterCountries, setMasterCountries] = useState<Array<{ _id: string; name: string; slug: string; region?: string }>>([]);
+  const [masterStates, setMasterStates] = useState<Array<{ _id: string; name: string; slug: string; countryName?: string; countryId?: string; countrySlug?: string; region?: string }>>([]);
 
   // Modals & Active Tab
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -126,7 +120,7 @@ export default function AdminDestinationsPage() {
     name: "",
     slug: "",
     type: "STATE" as "COUNTRY" | "STATE" | "CITY" | "ISLAND" | "AREA" | "UNION_TERRITORY",
-    countryId: "india",
+    countryId: "",
     stateId: "",
     region: "North India",
     displayOrder: 1,
@@ -162,6 +156,41 @@ export default function AdminDestinationsPage() {
   const [schemaStatus, setSchemaStatus] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [showSchemaBox, setShowSchemaBox] = useState(false);
 
+  // Fetch full hierarchy data independently so filters/searches never empty the master country/state lists
+  const fetchHierarchyData = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/destinations/hierarchy");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.countries) && data.countries.length > 0) {
+          setMasterCountries(
+            data.countries.map((c: any) => ({
+              _id: String(c._id),
+              name: c.name,
+              slug: c.slug,
+              region: c.region,
+            }))
+          );
+        }
+        if (Array.isArray(data.states) && data.states.length > 0) {
+          setMasterStates(
+            data.states.map((s: any) => ({
+              _id: String(s._id),
+              name: s.name,
+              slug: s.slug,
+              countryName: s.countryName,
+              countryId: s.countryId ? String(s.countryId) : undefined,
+              countrySlug: s.countrySlug,
+              region: s.region,
+            }))
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching destination hierarchy:", err);
+    }
+  }, []);
+
   const fetchDestinations = useCallback(async () => {
     setLoading(true);
     try {
@@ -173,16 +202,6 @@ export default function AdminDestinationsPage() {
       if (res.ok) {
         const data = await res.json();
         setDestinations(data.destinations || []);
-
-        // Populate master countries & states
-        const allDests: DestinationItem[] = data.destinations || [];
-        const countries = allDests.filter((d) => d.type === "COUNTRY");
-        if (countries.length > 0) {
-          setMasterCountries(countries.map((c) => ({ _id: c._id, name: c.name, slug: c.slug })));
-        }
-
-        const states = allDests.filter((d) => d.type === "STATE" || d.type === "UNION_TERRITORY" || d.type === "ISLAND");
-        setMasterStates(states.map((s) => ({ _id: s._id, name: s.name, slug: s.slug, countryName: s.countryName, countryId: s.countryId, region: s.region })));
       }
     } catch (err) {
       console.error("Error fetching destinations:", err);
@@ -190,6 +209,10 @@ export default function AdminDestinationsPage() {
       setLoading(false);
     }
   }, [search, selectedType]);
+
+  useEffect(() => {
+    fetchHierarchyData();
+  }, [fetchHierarchyData]);
 
   useEffect(() => {
     fetchDestinations();
@@ -203,15 +226,16 @@ export default function AdminDestinationsPage() {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
 
-    const cSlug = "india";
+    const countryObj = masterCountries.find((c) => String(c._id) === String(form.countryId) || c.slug === form.countryId);
+    const cSlug = clean(countryObj?.slug || "india");
     const stateObj = masterStates.find((s) => String(s._id) === String(form.stateId) || s.slug === form.stateId);
     const sSlug = clean(stateObj?.slug);
     const pSlug = clean(form.slug || form.name);
 
     if (form.type === "COUNTRY") {
-      return `bemytraveller/destinations/${pSlug || "india"}`;
+      return `bemytraveller/destinations/${pSlug || cSlug}`;
     }
-    if (form.type === "STATE" || form.type === "ISLAND") {
+    if (form.type === "STATE" || form.type === "ISLAND" || form.type === "UNION_TERRITORY") {
       return `bemytraveller/destinations/${cSlug}/${pSlug || sSlug || "state"}`;
     }
     if (form.type === "CITY" || form.type === "AREA") {
@@ -356,22 +380,32 @@ export default function AdminDestinationsPage() {
         : "/api/v1/admin/destinations";
       const method = editingDest ? "PATCH" : "POST";
 
+      const parentCountry = masterCountries.find((c) => String(c._id) === String(formData.countryId));
+      const parentState = masterStates.find((s) => String(s._id) === String(formData.stateId));
+
+      const payload = {
+        ...formData,
+        countrySlug: parentCountry?.slug,
+        countryName: parentCountry?.name,
+        stateSlug: parentState?.slug,
+        stateName: parentState?.name,
+      };
+
       const res = await fetch(endpoint, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        const parentState = masterStates.find((s) => s._id === formData.stateId || s.slug === formData.stateId);
         let previewUrl = "/destination/india-tour-packages";
         if (formData.type === "COUNTRY") {
           previewUrl = buildDestinationUrl({ country: formData.slug });
         } else if (formData.type === "STATE" || formData.type === "UNION_TERRITORY") {
-          previewUrl = buildDestinationUrl({ country: "india", state: formData.slug });
+          previewUrl = buildDestinationUrl({ country: parentCountry?.slug || "india", state: formData.slug });
         } else {
           previewUrl = buildDestinationUrl({
-            country: "india",
+            country: parentCountry?.slug || "india",
             state: parentState?.slug || "himachal",
             place: formData.slug,
           });
@@ -392,6 +426,7 @@ export default function AdminDestinationsPage() {
           action: actionType,
         });
         fetchDestinations();
+        fetchHierarchyData();
       } else {
         const errData = await res.json();
         setFormError(errData.error || "Failed to save destination. Please review all fields.");
@@ -409,6 +444,7 @@ export default function AdminDestinationsPage() {
       const res = await fetch(`/api/v1/admin/destinations/${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchDestinations();
+        fetchHierarchyData();
       } else {
         alert("Failed to delete destination");
       }
@@ -421,12 +457,66 @@ export default function AdminDestinationsPage() {
     setEditingDest(dest);
     setFormError(null);
     setActiveTab("hierarchy");
+
+    // 1. Resolve State ID
+    let resolvedStateId = "";
+    if (dest.stateId) {
+      const match = masterStates.find(
+        (s) => String(s._id) === String(dest.stateId) || s.slug === String(dest.stateId).toLowerCase()
+      );
+      if (match) resolvedStateId = match._id;
+    }
+    if (!resolvedStateId && dest.stateSlug) {
+      const match = masterStates.find((s) => s.slug === dest.stateSlug);
+      if (match) resolvedStateId = match._id;
+    }
+    if (!resolvedStateId && dest.stateName) {
+      const match = masterStates.find((s) => s.name.toLowerCase() === dest.stateName?.toLowerCase());
+      if (match) resolvedStateId = match._id;
+    }
+
+    // 2. Resolve Country ID
+    let resolvedCountryId = "";
+    if (dest.countryId) {
+      const match = masterCountries.find(
+        (c) => String(c._id) === String(dest.countryId) || c.slug === String(dest.countryId).toLowerCase()
+      );
+      if (match) resolvedCountryId = match._id;
+    }
+    if (!resolvedCountryId && dest.countrySlug) {
+      const match = masterCountries.find((c) => c.slug === dest.countrySlug);
+      if (match) resolvedCountryId = match._id;
+    }
+    if (!resolvedCountryId && dest.countryName) {
+      const match = masterCountries.find((c) => c.name.toLowerCase() === dest.countryName?.toLowerCase());
+      if (match) resolvedCountryId = match._id;
+    }
+
+    // 3. If State is linked, verify parent Country matches the state's country
+    if (resolvedStateId) {
+      const matchedState = masterStates.find((s) => String(s._id) === String(resolvedStateId));
+      if (matchedState?.countryId) {
+        const countryMatch = masterCountries.find(
+          (c) => String(c._id) === String(matchedState.countryId) || c.slug === matchedState.countrySlug
+        );
+        if (countryMatch) {
+          resolvedCountryId = countryMatch._id;
+        }
+      }
+    }
+
+    // 4. Fallback if still unassigned and masterCountries exist
+    if (!resolvedCountryId && masterCountries.length > 0) {
+      const india = masterCountries.find((c) => c.slug === "india" || c.name.toLowerCase() === "india");
+      resolvedCountryId = india ? india._id : masterCountries[0]._id;
+    }
+
     setFormData({
       name: dest.name,
       slug: dest.slug,
       type: dest.type || "STATE",
-      countryId: dest.countryId || "india",
-      stateId: dest.stateId || "",
+      countryId: resolvedCountryId,
+      stateId: resolvedStateId,
       region: dest.region || "North India",
       displayOrder: dest.displayOrder || 1,
       startingPrice: dest.startingPrice || dest.fastFacts?.startingPrice || "₹14,999",
@@ -455,11 +545,14 @@ export default function AdminDestinationsPage() {
     setEditingDest(null);
     setFormError(null);
     setActiveTab("hierarchy");
+    const indiaObj = masterCountries.find((c) => c.slug === "india" || c.name.toLowerCase() === "india");
+    const defaultCountryId = indiaObj ? indiaObj._id : (masterCountries[0]?._id || "");
+
     setFormData({
       name: "",
       slug: "",
       type: "STATE",
-      countryId: "india",
+      countryId: defaultCountryId,
       stateId: "",
       region: "North India",
       displayOrder: destinations.length + 1,
@@ -638,8 +731,8 @@ export default function AdminDestinationsPage() {
                             dest.type === "COUNTRY"
                               ? `/destination/${dest.slug}-tour-packages`
                               : dest.type === "STATE"
-                              ? `/destination/india/${dest.slug}-tour-packages`
-                              : `/destination/india/${dest.stateSlug || "himachal"}/${dest.slug}-tour-packages`
+                              ? `/destination/${dest.countrySlug || "india"}/${dest.slug}-tour-packages`
+                              : `/destination/${dest.countrySlug || "india"}/${dest.stateSlug || "himachal"}/${dest.slug}-tour-packages`
                           }
                           target="_blank"
                           className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all"
@@ -819,12 +912,33 @@ export default function AdminDestinationsPage() {
                   {/* Cascading Parents */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">Parent Country</label>
+                      <label className="text-xs font-bold text-slate-300">
+                        Parent Country {formData.type !== "COUNTRY" && <span className="text-amber-500">*</span>}
+                      </label>
                       <select
                         value={formData.countryId}
-                        onChange={(e) => setFormData({ ...formData, countryId: e.target.value })}
-                        className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer"
+                        disabled={formData.type === "COUNTRY"}
+                        onChange={(e) => {
+                          const newCountryId = e.target.value;
+                          const currentParentState = masterStates.find((s) => String(s._id) === String(formData.stateId));
+                          const stateBelongs = currentParentState && (
+                            String(currentParentState.countryId) === String(newCountryId) ||
+                            currentParentState.countrySlug === newCountryId
+                          );
+                          const countryObj = masterCountries.find((c) => String(c._id) === String(newCountryId));
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            countryId: newCountryId,
+                            stateId: stateBelongs ? prev.stateId : "",
+                            region: countryObj?.region || prev.region,
+                          }));
+                        }}
+                        className={`w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer ${
+                          formData.type === "COUNTRY" ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                       >
+                        <option value="">Select Country</option>
                         {masterCountries.map((c) => (
                           <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
@@ -838,13 +952,40 @@ export default function AdminDestinationsPage() {
                         </label>
                         <select
                           value={formData.stateId}
-                          onChange={(e) => setFormData({ ...formData, stateId: e.target.value })}
+                          onChange={(e) => {
+                            const selectedStateId = e.target.value;
+                            const stateObj = masterStates.find((s) => String(s._id) === String(selectedStateId));
+                            let matchedCountryId = formData.countryId;
+                            if (stateObj?.countryId) {
+                              const countryMatch = masterCountries.find(
+                                (c) => String(c._id) === String(stateObj.countryId) || c.slug === stateObj.countrySlug
+                              );
+                              if (countryMatch) {
+                                matchedCountryId = countryMatch._id;
+                              }
+                            }
+                            setFormData((prev) => ({
+                              ...prev,
+                              stateId: selectedStateId,
+                              countryId: matchedCountryId || prev.countryId,
+                              region: stateObj?.region || prev.region,
+                            }));
+                          }}
                           className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer"
                         >
                           <option value="">Select State</option>
-                          {masterStates.map((s) => (
-                            <option key={s._id} value={s._id}>{s.name}</option>
-                          ))}
+                          {masterStates
+                            .filter((s) => {
+                              if (!formData.countryId) return true;
+                              const cObj = masterCountries.find((c) => String(c._id) === String(formData.countryId));
+                              return (
+                                String(s.countryId) === String(formData.countryId) ||
+                                (cObj && (s.countrySlug === cObj.slug || s.countryName?.toLowerCase() === cObj.name.toLowerCase()))
+                              );
+                            })
+                            .map((s) => (
+                              <option key={s._id} value={s._id}>{s.name}</option>
+                            ))}
                         </select>
                       </div>
                     )}

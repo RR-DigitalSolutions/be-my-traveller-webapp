@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
     }
 
     const query: Record<string, unknown> = {};
+    if (type && type !== "ALL") {
+      query.type = type;
+    }
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -179,7 +182,7 @@ export async function POST(req: NextRequest) {
         if (parentState) {
           finalStateSlug = parentState.slug;
           finalStateName = parentState.name;
-          if (parentState.countryId) {
+          if (!finalCountryId && parentState.countryId) {
             finalCountryId = parentState.countryId;
             finalCountrySlug = parentState.countrySlug;
             finalCountryName = parentState.countryName;
