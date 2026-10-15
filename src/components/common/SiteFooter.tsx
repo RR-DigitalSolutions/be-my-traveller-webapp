@@ -309,14 +309,14 @@ export default function SiteFooter() {
 
           {/* Brand Logo in center after Copyright, aligned in same line */}
           <div className="flex items-center justify-center">
-            <Link href="/" className="inline-flex items-center justify-center" aria-label="Be My Traveller — Home">
-              <div className="relative w-[130px] h-[26px] sm:w-[150px] sm:h-[30px] rounded-md bg-white px-2 py-0.5 overflow-hidden shadow-2xs">
+            <Link href="/" className="inline-flex items-center justify-center group" aria-label="Be My Traveller — Home">
+              <div className="relative w-[140px] h-[32px] sm:w-[165px] sm:h-[36px] flex items-center justify-center transition-transform group-hover:scale-105">
                 <Image
-                  src="/Logo for website PNG.webp"
+                  src={settings.footerLogoUrl || settings.logoUrl || "/Logo for website PNG.webp"}
                   alt={settings.tradeName || "Be My Traveller"}
                   fill
                   className="object-contain"
-                  sizes="150px"
+                  sizes="165px"
                   priority
                 />
               </div>

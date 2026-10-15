@@ -73,6 +73,7 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
       tagline: doc.tagline || DEFAULT_PUBLIC_SETTINGS.tagline,
       brandDescription: doc.brandDescription || DEFAULT_PUBLIC_SETTINGS.brandDescription,
       logoUrl: doc.logoUrl || DEFAULT_PUBLIC_SETTINGS.logoUrl,
+      footerLogoUrl: doc.footerLogoUrl || doc.logoUrl || DEFAULT_PUBLIC_SETTINGS.footerLogoUrl,
       faviconUrl: doc.faviconUrl || DEFAULT_PUBLIC_SETTINGS.faviconUrl,
       watermarkText: doc.watermarkText || DEFAULT_PUBLIC_SETTINGS.watermarkText,
 

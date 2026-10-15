@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import MediaPickerModal, { MediaItem } from "@/components/common/MediaPickerModal";
 
 type SettingsTab =
   | "COMPANY"
@@ -15,6 +17,13 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Logo & Branding Upload States
+  const [uploadingLogo, setUploadingLogo] = useState<"header" | "footer" | null>(null);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<"header" | "footer" | null>(null);
+  const [headerPreviewBg, setHeaderPreviewBg] = useState<"dark" | "transparent" | "light">("dark");
+  const headerFileInputRef = useRef<HTMLInputElement>(null);
+  const footerFileInputRef = useRef<HTMLInputElement>(null);
 
   // Test Modals State
   const [isEmailTestOpen, setIsEmailTestOpen] = useState(false);
@@ -44,6 +53,7 @@ export default function AdminSettingsPage() {
     brandDescription:
       "India's leading experiential luxury and mountain travel specialist, providing curated tour packages, point-to-point chauffeured fleet transfers, and bespoke holiday planning across Himachal Pradesh, Kashmir, Uttarakhand, Ladakh, Dubai, and Andaman.",
     logoUrl: "",
+    footerLogoUrl: "",
     faviconUrl: "",
     watermarkText: "RRDS",
     gstin: "07AAGCB1234F1Z8",
@@ -254,6 +264,48 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  // Direct Logo File Upload Handler (Uploads to Cloudinary)
+  const handleDirectLogoUpload = async (file: File, target: "header" | "footer") => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file (PNG, WebP, SVG, JPG)", "error");
+      return;
+    }
+    setUploadingLogo(target);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("folderType", "banners");
+      body.append("customFolder", "brand-logos");
+      body.append("title", target === "header" ? "Website Header Navbar Logo" : "Website Footer Logo");
+
+      const res = await fetch("/api/v1/cloudinary/upload", {
+        method: "POST",
+        body,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to upload logo image to server.");
+      }
+      const uploadedUrl = data.url || data.secure_url || data.media?.url;
+      if (!uploadedUrl) {
+        throw new Error("Server returned empty URL for uploaded asset.");
+      }
+
+      if (target === "header") {
+        setFormData((prev) => ({ ...prev, logoUrl: uploadedUrl }));
+      } else {
+        setFormData((prev) => ({ ...prev, footerLogoUrl: uploadedUrl }));
+      }
+      showToast(`✓ ${target === "header" ? "Header Navbar" : "Footer Section"} logo uploaded!`);
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to upload logo image", "error");
+    } finally {
+      setUploadingLogo(null);
+    }
+  };
 
   // Save Settings
   const handleSaveSettings = async () => {
@@ -500,6 +552,233 @@ export default function AdminSettingsPage() {
                   onChange={(e) => setFormData({ ...formData, tradeName: e.target.value })}
                   className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                 />
+              </div>
+
+              {/* Webapp Brand Logos (Header Navbar & Footer Section) */}
+              <div className="sm:col-span-2 lg:col-span-3 mt-1 pt-4 border-t border-slate-800/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                      <span>🎨</span> Webapp Brand Logos (Header Navbar & Footer Section)
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Upload or select live logos for the website Header Navbar (transparent & solid) and the dark Footer Section. Supports direct device upload (Cloudinary CDN), Media Library, or custom URL.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Header Navbar Logo */}
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-200 flex items-center gap-1">
+                          <span>🏷️</span> Header Navbar Logo
+                        </label>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
+                          Navbar & Mobile
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mb-2.5">
+                        Appears on desktop header navbar & mobile navigation drawer. Transparent background recommended.
+                      </p>
+
+                      {/* URL Input */}
+                      <div className="mb-2.5">
+                        <input
+                          type="text"
+                          value={formData.logoUrl}
+                          onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                          placeholder="/Logo for website PNG.webp"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                        <button
+                          type="button"
+                          disabled={uploadingLogo === "header"}
+                          onClick={() => headerFileInputRef.current?.click()}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {uploadingLogo === "header" ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <span>⬆️</span> Upload from Device
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMediaPickerTarget("header")}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] transition-colors flex items-center gap-1 border border-slate-700"
+                        >
+                          <span>📁</span> Media Library
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, logoUrl: "/Logo for website PNG.webp" })}
+                          className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[11px] transition-colors"
+                          title="Reset to default logo"
+                        >
+                          ↺ Default
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Container */}
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Live Preview:</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setHeaderPreviewBg("dark")}
+                            className={`px-1.5 py-0.5 rounded ${headerPreviewBg === "dark" ? "bg-amber-500/20 text-amber-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            Dark
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHeaderPreviewBg("transparent")}
+                            className={`px-1.5 py-0.5 rounded ${headerPreviewBg === "transparent" ? "bg-amber-500/20 text-amber-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            Grid
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setHeaderPreviewBg("light")}
+                            className={`px-1.5 py-0.5 rounded ${headerPreviewBg === "light" ? "bg-amber-500/20 text-amber-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            Light
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`h-14 rounded-lg flex items-center justify-center p-2 border transition-all ${
+                          headerPreviewBg === "dark"
+                            ? "bg-slate-950 border-slate-800"
+                            : headerPreviewBg === "light"
+                            ? "bg-slate-100 border-slate-300"
+                            : "bg-[radial-gradient(#334155_1px,transparent_1px)] bg-[size:10px_10px] bg-slate-900 border-slate-800"
+                        }`}
+                      >
+                        <div className="relative w-44 h-8 flex items-center justify-center">
+                          <Image
+                            src={formData.logoUrl || "/Logo for website PNG.webp"}
+                            alt={formData.tradeName || "Header Logo"}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Footer Section Logo */}
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-200 flex items-center gap-1">
+                          <span>🏷️</span> Footer Section Logo
+                        </label>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-semibold border border-slate-700">
+                          Footer Base
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mb-2.5">
+                        Appears in the dark footer copyright bar. Transparent or high-contrast logo recommended.
+                      </p>
+
+                      {/* URL Input */}
+                      <div className="mb-2.5">
+                        <input
+                          type="text"
+                          value={formData.footerLogoUrl}
+                          onChange={(e) => setFormData({ ...formData, footerLogoUrl: e.target.value })}
+                          placeholder={formData.logoUrl || "/Logo for website PNG.webp"}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 font-mono"
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                        <button
+                          type="button"
+                          disabled={uploadingLogo === "footer"}
+                          onClick={() => footerFileInputRef.current?.click()}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {uploadingLogo === "footer" ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <span>⬆️</span> Upload from Device
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMediaPickerTarget("footer")}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] transition-colors flex items-center gap-1 border border-slate-700"
+                        >
+                          <span>📁</span> Media Library
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, footerLogoUrl: formData.logoUrl })}
+                          className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-amber-400 text-[11px] transition-colors"
+                          title="Use same logo as Header"
+                        >
+                          🔗 Same as Header
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, footerLogoUrl: "/Logo for website PNG.webp" })}
+                          className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[11px] transition-colors"
+                          title="Reset to default logo"
+                        >
+                          ↺ Default
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Container (Footer style) */}
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Live Footer Preview (Dark Backdrop):</span>
+                        <span className="text-[9px] text-slate-500 font-mono">bg-slate-950</span>
+                      </div>
+
+                      <div className="h-14 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center p-2">
+                        <div className="relative w-44 h-8 flex items-center justify-center">
+                          <Image
+                            src={formData.footerLogoUrl || formData.logoUrl || "/Logo for website PNG.webp"}
+                            alt={formData.tradeName || "Footer Logo"}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               
@@ -1999,6 +2278,50 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Hidden File Inputs for Direct One-Click Device Upload */}
+      <input
+        type="file"
+        ref={headerFileInputRef}
+        accept="image/png,image/webp,image/svg+xml,image/jpeg"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleDirectLogoUpload(file, "header");
+          e.target.value = "";
+        }}
+      />
+      <input
+        type="file"
+        ref={footerFileInputRef}
+        accept="image/png,image/webp,image/svg+xml,image/jpeg"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleDirectLogoUpload(file, "footer");
+          e.target.value = "";
+        }}
+      />
+
+      {/* Cloudinary Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={mediaPickerTarget !== null}
+        onClose={() => setMediaPickerTarget(null)}
+        title={mediaPickerTarget === "header" ? "Select Header Navbar Logo" : "Select Footer Section Logo"}
+        defaultFolderType="banners"
+        customFolder="brand-logos"
+        onSelect={(media: MediaItem) => {
+          const selectedUrl = media.url || media.optimizedUrl || media.publicUrl || "";
+          if (mediaPickerTarget === "header") {
+            setFormData((prev) => ({ ...prev, logoUrl: selectedUrl }));
+            showToast("✓ Header Navbar Logo selected from library!");
+          } else if (mediaPickerTarget === "footer") {
+            setFormData((prev) => ({ ...prev, footerLogoUrl: selectedUrl }));
+            showToast("✓ Footer Section Logo selected from library!");
+          }
+          setMediaPickerTarget(null);
+        }}
+      />
     </div>
   );
 }

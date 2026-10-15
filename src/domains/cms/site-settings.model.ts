@@ -15,6 +15,7 @@ export interface ISiteSettings extends Document {
   tagline: string;
   brandDescription?: string;
   logoUrl?: string;
+  footerLogoUrl?: string;
   faviconUrl?: string;
   watermarkText: string;
   gstin?: string;
@@ -152,6 +153,7 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
         "India's leading experiential luxury and mountain travel specialist, providing curated tour packages, point-to-point chauffeured fleet transfers, and bespoke holiday planning across Himachal Pradesh, Kashmir, Uttarakhand, Ladakh, Dubai, and Andaman.",
     },
     logoUrl: { type: String, default: "" },
+    footerLogoUrl: { type: String, default: "" },
     faviconUrl: { type: String, default: "" },
     watermarkText: { type: String, default: "RRDS" },
     gstin: { type: String, default: "07AAGCB1234F1Z8" },

@@ -120,6 +120,7 @@ export async function PATCH(req: NextRequest) {
     if (body.tagline) settings.tagline = body.tagline.trim();
     if (body.brandDescription !== undefined) settings.brandDescription = body.brandDescription.trim();
     if (body.logoUrl !== undefined) settings.logoUrl = body.logoUrl.trim();
+    if (body.footerLogoUrl !== undefined) settings.footerLogoUrl = body.footerLogoUrl.trim();
     if (body.faviconUrl !== undefined) settings.faviconUrl = body.faviconUrl.trim();
     if (body.watermarkText !== undefined) settings.watermarkText = body.watermarkText.trim() || "RRDS";
 

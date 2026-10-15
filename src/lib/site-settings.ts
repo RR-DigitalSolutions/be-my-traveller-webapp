@@ -34,6 +34,7 @@ export interface PublicSiteSettings {
   tagline: string;
   brandDescription: string;
   logoUrl?: string;
+  footerLogoUrl?: string;
   faviconUrl?: string;
   watermarkText: string;
 
@@ -76,6 +77,8 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSiteSettings = {
   tagline: "Curated Experiential Mountain Holidays & Custom Tour Packages",
   brandDescription:
     "India's leading experiential luxury and mountain travel specialist, providing curated tour packages, point-to-point chauffeured fleet transfers, and bespoke holiday planning across Himachal Pradesh, Kashmir, Uttarakhand, Ladakh, Dubai, and Andaman.",
+  logoUrl: "/Logo for website PNG.webp",
+  footerLogoUrl: "/Logo for website PNG.webp",
   watermarkText: "RRDS",
 
   gstin: "07AAGCB1234F1Z8",

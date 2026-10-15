@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
+import AdminPageTransitionLoader from "./AdminPageTransitionLoader";
 import type { RoleKey, PermissionKey, DepartmentKey } from "@/lib/auth/permissions";
 
 interface AdminShellProps {
@@ -41,6 +42,9 @@ export default function AdminShell({ user, children }: AdminShellProps) {
 
   return (
     <div className="flex h-screen bg-slate-950 overflow-hidden relative">
+      {/* Live navigation transition indicator & watermark badge */}
+      <AdminPageTransitionLoader />
+
       {/* Sidebar with mobile drawer support */}
       <AdminSidebar
         userRole={user.role}

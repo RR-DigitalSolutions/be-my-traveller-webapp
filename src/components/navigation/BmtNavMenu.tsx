@@ -348,14 +348,10 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
           <div className="flex items-center justify-between h-[52px] sm:h-[56px] gap-4">
             {/* Logo (Clean, no black overlay line) */}
             <Link href="/" className="shrink-0 group flex items-center" aria-label="Be My Traveller — Home">
-              <div
-                className={`relative w-[150px] h-[34px] sm:w-[170px] sm:h-[38px] flex items-center transition-all ${
-                  !isSolid ? "bg-white px-2 py-0.5 rounded-lg" : ""
-                }`}
-              >
+              <div className="relative w-[150px] h-[34px] sm:w-[170px] sm:h-[38px] flex items-center transition-all">
                 <Image
-                  src="/Logo for website PNG.webp"
-                  alt="Be My Traveller"
+                  src={settings.logoUrl || "/Logo for website PNG.webp"}
+                  alt={settings.tradeName || "Be My Traveller"}
                   fill
                   className="object-contain object-left"
                   priority
@@ -828,8 +824,8 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
               <div className="relative w-36 h-10">
                 <Image
-                  src="/Logo for website PNG.webp"
-                  alt="Be My Traveller"
+                  src={settings.logoUrl || "/Logo for website PNG.webp"}
+                  alt={settings.tradeName || "Be My Traveller"}
                   fill
                   className="object-contain object-left"
                   sizes="144px"

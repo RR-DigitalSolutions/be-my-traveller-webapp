@@ -350,6 +350,7 @@ export default function AdminSidebar({
                 ) : (
                   <Link
                     href={item.href}
+                    prefetch={true}
                     onClick={() => onClose?.()}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -372,6 +373,7 @@ export default function AdminSidebar({
                       <Link
                         key={child.href}
                         href={child.href}
+                        prefetch={true}
                         onClick={() => onClose?.()}
                         className={cn(
                           "block px-2 py-1.5 rounded-md text-xs font-medium transition-colors",
@@ -392,7 +394,10 @@ export default function AdminSidebar({
 
         {/* Bottom: app version */}
         <div className="p-4 border-t border-slate-800 shrink-0">
-          <p className="text-xs text-slate-600">RRDS Travel Engine 3.1.1</p>
+          <p className="text-xs text-slate-400 font-mono flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="font-semibold text-slate-300">RRDS V8 Travel Engine</span>
+          </p>
         </div>
       </aside>
     </>
