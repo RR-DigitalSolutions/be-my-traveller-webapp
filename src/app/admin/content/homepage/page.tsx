@@ -3604,8 +3604,20 @@ export default function HomepageContentAdmin() {
           defaultFolderType={mediaPickerConfig.folderType}
           customFolder={mediaPickerConfig.customFolder}
           onSelect={(media: MediaItem) => {
-            const url = media.url || media.optimizedUrl || media.publicUrl || "";
-            if (url) mediaPickerConfig.onSelect(url);
+            const url =
+              media.url ||
+              media.optimizedUrl ||
+              media.publicUrl ||
+              (media as any).secureUrl ||
+              (media as any).secure_url ||
+              (media as any).cardUrl ||
+              "";
+            if (url) {
+              mediaPickerConfig.onSelect(url);
+              showToast("✓ Selected image from Media Gallery!");
+            } else {
+              showToast("No valid image URL found on selected asset", "error");
+            }
             setMediaPickerConfig(null);
           }}
         />

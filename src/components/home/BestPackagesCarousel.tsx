@@ -78,7 +78,7 @@ export default function BestPackagesCarousel({ onEnquire, adminPackages }: BestP
       setCurrentIndex(0);
       return;
     }
-    fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
+    fetch("/api/v1/homepage-content", { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (data.success && Array.isArray(data.content?.featuredPackages) && data.content.featuredPackages.length > 0) {

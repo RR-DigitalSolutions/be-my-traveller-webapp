@@ -264,7 +264,7 @@ export default function HomePage() {
   const [seoContentData, setSeoContentData] = useState<HomeSeoContentData | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
+    fetch("/api/v1/homepage-content", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.content) {

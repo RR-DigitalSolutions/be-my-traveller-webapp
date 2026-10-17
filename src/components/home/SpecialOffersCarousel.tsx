@@ -153,7 +153,7 @@ export default function SpecialOffersCarousel({
   // Fetch dynamic offers from admin content if not provided by parent
   useEffect(() => {
     if (!initialOffers || initialOffers.length === 0) {
-      fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
+      fetch("/api/v1/homepage-content", { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success && Array.isArray(data.content?.specialOffers) && data.content.specialOffers.length > 0) {

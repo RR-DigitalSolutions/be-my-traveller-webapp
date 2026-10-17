@@ -51,7 +51,10 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/api/v1/admin") && pathname !== "/api/v1/admin/seed") {
+  const isPublicAdminGet =
+    request.method === "GET" && pathname === "/api/v1/admin/homepage-content";
+
+  if (pathname.startsWith("/api/v1/admin") && pathname !== "/api/v1/admin/seed" && !isPublicAdminGet) {
     if (!session?.user) {
       return NextResponse.json(
         {
