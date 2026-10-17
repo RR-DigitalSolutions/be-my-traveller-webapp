@@ -255,6 +255,7 @@ export default function HomePage() {
   const [intlList, setIntlList] = useState(internationalDestinations);
   const [featuredPackagesList, setFeaturedPackagesList] = useState<any[]>([]);
   const [specialOffersList, setSpecialOffersList] = useState<any[]>([]);
+  const [specialOffersMeta, setSpecialOffersMeta] = useState<any>(null);
   const [themePackagesList, setThemePackagesList] = useState<any[]>([]);
 
   // Dynamic About Us, Why Book, FAQs, and SEO Content Area states
@@ -285,6 +286,9 @@ export default function HomePage() {
           if (Array.isArray(data.content.specialOffers) && data.content.specialOffers.length > 0) {
             const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
             if (active.length > 0) setSpecialOffersList(active);
+          }
+          if (data.content.specialOffersMeta) {
+            setSpecialOffersMeta(data.content.specialOffersMeta);
           }
           if (Array.isArray(data.content.themePackages) && data.content.themePackages.length > 0) {
             const active = data.content.themePackages.filter((t: any) => t.isActive !== false);
@@ -695,6 +699,7 @@ export default function HomePage() {
       {/* ── Special Offers & Exclusive Discounts Carousel (Above Popular Holiday Spots) ── */}
       <SpecialOffersCarousel
         initialOffers={specialOffersList.length > 0 ? specialOffersList : undefined}
+        meta={specialOffersMeta || undefined}
         onClaimOffer={(offerName) => {
           setEnquiryPackage(offerName);
           setIsEnquiryOpen(true);

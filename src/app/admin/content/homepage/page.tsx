@@ -574,6 +574,10 @@ export default function HomepageContentAdmin() {
   // Section States
   const [packages, setPackages] = useState<PackageItem[]>(DEFAULT_PACKAGES);
   const [offers, setOffers] = useState<OfferItem[]>(DEFAULT_OFFERS);
+  const [offersBadge, setOffersBadge] = useState("Exclusive Travel Deals");
+  const [offersHeading, setOffersHeading] = useState("Handpicked Offers & Instant Discounts");
+  const [offersSubheading, setOffersSubheading] = useState("Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways.");
+  const [offersIsActive, setOffersIsActive] = useState(true);
   const [domesticSpots, setDomesticSpots] = useState<DestinationCard[]>(DEFAULT_DOMESTIC_DESTINATIONS);
   const [intlSpots, setIntlSpots] = useState<DestinationCard[]>(DEFAULT_INTL_DESTINATIONS);
   const [themePackages, setThemePackages] = useState<ThemePackageItem[]>(DEFAULT_THEME_PACKAGES);
@@ -793,6 +797,12 @@ export default function HomepageContentAdmin() {
           const c = data.content;
           if (c.featuredPackages?.length > 0) setPackages(c.featuredPackages);
           if (c.specialOffers?.length > 0) setOffers(c.specialOffers);
+          if (c.specialOffersMeta) {
+            if (c.specialOffersMeta.badge) setOffersBadge(c.specialOffersMeta.badge);
+            if (c.specialOffersMeta.heading) setOffersHeading(c.specialOffersMeta.heading);
+            if (c.specialOffersMeta.subheading) setOffersSubheading(c.specialOffersMeta.subheading);
+            if (typeof c.specialOffersMeta.isActive === "boolean") setOffersIsActive(c.specialOffersMeta.isActive);
+          }
           if (c.popularDestinations?.domestic?.length > 0) setDomesticSpots(c.popularDestinations.domestic);
           if (c.popularDestinations?.international?.length > 0) setIntlSpots(c.popularDestinations.international);
           if (c.themePackages?.length > 0) setThemePackages(c.themePackages);
@@ -851,6 +861,12 @@ export default function HomepageContentAdmin() {
         body: JSON.stringify({
           featuredPackages: packages,
           specialOffers: offers,
+          specialOffersMeta: {
+            badge: offersBadge,
+            heading: offersHeading,
+            subheading: offersSubheading,
+            isActive: offersIsActive,
+          },
           popularDestinations: { domestic: domesticSpots, international: intlSpots },
           themePackages,
           whyBook: {
@@ -1134,6 +1150,54 @@ export default function HomepageContentAdmin() {
                 >
                   <span>+</span> Add Promo Offer
                 </button>
+              </div>
+
+              {/* Section Header Controls */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Section Header &amp; Subtitle (Exclusive Travel Deals)</h3>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={offersIsActive}
+                      onChange={(e) => setOffersIsActive(e.target.checked)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-400"
+                    />
+                    <span>Show Section on Homepage</span>
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Badge / Tag (e.g. Exclusive Travel Deals)</label>
+                    <input
+                      type="text"
+                      value={offersBadge}
+                      onChange={(e) => setOffersBadge(e.target.value)}
+                      placeholder="Exclusive Travel Deals"
+                      className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-200 focus:outline-hidden focus:border-amber-500 font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Main Heading</label>
+                    <input
+                      type="text"
+                      value={offersHeading}
+                      onChange={(e) => setOffersHeading(e.target.value)}
+                      placeholder="Handpicked Offers & Instant Discounts"
+                      className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-200 focus:outline-hidden focus:border-amber-500 font-bold"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Subheading / Description</label>
+                    <input
+                      type="text"
+                      value={offersSubheading}
+                      onChange={(e) => setOffersSubheading(e.target.value)}
+                      placeholder="Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways."
+                      className="w-full text-xs px-3 py-2 bg-white rounded-lg border border-slate-200 focus:outline-hidden focus:border-amber-500"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

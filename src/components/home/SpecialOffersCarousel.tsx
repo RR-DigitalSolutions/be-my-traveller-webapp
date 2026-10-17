@@ -128,16 +128,31 @@ const OFFERS: OfferItem[] = [
   },
 ];
 
+export interface SpecialOffersMeta {
+  badge?: string;
+  heading?: string;
+  subheading?: string;
+  isActive?: boolean;
+}
+
 interface SpecialOffersCarouselProps {
   onClaimOffer: (enquiryName: string) => void;
   initialOffers?: OfferItem[];
+  meta?: SpecialOffersMeta;
 }
 
 export default function SpecialOffersCarousel({
   onClaimOffer,
   initialOffers,
+  meta,
 }: SpecialOffersCarouselProps) {
   const [offersList, setOffersList] = useState<OfferItem[]>(initialOffers || OFFERS);
+  const [sectionMeta, setSectionMeta] = useState<SpecialOffersMeta>({
+    badge: meta?.badge || "Exclusive Travel Deals",
+    heading: meta?.heading || "Handpicked Offers & Instant Discounts",
+    subheading: meta?.subheading || "Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways.",
+    isActive: meta?.isActive !== false,
+  });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -150,20 +165,39 @@ export default function SpecialOffersCarousel({
     }
   }, [initialOffers]);
 
-  // Fetch dynamic offers from admin content if not provided by parent
   useEffect(() => {
-    if (!initialOffers || initialOffers.length === 0) {
-      fetch("/api/v1/homepage-content", { cache: "no-store" })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.content?.specialOffers) && data.content.specialOffers.length > 0) {
+    if (meta) {
+      setSectionMeta({
+        badge: meta.badge || "Exclusive Travel Deals",
+        heading: meta.heading || "Handpicked Offers & Instant Discounts",
+        subheading: meta.subheading || "Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways.",
+        isActive: meta.isActive !== false,
+      });
+    }
+  }, [meta]);
+
+  // Fetch dynamic offers from admin content
+  useEffect(() => {
+    fetch("/api/v1/homepage-content", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.content) {
+          if (Array.isArray(data.content.specialOffers) && data.content.specialOffers.length > 0) {
             const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
             if (active.length > 0) setOffersList(active);
           }
-        })
-        .catch(() => {});
-    }
-  }, [initialOffers]);
+          if (data.content.specialOffersMeta) {
+            setSectionMeta({
+              badge: data.content.specialOffersMeta.badge || "Exclusive Travel Deals",
+              heading: data.content.specialOffersMeta.heading || "Handpicked Offers & Instant Discounts",
+              subheading: data.content.specialOffersMeta.subheading || "Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways.",
+              isActive: data.content.specialOffersMeta.isActive !== false,
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Responsive items count
   useEffect(() => {
@@ -215,6 +249,10 @@ export default function SpecialOffersCarousel({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  if (sectionMeta.isActive === false || offersList.length === 0) {
+    return null;
+  }
+
   return (
     <section
       className="py-8 px-4 max-w-7xl mx-auto w-full"
@@ -230,14 +268,14 @@ export default function SpecialOffersCarousel({
               🏷️
             </span>
             <span className="text-xs uppercase font-extrabold text-amber-600 tracking-wider">
-              Exclusive Travel Deals
+              {sectionMeta.badge || "Exclusive Travel Deals"}
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-            Handpicked Offers &amp; Instant Discounts
+            {sectionMeta.heading || "Handpicked Offers & Instant Discounts"}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways.
+            {sectionMeta.subheading || "Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways."}
           </p>
         </div>
 

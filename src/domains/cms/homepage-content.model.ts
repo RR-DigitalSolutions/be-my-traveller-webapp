@@ -39,6 +39,12 @@ export interface IHomepageContent extends Document {
     isActive: boolean;
     sortOrder: number;
   }>;
+  specialOffersMeta?: {
+    badge: string;
+    heading: string;
+    subheading: string;
+    isActive: boolean;
+  };
   popularDestinations: {
     domestic: Array<{
       name: string;
@@ -199,6 +205,12 @@ const HomepageContentSchema = new Schema<IHomepageContent>(
       isActive: { type: Boolean, default: true },
       sortOrder: { type: Number, default: 0 },
     }],
+    specialOffersMeta: {
+      badge: { type: String, default: "Exclusive Travel Deals" },
+      heading: { type: String, default: "Handpicked Offers & Instant Discounts" },
+      subheading: { type: String, default: "Limited-period seasonal savings on domestic tours, honeymoon specials, and adventure getaways." },
+      isActive: { type: Boolean, default: true },
+    },
     popularDestinations: {
       domestic: [{
         name: { type: String, required: true },

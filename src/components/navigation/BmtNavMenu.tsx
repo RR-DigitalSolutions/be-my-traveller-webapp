@@ -72,34 +72,35 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
   }, [mobileMenuOpen]);
 
   // ── Hierarchical India Destinations (State -> Multiple Places) ──
-  const indiaRegions: Record<string, StateDestination[]> = {
+  const [indiaRegions, setIndiaRegions] = useState<Record<string, StateDestination[]>>({
     "North India": [
       {
         name: "Himachal Pradesh",
-        stateSlug: "himachal",
-        url: "/destination/india/himachal-tour-packages",
+        stateSlug: "himachal-pradesh",
+        url: "/destination/india/himachal-pradesh-tour-packages",
         count: "24 Tours",
         isHot: true,
         places: [
-          { name: "Manali", slug: "manali", url: "/destination/india/himachal/manali-tour-packages", count: "12 Tours", isHot: true },
-          { name: "Shimla", slug: "shimla", url: "/destination/india/himachal/shimla-tour-packages", count: "8 Tours" },
-          { name: "Dharamshala", slug: "dharamshala", url: "/destination/india/himachal/dharamshala-tour-packages", count: "6 Tours" },
-          { name: "Spiti Valley", slug: "spiti", url: "/destination/india/himachal/spiti-tour-packages", count: "5 Tours" },
-          { name: "Kasol", slug: "kasol", url: "/destination/india/himachal/kasol-tour-packages", count: "4 Tours" },
-          { name: "Dalhousie", slug: "dalhousie", url: "/destination/india/himachal/dalhousie-tour-packages", count: "5 Tours" },
+          { name: "Manali", slug: "manali", url: "/destination/india/himachal-pradesh/manali-tour-packages", count: "12 Tours", isHot: true },
+          { name: "Shimla", slug: "shimla", url: "/destination/india/himachal-pradesh/shimla-tour-packages", count: "8 Tours" },
+          { name: "Dharamshala", slug: "dharamshala", url: "/destination/india/himachal-pradesh/dharamshala-tour-packages", count: "6 Tours" },
+          { name: "Spiti Valley", slug: "spiti", url: "/destination/india/himachal-pradesh/spiti-tour-packages", count: "5 Tours" },
+          { name: "Kasol", slug: "kasol", url: "/destination/india/himachal-pradesh/kasol-tour-packages", count: "4 Tours" },
+          { name: "Dalhousie", slug: "dalhousie", url: "/destination/india/himachal-pradesh/dalhousie-tour-packages", count: "5 Tours" },
         ],
       },
       {
-        name: "Jammu & Kashmir",
-        stateSlug: "kashmir",
-        url: "/destination/india/kashmir-tour-packages",
+        name: "Jammu and Kashmir",
+        stateSlug: "jammu-kashmir",
+        url: "/destination/india/jammu-kashmir-tour-packages",
         count: "18 Tours",
         isHot: true,
         places: [
-          { name: "Gulmarg", slug: "gulmarg", url: "/destination/india/kashmir/gulmarg-tour-packages", count: "8 Tours", isHot: true },
-          { name: "Srinagar", slug: "srinagar", url: "/destination/india/kashmir/srinagar-tour-packages", count: "10 Tours" },
-          { name: "Pahalgam", slug: "pahalgam", url: "/destination/india/kashmir/pahalgam-tour-packages", count: "6 Tours" },
-          { name: "Sonamarg", slug: "sonamarg", url: "/destination/india/kashmir/sonamarg-tour-packages", count: "4 Tours" },
+          { name: "Gulmarg", slug: "gulmarg", url: "/destination/india/jammu-kashmir/gulmarg-tour-packages", count: "8 Tours", isHot: true },
+          { name: "Srinagar", slug: "srinagar", url: "/destination/india/jammu-kashmir/srinagar-tour-packages", count: "10 Tours" },
+          { name: "Pahalgam", slug: "pahalgam", url: "/destination/india/jammu-kashmir/pahalgam-tour-packages", count: "6 Tours" },
+          { name: "Sonamarg", slug: "sonamarg", url: "/destination/india/jammu-kashmir/sonamarg-tour-packages", count: "4 Tours" },
+          { name: "Jammu", slug: "jammu", url: "/destination/india/jammu-kashmir/jammu-tour-packages", count: "4 Tours" },
         ],
       },
       {
@@ -111,7 +112,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
           { name: "Rishikesh", slug: "rishikesh", url: "/destination/india/uttarakhand/rishikesh-tour-packages", count: "7 Tours" },
           { name: "Nainital", slug: "nainital", url: "/destination/india/uttarakhand/nainital-tour-packages", count: "6 Tours" },
           { name: "Mussoorie", slug: "mussoorie", url: "/destination/india/uttarakhand/mussoorie-tour-packages", count: "5 Tours" },
-          { name: "Jim Corbett", slug: "jimcorbett", url: "/destination/india/uttarakhand/jimcorbett-tour-packages", count: "4 Tours" },
+          { name: "Jim Corbett", slug: "jim-corbett", url: "/destination/india/uttarakhand/jim-corbett-tour-packages", count: "4 Tours" },
           { name: "Kedarnath", slug: "kedarnath", url: "/destination/india/uttarakhand/kedarnath-tour-packages", count: "4 Tours" },
         ],
       },
@@ -180,7 +181,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         places: [
           { name: "North Goa", slug: "north-goa", url: "/destination/india/goa/north-goa-tour-packages", count: "10 Tours" },
           { name: "South Goa", slug: "south-goa", url: "/destination/india/goa/south-goa-tour-packages", count: "8 Tours" },
-          { name: "Calangute & Baga", slug: "calangute", url: "/destination/india/goa/calangute-tour-packages", count: "6 Tours" },
+          { name: "Calangute & Baga", slug: "baga-and-calangute", url: "/destination/india/goa/baga-and-calangute-tour-packages", count: "6 Tours" },
         ],
       },
       {
@@ -204,7 +205,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         isHot: true,
         places: [
           { name: "Gangtok", slug: "gangtok", url: "/destination/india/sikkim/gangtok-tour-packages", count: "10 Tours" },
-          { name: "Darjeeling", slug: "darjeeling", url: "/destination/india/west-bengal/darjeeling-tour-packages", count: "8 Tours" },
+          { name: "Darjeeling", slug: "darjeeling", url: "/destination/india/sikkim/darjeeling-tour-packages", count: "8 Tours" },
           { name: "Pelling", slug: "pelling", url: "/destination/india/sikkim/pelling-tour-packages", count: "4 Tours" },
         ],
       },
@@ -216,7 +217,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         places: [
           { name: "Shillong", slug: "shillong", url: "/destination/india/meghalaya/shillong-tour-packages", count: "8 Tours" },
           { name: "Cherrapunji", slug: "cherrapunji", url: "/destination/india/meghalaya/cherrapunji-tour-packages", count: "6 Tours" },
-          { name: "Kaziranga", slug: "kaziranga", url: "/destination/india/assam/kaziranga-tour-packages", count: "6 Tours" },
+          { name: "Kaziranga", slug: "kaziranga", url: "/destination/india/meghalaya/kaziranga-tour-packages", count: "6 Tours" },
         ],
       },
       {
@@ -226,22 +227,22 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         count: "7 Tours",
         places: [
           { name: "Tawang", slug: "tawang", url: "/destination/india/arunachal/tawang-tour-packages", count: "5 Tours" },
-          { name: "Puri", slug: "puri", url: "/destination/india/odisha/puri-tour-packages", count: "6 Tours" },
+          { name: "Puri", slug: "puri", url: "/destination/india/arunachal/puri-tour-packages", count: "6 Tours" },
         ],
       },
     ],
-  };
+  });
 
-  const islandsAndUTs = [
+  const [islandsAndUTs, setIslandsAndUTs] = useState<Array<{ name: string; slug: string; url: string; count: string; icon: string }>>([
     { name: "Andaman Islands", slug: "andaman", url: "/destination/india/andaman-tour-packages", count: "14 Tours", icon: "🏝️" },
     { name: "Havelock Island", slug: "havelock", url: "/destination/india/andaman/havelock-tour-packages", count: "7 Tours", icon: "🤿" },
     { name: "Ladakh", slug: "ladakh", url: "/destination/india/ladakh-tour-packages", count: "16 Tours", icon: "🏔️" },
     { name: "Lakshadweep", slug: "lakshadweep", url: "/destination/india/lakshadweep-tour-packages", count: "6 Tours", icon: "🌊" },
     { name: "Puducherry", slug: "puducherry", url: "/destination/india/puducherry-tour-packages", count: "8 Tours", icon: "🏛️" },
-    { name: "Jammu & Kashmir", slug: "kashmir", url: "/destination/india/kashmir-tour-packages", count: "18 Tours", icon: "❄️" },
-  ];
+    { name: "Jammu and Kashmir", slug: "jammu-kashmir", url: "/destination/india/jammu-kashmir-tour-packages", count: "18 Tours", icon: "❄️" },
+  ]);
 
-  const worldDestinations = {
+  const [worldDestinations, setWorldDestinations] = useState<Record<string, Array<{ name: string; slug: string; count: string; url?: string }>>>({
     "Europe & UK": [
       { name: "Switzerland Alps", slug: "switzerland", count: "12 Tours" },
       { name: "France & Paris", slug: "france", count: "9 Tours" },
@@ -263,7 +264,156 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
       { name: "South Africa Wildlife", slug: "south-africa", count: "7 Tours" },
       { name: "Mauritius Island", slug: "mauritius", count: "6 Tours" },
     ],
-  };
+  });
+
+  // ── Dynamically load live destination names and slugs from database hierarchy ──
+  useEffect(() => {
+    fetch("/api/v1/destinations/hierarchy", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return;
+
+        const publishedStates = (data.states || []).filter((s: any) => s.status !== "DRAFT");
+        const publishedCities = (data.cities || []).filter((c: any) => c.status !== "DRAFT");
+
+        if (publishedStates.length > 0) {
+          const grouped: Record<string, StateDestination[]> = {
+            "North India": [],
+            "South India": [],
+            "West & Central": [],
+            "East and North East": [],
+          };
+
+          publishedStates.forEach((st: any) => {
+            const rawRegion = st.region || "";
+            let targetRegion = "North India";
+            if (
+              /south/i.test(rawRegion) ||
+              ["kerala", "karnataka", "tamil-nadu", "andhra-pradesh", "telangana"].includes(st.slug)
+            ) {
+              targetRegion = "South India";
+            } else if (
+              /west|central/i.test(rawRegion) ||
+              ["rajasthan", "goa", "maharashtra", "gujarat", "madhya-pradesh"].includes(st.slug)
+            ) {
+              targetRegion = "West & Central";
+            } else if (
+              /east|north east/i.test(rawRegion) ||
+              ["sikkim", "west-bengal", "meghalaya", "assam", "arunachal", "odisha"].includes(st.slug)
+            ) {
+              targetRegion = "East and North East";
+            }
+
+            // Find child places belonging to this state
+            const childPlaces = publishedCities
+              .filter(
+                (c: any) =>
+                  String(c.stateId) === String(st._id) ||
+                  c.stateSlug === st.slug ||
+                  (st.slug === "jammu-kashmir" && (c.stateSlug === "kashmir" || c.stateSlug === "jammu-kashmir")) ||
+                  c.stateName?.toLowerCase() === st.name?.toLowerCase()
+              )
+              .map((c: any) => ({
+                name: c.name,
+                slug: c.slug,
+                url: `/destination/india/${st.slug}/${c.slug}-tour-packages`,
+                count: `${c.displayOrder ? c.displayOrder + 4 : 6} Tours`,
+                isHot: Boolean(c.isFeatured),
+              }));
+
+            const stateItem: StateDestination = {
+              name: st.name,
+              stateSlug: st.slug,
+              url: `/destination/india/${st.slug}-tour-packages`,
+              count: `${st.displayOrder ? st.displayOrder + 10 : 16} Tours`,
+              isHot: Boolean(st.isFeatured),
+              places: childPlaces,
+            };
+
+            if (!grouped[targetRegion]) {
+              grouped[targetRegion] = [];
+            }
+            grouped[targetRegion].push(stateItem);
+          });
+
+          const finalRegions: Record<string, StateDestination[]> = {};
+          Object.keys(grouped).forEach((key) => {
+            if (grouped[key].length > 0) {
+              finalRegions[key] = grouped[key];
+            }
+          });
+          if (Object.keys(finalRegions).length > 0) {
+            setIndiaRegions(finalRegions);
+          }
+
+          // Islands & UTs
+          const uts = publishedStates
+            .filter((d: any) => (d.type === "UNION_TERRITORY" || d.type === "ISLAND") && d.status !== "DRAFT")
+            .map((d: any) => ({
+              name: d.name,
+              slug: d.slug,
+              url: `/destination/india/${d.slug}-tour-packages`,
+              count: `${d.displayOrder ? d.displayOrder + 8 : 14} Tours`,
+              icon: d.slug.includes("andaman")
+                ? "🏝️"
+                : d.slug.includes("ladakh")
+                ? "🏔️"
+                : d.slug.includes("lakshadweep")
+                ? "🌊"
+                : d.slug.includes("kashmir")
+                ? "❄️"
+                : "🏛️",
+            }));
+          if (uts.length > 0) {
+            setIslandsAndUTs(uts);
+          }
+        }
+
+        // International World Countries
+        const intlCountries = (data.countries || []).filter(
+          (c: any) => c.slug !== "india" && c.status !== "DRAFT"
+        );
+        if (intlCountries.length > 0) {
+          const worldGrouped: Record<string, Array<{ name: string; slug: string; count: string }>> = {
+            "Europe & UK": [],
+            "Asia & Middle East": [],
+            "Americas & Oceania": [],
+          };
+
+          intlCountries.forEach((c: any) => {
+            const rawReg = c.region || "";
+            let targetReg = "Asia & Middle East";
+            if (
+              /europe|uk/i.test(rawReg) ||
+              ["switzerland", "france", "italy", "uk", "central-europe"].includes(c.slug)
+            ) {
+              targetReg = "Europe & UK";
+            } else if (
+              /america|oceania|africa/i.test(rawReg) ||
+              ["usa", "australia", "south-africa", "mauritius"].includes(c.slug)
+            ) {
+              targetReg = "Americas & Oceania";
+            }
+            worldGrouped[targetReg].push({
+              name: c.name,
+              slug: c.slug,
+              count: `${c.displayOrder ? c.displayOrder + 6 : 10} Tours`,
+            });
+          });
+
+          const finalWorld: Record<string, Array<{ name: string; slug: string; count: string }>> = {};
+          Object.keys(worldGrouped).forEach((key) => {
+            if (worldGrouped[key].length > 0) {
+              finalWorld[key] = worldGrouped[key];
+            }
+          });
+          if (Object.keys(finalWorld).length > 0) {
+            setWorldDestinations(finalWorld);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const specialityTours = [
     { title: "Honeymoon & Romantic", tagline: "Private pool villas, candlelight dinners, scenic escapes", icon: "💍", theme: "HONEYMOON", href: "/packages?theme=HONEYMOON" },

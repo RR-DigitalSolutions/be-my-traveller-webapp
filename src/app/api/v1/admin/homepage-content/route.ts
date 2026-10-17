@@ -44,6 +44,7 @@ export async function PATCH(req: NextRequest) {
 
     if (body.featuredPackages !== undefined) updateData.featuredPackages = body.featuredPackages;
     if (body.specialOffers !== undefined) updateData.specialOffers = body.specialOffers;
+    if (body.specialOffersMeta !== undefined) updateData.specialOffersMeta = body.specialOffersMeta;
     if (body.popularDestinations !== undefined) updateData.popularDestinations = body.popularDestinations;
     if (body.themePackages !== undefined) updateData.themePackages = body.themePackages;
     if (body.whyBook !== undefined) updateData.whyBook = body.whyBook;

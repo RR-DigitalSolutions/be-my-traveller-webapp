@@ -76,11 +76,12 @@ export function buildDestinationUrl(options: {
  * Known Indian States and their canonical state slug
  */
 export const STATE_SLUG_MAP: Record<string, string> = {
-  "himachal-pradesh": "himachal",
-  "himachal": "himachal",
-  "kashmir": "kashmir",
-  "jammu-and-kashmir": "kashmir",
-  "jammu-kashmir": "kashmir",
+  "himachal-pradesh": "himachal-pradesh",
+  "himachal": "himachal-pradesh",
+  "kashmir": "jammu-kashmir",
+  "jammu-and-kashmir": "jammu-kashmir",
+  "jammu-kashmir": "jammu-kashmir",
+  "jammu": "jammu-kashmir",
   "kerala": "kerala",
   "rajasthan": "rajasthan",
   "goa": "goa",
@@ -110,23 +111,24 @@ export const STATE_SLUG_MAP: Record<string, string> = {
  */
 export const PLACE_TO_STATE_MAP: Record<string, { stateSlug: string; stateName: string }> = {
   // Himachal Pradesh
-  manali: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  shimla: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  dharamshala: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  spiti: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  "spiti-valley": { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  kasol: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  dalhousie: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  kullu: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  bir: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  "bir-billing": { stateSlug: "himachal", stateName: "Himachal Pradesh" },
-  jibhi: { stateSlug: "himachal", stateName: "Himachal Pradesh" },
+  manali: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  shimla: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  dharamshala: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  spiti: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  "spiti-valley": { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  kasol: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  dalhousie: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  kullu: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  bir: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  "bir-billing": { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
+  jibhi: { stateSlug: "himachal-pradesh", stateName: "Himachal Pradesh" },
 
-  // Kashmir
-  srinagar: { stateSlug: "kashmir", stateName: "Jammu & Kashmir" },
-  gulmarg: { stateSlug: "kashmir", stateName: "Jammu & Kashmir" },
-  pahalgam: { stateSlug: "kashmir", stateName: "Jammu & Kashmir" },
-  sonamarg: { stateSlug: "kashmir", stateName: "Jammu & Kashmir" },
+  // Jammu & Kashmir
+  srinagar: { stateSlug: "jammu-kashmir", stateName: "Jammu and Kashmir" },
+  gulmarg: { stateSlug: "jammu-kashmir", stateName: "Jammu and Kashmir" },
+  pahalgam: { stateSlug: "jammu-kashmir", stateName: "Jammu and Kashmir" },
+  sonamarg: { stateSlug: "jammu-kashmir", stateName: "Jammu and Kashmir" },
+  jammu: { stateSlug: "jammu-kashmir", stateName: "Jammu and Kashmir" },
 
   // Kerala
   munnar: { stateSlug: "kerala", stateName: "Kerala" },

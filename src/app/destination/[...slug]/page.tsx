@@ -95,21 +95,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
   const { slug } = await params;
   const parsed = parseDestinationSlug(slug);
 
-  const targetSlug = parsed.cleanTargetSlug.toLowerCase();
-
-  // Determine hierarchy level accurately
-  const isCountryLevel =
-    parsed.level === "COUNTRY" ||
-    targetSlug === "india" ||
-    targetSlug === "all-india" ||
-    parsed.cleanTargetSlug === "india";
-
-  const isStateLevel =
-    !isCountryLevel &&
-    (parsed.level === "STATE" ||
-      (STATE_SLUG_MAP[targetSlug] !== undefined && parsed.rawSegments.length <= 2));
-
-  const isCityLevel = !isCountryLevel && !isStateLevel;
+  const rawTargetSlug = parsed.cleanTargetSlug.toLowerCase();
 
   // 1. Connect and Fetch from MongoDB Collections
   let dbDest: any = null;
@@ -117,28 +103,74 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
   let dbPackages: any[] = [];
   let dbAttractions: any[] = [];
   let dbActivities: any[] = [];
+  let targetSlug = rawTargetSlug;
+
+  // Initial fallback hierarchy guess
+  let isCountryLevel =
+    parsed.level === "COUNTRY" ||
+    rawTargetSlug === "india" ||
+    rawTargetSlug === "all-india" ||
+    parsed.cleanTargetSlug === "india";
+
+  let isStateLevel =
+    !isCountryLevel &&
+    (parsed.level === "STATE" ||
+      (STATE_SLUG_MAP[rawTargetSlug] !== undefined && parsed.rawSegments.length <= 2));
+
+  let isCityLevel = !isCountryLevel && !isStateLevel;
 
   try {
     const mongoose = await connectDB();
     const db = mongoose.connection.db;
     if (db) {
-      // Find destination document for THIS specific target
-      const targetSlugVariants = [
-        targetSlug,
-        `${targetSlug}-tour-packages`,
-        `${targetSlug}-packages`,
-        `${targetSlug}-tours`,
-        `${targetSlug}-pradesh`,
-        targetSlug.replace(/-pradesh$/, ""),
-      ];
+      // Find destination document for THIS specific target with comprehensive alias support
+      const targetSlugVariants = Array.from(
+        new Set([
+          rawTargetSlug,
+          `${rawTargetSlug}-tour-packages`,
+          `${rawTargetSlug}-packages`,
+          `${rawTargetSlug}-tours`,
+          `${rawTargetSlug}-pradesh`,
+          rawTargetSlug.replace(/-pradesh$/, ""),
+          STATE_SLUG_MAP[rawTargetSlug],
+          rawTargetSlug === "kashmir" ? "jammu-kashmir" : null,
+          rawTargetSlug === "jammu-kashmir" ? "kashmir" : null,
+          rawTargetSlug === "himachal" ? "himachal-pradesh" : null,
+          rawTargetSlug === "himachal-pradesh" ? "himachal" : null,
+          rawTargetSlug === "jimcorbett" ? "jim-corbett" : null,
+          rawTargetSlug === "jim-corbett" ? "jimcorbett" : null,
+          rawTargetSlug === "calangute" ? "baga-and-calangute" : null,
+          rawTargetSlug === "baga" ? "baga-and-calangute" : null,
+        ].filter(Boolean) as string[])
+      );
 
       dbDest = await db.collection("destinations").findOne({
         $or: [
           { slug: { $in: targetSlugVariants } },
-          { name: { $regex: new RegExp(`^${targetSlug.replace(/-/g, " ")}$`, "i") } },
+          { slug: new RegExp(`^${rawTargetSlug.replace(/-/g, "[- ]?")}$`, "i") },
+          { name: { $regex: new RegExp(`^${rawTargetSlug.replace(/-/g, " ")}$`, "i") } },
+          { name: { $regex: new RegExp(rawTargetSlug.replace(/-/g, " "), "i") } },
         ],
       });
 
+      // If DB destination is found, override hierarchy level according to admin setting
+      if (dbDest?.type) {
+        if (dbDest.type === "COUNTRY" || rawTargetSlug === "india" || rawTargetSlug === "all-india") {
+          isCountryLevel = true;
+          isStateLevel = false;
+          isCityLevel = false;
+        } else if (dbDest.type === "STATE" || dbDest.type === "UNION_TERRITORY") {
+          isStateLevel = true;
+          isCountryLevel = false;
+          isCityLevel = false;
+        } else if (dbDest.type === "CITY" || dbDest.type === "AREA" || dbDest.type === "ISLAND") {
+          isCityLevel = true;
+          isCountryLevel = false;
+          isStateLevel = false;
+        }
+      }
+
+      targetSlug = (dbDest?.slug || rawTargetSlug).toLowerCase();
       const parentId = dbDest?._id;
 
       // ── Hierarchy Level 1: COUNTRY (India) -> Fetch States/UTs ──
@@ -159,7 +191,9 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           new Set(
             [
               targetSlug,
+              rawTargetSlug,
               STATE_SLUG_MAP[targetSlug],
+              STATE_SLUG_MAP[rawTargetSlug],
               targetSlug.replace(/-pradesh$/, ""),
               `${targetSlug}-pradesh`,
               dbDest?.slug,
@@ -198,7 +232,13 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       }
       // ── Hierarchy Level 3: CITY -> Fetch Sibling Cities in the same State ──
       else {
-        const rawParentState = parsed.stateSlug || dbDest?.stateSlug || "uttarakhand";
+        const rawParentState =
+          dbDest?.stateSlug ||
+          parsed.stateSlug ||
+          PLACE_TO_STATE_MAP[rawTargetSlug]?.stateSlug ||
+          PLACE_TO_STATE_MAP[targetSlug]?.stateSlug ||
+          "";
+
         const stateSlugs = Array.from(
           new Set(
             [
@@ -229,13 +269,17 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           .collection("destinations")
           .find({
             type: { $in: ["CITY", "AREA", "ISLAND"] },
-            slug: { $nin: [targetSlug, `${targetSlug}-tour-packages`] },
+            slug: { $nin: [targetSlug, rawTargetSlug, `${targetSlug}-tour-packages`] },
             ...(parentId ? { _id: { $ne: parentId } } : {}),
-            $or: [
-              ...(stateIds.length > 0 ? [{ stateId: { $in: stateIds } }] : []),
-              { stateSlug: { $in: stateSlugs } },
-              { stateName: { $regex: new RegExp(`^${stateCleanName}`, "i") } },
-            ],
+            ...(stateSlugs.length > 0 || stateIds.length > 0
+              ? {
+                  $or: [
+                    ...(stateIds.length > 0 ? [{ stateId: { $in: stateIds } }] : []),
+                    { stateSlug: { $in: stateSlugs } },
+                    { stateName: { $regex: new RegExp(`^${stateCleanName}`, "i") } },
+                  ],
+                }
+              : {}),
             status: { $ne: "DRAFT" },
           })
           .sort({ displayOrder: 1, sortOrder: 1, name: 1 })
@@ -243,44 +287,190 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       }
 
       // ── Query Packages strictly matching THIS destination ──
-      const packageSearchTerms = Array.from(
-        new Set([
-          targetSlug,
-          targetSlug.replace(/-/g, " "),
-          parsed.placeSlug,
-        ].filter(Boolean) as string[])
-      );
+      if (isCountryLevel) {
+        // Collect all Indian state and city slugs from destinations collection
+        const indianDests = await db
+          .collection("destinations")
+          .find({
+            $or: [
+              { countrySlug: "india" },
+              { parentCountry: { $regex: /^india/i } },
+              { type: { $in: ["STATE", "UNION_TERRITORY", "CITY", "AREA", "ISLAND"] } },
+            ],
+            slug: {
+              $nin: [
+                "dubai",
+                "bali",
+                "thailand",
+                "singapore",
+                "vietnam",
+                "maldives",
+                "switzerland",
+                "france",
+                "italy",
+                "uk",
+                "central-europe",
+                "australia",
+                "mauritius",
+              ],
+            },
+          })
+          .toArray();
 
-      const pkgQueryOr: any[] = [
-        { "destinations.slug": { $in: packageSearchTerms } },
-        { "citySlug": { $in: packageSearchTerms } },
-        { "name": { $regex: new RegExp(targetSlug.replace(/-/g, " "), "i") } },
-        { "title": { $regex: new RegExp(targetSlug.replace(/-/g, " "), "i") } },
-        { "tagline": { $regex: new RegExp(targetSlug.replace(/-/g, " "), "i") } },
-        { "route": { $regex: new RegExp(targetSlug.replace(/-/g, " "), "i") } },
-      ];
+        const indianDestIds = indianDests.map((d) => d._id);
+        const indianDestIdStrs = indianDests.map((d) => String(d._id));
+        const indianSlugs = indianDests.map((d) => d.slug);
 
-      if (parentId) {
-        pkgQueryOr.push(
-          { destinationId: parentId },
-          { destinations: parentId },
-          { destinations: String(parentId) }
+        const intlDests = await db
+          .collection("destinations")
+          .find({
+            $or: [
+              {
+                slug: {
+                  $in: [
+                    "dubai",
+                    "bali",
+                    "thailand",
+                    "singapore",
+                    "vietnam",
+                    "maldives",
+                    "switzerland",
+                    "france",
+                    "italy",
+                    "uk",
+                    "central-europe",
+                    "australia",
+                    "mauritius",
+                  ],
+                },
+              },
+              { type: "COUNTRY", slug: { $ne: "india" } },
+            ],
+          })
+          .toArray();
+
+        const intlDestIds = intlDests.map((d) => d._id);
+        const intlDestIdStrs = intlDests.map((d) => String(d._id));
+        const intlSlugs = intlDests.map((d) => d.slug);
+
+        dbPackages = await db
+          .collection("packages")
+          .find({
+            $and: [
+              {
+                $or: [
+                  { countries: { $in: ["india", "India", "all-india"] } },
+                  { countrySlug: "india" },
+                  { country: { $regex: /india/i } },
+                  { destinationId: { $in: [...indianDestIds, ...indianDestIdStrs] } },
+                  { destinations: { $in: [...indianDestIds, ...indianDestIdStrs, ...indianSlugs] } },
+                  { stateSlug: { $in: indianSlugs } },
+                  { states: { $in: indianSlugs } },
+                  { cities: { $in: indianSlugs } },
+                  { citySlug: { $in: indianSlugs } },
+                ],
+              },
+              {
+                destinationId: { $nin: [...intlDestIds, ...intlDestIdStrs] },
+                destinations: { $nin: [...intlDestIds, ...intlDestIdStrs, ...intlSlugs] },
+                countries: { $nin: intlSlugs },
+                slug: { $not: /dubai|bali|thailand|singapore|vietnam|maldives|switzerland|france|italy|europe/i },
+                status: { $ne: "DRAFT" },
+              },
+            ],
+          })
+          .toArray();
+      } else if (isStateLevel) {
+        // Collect child cities of this state from destinations collection
+        const stateChildCities = dbChildDestinations.map((c) => c.slug);
+        const stateChildIds = dbChildDestinations.map((c) => c._id);
+        const stateChildIdStrs = dbChildDestinations.map((c) => String(c._id));
+
+        const targetSlug = (dbDest?.slug || rawTargetSlug).toLowerCase();
+        const stateSearchSlugs = Array.from(
+          new Set(
+            [
+              targetSlug,
+              rawTargetSlug,
+              dbDest?.slug,
+              dbDest?.stateSlug,
+              STATE_SLUG_MAP[targetSlug],
+              STATE_SLUG_MAP[rawTargetSlug],
+              targetSlug === "jammu-kashmir" ? "kashmir" : null,
+              targetSlug === "kashmir" ? "jammu-kashmir" : null,
+              targetSlug === "himachal-pradesh" ? "himachal" : null,
+              targetSlug === "himachal" ? "himachal-pradesh" : null,
+            ].filter(Boolean) as string[]
+          )
         );
+
+        const stateCleanTitle = (dbDest?.name || targetSlug).replace(/-/g, " ");
+
+        const statePkgOr: any[] = [
+          { stateSlug: { $in: stateSearchSlugs } },
+          { states: { $in: stateSearchSlugs } },
+          { state: { $regex: new RegExp(stateCleanTitle, "i") } },
+          { "destinations.slug": { $in: [...stateSearchSlugs, ...stateChildCities] } },
+          {
+            destinations: {
+              $in: [
+                ...stateSearchSlugs,
+                ...stateChildCities,
+                ...(parentId ? [parentId, String(parentId)] : []),
+                ...stateChildIds,
+                ...stateChildIdStrs,
+              ],
+            },
+          },
+          { citySlug: { $in: stateChildCities } },
+          { cities: { $in: stateChildCities } },
+          { name: { $regex: new RegExp(stateCleanTitle, "i") } },
+          { title: { $regex: new RegExp(stateCleanTitle, "i") } },
+          { tagline: { $regex: new RegExp(stateCleanTitle, "i") } },
+          { route: { $regex: new RegExp(stateCleanTitle, "i") } },
+        ];
+
+        if (parentId) {
+          statePkgOr.push({ destinationId: parentId }, { destinationId: String(parentId) });
+        }
+
+        dbPackages = await db
+          .collection("packages")
+          .find({
+            $and: [{ $or: statePkgOr }, { status: { $ne: "DRAFT" } }],
+          })
+          .toArray();
+      } else {
+        // City Level
+        const targetSlug = (dbDest?.slug || rawTargetSlug).toLowerCase();
+        const citySearchSlugs = Array.from(
+          new Set([targetSlug, rawTargetSlug, dbDest?.slug, parsed.placeSlug].filter(Boolean) as string[])
+        );
+
+        const cityCleanTitle = (dbDest?.name || targetSlug).replace(/-/g, " ");
+
+        const cityPkgOr: any[] = [
+          { citySlug: { $in: citySearchSlugs } },
+          { cities: { $in: citySearchSlugs } },
+          { "destinations.slug": { $in: citySearchSlugs } },
+          { destinations: { $in: [...citySearchSlugs, ...(parentId ? [parentId, String(parentId)] : [])] } },
+          { name: { $regex: new RegExp(cityCleanTitle, "i") } },
+          { title: { $regex: new RegExp(cityCleanTitle, "i") } },
+          { tagline: { $regex: new RegExp(cityCleanTitle, "i") } },
+          { route: { $regex: new RegExp(cityCleanTitle, "i") } },
+        ];
+
+        if (parentId) {
+          cityPkgOr.push({ destinationId: parentId }, { destinationId: String(parentId) });
+        }
+
+        dbPackages = await db
+          .collection("packages")
+          .find({
+            $and: [{ $or: cityPkgOr }, { status: { $ne: "DRAFT" } }],
+          })
+          .toArray();
       }
-
-      if (isStateLevel) {
-        pkgQueryOr.push(
-          { stateSlug: targetSlug },
-          { state: { $regex: new RegExp(targetSlug.replace(/-/g, " "), "i") } }
-        );
-      } else if (isCountryLevel) {
-        pkgQueryOr.push(
-          { countrySlug: "india" },
-          { country: { $regex: /india/i } }
-        );
-      }
-
-      dbPackages = await db.collection("packages").find({ $or: pkgQueryOr }).toArray();
 
       // ── Query Attractions from Attractions Collection (/admin/content/attractions) ──
       const attractionQueryOr: any[] = [
@@ -337,17 +527,36 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
     console.error("DB Query error on destination page:", err);
   }
 
-  // 2. Resolve Current Destination Info from Database
-  const stateInfo = PLACE_TO_STATE_MAP[targetSlug] || {
-    stateSlug: parsed.stateSlug || dbDest?.stateSlug || "uttarakhand",
-    stateName: dbDest?.stateName || "Uttarakhand",
-  };
+  // 2. Resolve Current Destination Info from Database without hardcoded fallbacks
+  const parentCountry = dbDest?.parentCountry || dbDest?.countryName || "India";
+  const parentCountrySlug = (dbDest?.countrySlug || "india").toLowerCase();
 
-  const currentStateSlug = dbDest?.stateSlug || stateInfo.stateSlug || "uttarakhand";
+  let resolvedStateName = "";
+  let resolvedStateSlug = "";
+
+  if (isCountryLevel) {
+    resolvedStateName = "";
+    resolvedStateSlug = "";
+  } else if (isStateLevel) {
+    resolvedStateName = dbDest?.name || targetSlug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+    resolvedStateSlug = dbDest?.slug || targetSlug;
+  } else {
+    // City Level
+    resolvedStateName =
+      dbDest?.stateName ||
+      PLACE_TO_STATE_MAP[rawTargetSlug]?.stateName ||
+      PLACE_TO_STATE_MAP[targetSlug]?.stateName ||
+      "";
+    resolvedStateSlug =
+      dbDest?.stateSlug ||
+      PLACE_TO_STATE_MAP[rawTargetSlug]?.stateSlug ||
+      PLACE_TO_STATE_MAP[targetSlug]?.stateSlug ||
+      "";
+  }
 
   const currentName =
     dbDest?.name ||
-    targetSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    targetSlug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
 
   // 3. Map Child Places with Consistent URLs & Hierarchy
   const mappedDbChildPlaces = dbChildDestinations.map((d: any) => {
@@ -357,7 +566,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
     } else {
       cardUrl = buildDestinationUrl({
         country: "india",
-        state: d.stateSlug || currentStateSlug,
+        state: d.stateSlug || resolvedStateSlug,
         place: d.slug,
       });
     }
@@ -366,7 +575,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       name: d.name,
       slug: d.slug,
       url: cardUrl,
-      stateSlug: d.stateSlug || currentStateSlug,
+      stateSlug: d.stateSlug || resolvedStateSlug,
       count: `${d.displayOrder ? d.displayOrder + 4 : 8} Tours`,
       img: d.coverImageStr || d.coverImage || "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80",
       price: (typeof d.startingPrice === "string" && d.startingPrice.trim()) ? d.startingPrice.trim() : (d.fastFacts?.startingPrice || "₹14,999"),
@@ -432,10 +641,14 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
 
   const current = {
     name: currentName,
-    type: dbDest?.type || parsed.level,
-    countryName: dbDest?.countryName || "India",
-    stateName: dbDest?.stateName || stateInfo.stateName,
-    stateSlug: dbDest?.stateSlug || stateInfo.stateSlug,
+    type: dbDest?.type || (isCountryLevel ? "COUNTRY" : isStateLevel ? "STATE" : "CITY"),
+    countryName: parentCountry,
+    stateName: resolvedStateName,
+    stateSlug: resolvedStateSlug,
+    childPlaces: mappedDbChildPlaces,
+    attractions: resolvedAttractions,
+    packages: resolvedPackages,
+    activities: resolvedActivities,
     tagline:
       dbDest?.tagline ||
       `Best Handcrafted Tour Packages & Curated Itineraries in ${currentName}`,
@@ -466,10 +679,6 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       ? dbDest.verifiedStays.trim()
       : (dbDest?.fastFacts?.verifiedStays || "4★ / 5★ Handpicked Stays"),
     highlights: dbDest?.highlights || [],
-    childPlaces: mappedDbChildPlaces,
-    attractions: resolvedAttractions,
-    activities: resolvedActivities,
-    packages: resolvedPackages,
     faqs:
       dbDest?.faqs && dbDest.faqs.length > 0
         ? dbDest.faqs
@@ -534,34 +743,45 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
             "name": "Home",
             "item": "https://www.bemytraveller.com",
           },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "India Tours",
-            "item": "https://www.bemytraveller.com/destination/india-tour-packages",
-          },
-          ...(current.stateName && current.name !== current.stateName
+          ...(isCountryLevel
             ? [
                 {
                   "@type": "ListItem",
-                  "position": 3,
-                  "name": current.stateName,
-                  "item": `https://www.bemytraveller.com${buildDestinationUrl({ state: current.stateSlug })}`,
-                },
-                {
-                  "@type": "ListItem",
-                  "position": 4,
-                  "name": current.name,
+                  "position": 2,
+                  "name": `${current.name} Tours`,
                   "item": canonicalUrl,
                 },
               ]
             : [
                 {
                   "@type": "ListItem",
-                  "position": 3,
-                  "name": current.name,
-                  "item": canonicalUrl,
+                  "position": 2,
+                  "name": parentCountry === "India" ? "India Tours" : `${parentCountry} Tours`,
+                  "item": `https://www.bemytraveller.com${buildDestinationUrl({ country: parentCountrySlug })}`,
                 },
+                ...(isCityLevel && current.stateName && current.name !== current.stateName
+                  ? [
+                      {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": current.stateName,
+                        "item": `https://www.bemytraveller.com${buildDestinationUrl({ country: parentCountrySlug, state: current.stateSlug })}`,
+                      },
+                      {
+                        "@type": "ListItem",
+                        "position": 4,
+                        "name": current.name,
+                        "item": canonicalUrl,
+                      },
+                    ]
+                  : [
+                      {
+                        "@type": "ListItem",
+                        "position": 3,
+                        "name": current.name,
+                        "item": canonicalUrl,
+                      },
+                    ]),
               ]),
         ],
       },
@@ -635,22 +855,31 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-400 font-bold">
             <Link href="/" className="hover:underline text-slate-300 hover:text-white">Home</Link>
             <span className="text-slate-500">›</span>
-            <Link href="/destination/india-tour-packages" className="hover:underline text-slate-300 hover:text-white">
-              India Tours
-            </Link>
-            {current.stateName && current.name !== current.stateName && (
+            {isCountryLevel ? (
+              <span className="text-amber-400">{current.name} Tours</span>
+            ) : (
               <>
-                <span className="text-slate-500">›</span>
                 <Link
-                  href={buildDestinationUrl({ state: current.stateSlug })}
-                  className="text-slate-300 hover:text-white hover:underline"
+                  href={buildDestinationUrl({ country: parentCountrySlug })}
+                  className="hover:underline text-slate-300 hover:text-white"
                 >
-                  {current.stateName}
+                  {parentCountry === "India" ? "India Tours" : `${parentCountry} Tours`}
                 </Link>
+                {isCityLevel && current.stateName && current.name !== current.stateName && (
+                  <>
+                    <span className="text-slate-500">›</span>
+                    <Link
+                      href={buildDestinationUrl({ country: parentCountrySlug, state: current.stateSlug })}
+                      className="text-slate-300 hover:text-white hover:underline"
+                    >
+                      {current.stateName}
+                    </Link>
+                  </>
+                )}
+                <span className="text-slate-500">›</span>
+                <span className="text-amber-400">{current.name}</span>
               </>
             )}
-            <span className="text-slate-500">›</span>
-            <span className="text-amber-400">{current.name}</span>
           </nav>
 
           {/* Trust Badges */}
