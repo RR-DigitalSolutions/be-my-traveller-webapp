@@ -235,11 +235,9 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
 
   const [islandsAndUTs, setIslandsAndUTs] = useState<Array<{ name: string; slug: string; url: string; count: string; icon: string }>>([
     { name: "Andaman Islands", slug: "andaman", url: "/destination/india/andaman-tour-packages", count: "14 Tours", icon: "🏝️" },
-    { name: "Havelock Island", slug: "havelock", url: "/destination/india/andaman/havelock-tour-packages", count: "7 Tours", icon: "🤿" },
     { name: "Ladakh", slug: "ladakh", url: "/destination/india/ladakh-tour-packages", count: "16 Tours", icon: "🏔️" },
     { name: "Lakshadweep", slug: "lakshadweep", url: "/destination/india/lakshadweep-tour-packages", count: "6 Tours", icon: "🌊" },
     { name: "Puducherry", slug: "puducherry", url: "/destination/india/puducherry-tour-packages", count: "8 Tours", icon: "🏛️" },
-    { name: "Jammu and Kashmir", slug: "jammu-kashmir", url: "/destination/india/jammu-kashmir-tour-packages", count: "18 Tours", icon: "❄️" },
   ]);
 
   const [worldDestinations, setWorldDestinations] = useState<Record<string, Array<{ name: string; slug: string; count: string; url?: string }>>>({
@@ -286,6 +284,19 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
 
           publishedStates.forEach((st: any) => {
             const rawRegion = st.region || "";
+
+            // Check if this entity is an Island or Union Territory (except J&K and Ladakh which have regional circuits)
+            const isIslandOrUT =
+              /island|union territory|ut/i.test(rawRegion) ||
+              ["andaman", "andaman-islands", "lakshadweep", "puducherry", "pondicherry", "havelock", "daman-diu"].includes(st.slug) ||
+              st.type === "ISLAND" ||
+              (st.type === "UNION_TERRITORY" && !["ladakh", "jammu-kashmir"].includes(st.slug));
+
+            if (isIslandOrUT) {
+              // Exclusively handled in the Islands & Union Territory bottom bar, skip adding to 4 regional state columns
+              return;
+            }
+
             let targetRegion = "North India";
             if (
               /south/i.test(rawRegion) ||
@@ -302,6 +313,11 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
               ["sikkim", "west-bengal", "meghalaya", "assam", "arunachal", "odisha"].includes(st.slug)
             ) {
               targetRegion = "East and North East";
+            } else if (
+              /north/i.test(rawRegion) ||
+              ["himachal-pradesh", "jammu-kashmir", "uttarakhand", "ladakh", "punjab", "haryana"].includes(st.slug)
+            ) {
+              targetRegion = "North India";
             }
 
             // Find child places belonging to this state
@@ -346,9 +362,23 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             setIndiaRegions(finalRegions);
           }
 
-          // Islands & UTs
+          // Islands & UTs: Dedicated bottom row with deduplication
+          const seenUtSlugs = new Set<string>();
           const uts = publishedStates
-            .filter((d: any) => (d.type === "UNION_TERRITORY" || d.type === "ISLAND") && d.status !== "DRAFT")
+            .filter((d: any) => {
+              if (d.status === "DRAFT") return false;
+              if (["jammu-kashmir"].includes(d.slug)) return false; // J&K is a primary northern state in Column 1
+              const matchesUt =
+                d.type === "UNION_TERRITORY" ||
+                d.type === "ISLAND" ||
+                /island|union territory|ut/i.test(d.region || "") ||
+                ["andaman", "andaman-islands", "ladakh", "lakshadweep", "puducherry", "pondicherry"].includes(d.slug);
+              if (!matchesUt) return false;
+              const normSlug = d.slug.replace(/-islands?$/, "").replace(/^pondi/, "pudu");
+              if (seenUtSlugs.has(normSlug)) return false;
+              seenUtSlugs.add(normSlug);
+              return true;
+            })
             .map((d: any) => ({
               name: d.name,
               slug: d.slug,
@@ -360,9 +390,9 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 ? "🏔️"
                 : d.slug.includes("lakshadweep")
                 ? "🌊"
-                : d.slug.includes("kashmir")
-                ? "❄️"
-                : "🏛️",
+                : d.slug.includes("puducherry") || d.slug.includes("pondicherry")
+                ? "🏛️"
+                : "🌴",
             }));
           if (uts.length > 0) {
             setIslandsAndUTs(uts);

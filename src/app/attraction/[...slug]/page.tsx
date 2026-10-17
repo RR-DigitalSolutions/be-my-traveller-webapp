@@ -257,22 +257,22 @@ export default async function AttractionDetailPage({ params }: AttractionRoutePr
           alt={attraction.name}
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent" />
 
         <div className="max-w-7xl mx-auto px-4 pb-8 relative z-10 w-full space-y-3">
           {/* Breadcrumb Trail */}
-          <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-400 font-bold">
-            <Link href="/" className="hover:underline text-slate-300 hover:text-white">Home</Link>
-            <span className="text-slate-500">›</span>
-            <Link href="/destination/india-tour-packages" className="hover:underline text-slate-300 hover:text-white">
+          <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-300 font-bold drop-shadow-sm">
+            <Link href="/" className="hover:underline text-slate-200 hover:text-white">Home</Link>
+            <span className="text-slate-400">›</span>
+            <Link href="/destination/india-tour-packages" className="hover:underline text-slate-200 hover:text-white">
               India Tours
             </Link>
-            <span className="text-slate-500">›</span>
-            <Link href={destUrl} className="hover:underline text-slate-300 hover:text-white">
+            <span className="text-slate-400">›</span>
+            <Link href={destUrl} className="hover:underline text-slate-200 hover:text-white">
               {attraction.destinationName || destination?.name || "Destination"}
             </Link>
-            <span className="text-slate-500">›</span>
-            <span className="text-amber-400">{attraction.name}</span>
+            <span className="text-slate-400">›</span>
+            <span className="text-amber-300">{attraction.name}</span>
           </nav>
 
           {/* Badges */}
@@ -289,10 +289,10 @@ export default async function AttractionDetailPage({ params }: AttractionRoutePr
           </div>
 
           {/* H1 SEO Title */}
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
             {attraction.name}
           </h1>
-          <p className="text-sm sm:text-base text-slate-200 max-w-3xl font-medium leading-relaxed">
+          <p className="text-sm sm:text-base text-white/95 max-w-3xl font-medium leading-relaxed drop-shadow-sm">
             {attraction.desc}
           </p>
         </div>

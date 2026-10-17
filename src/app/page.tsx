@@ -265,7 +265,10 @@ export default function HomePage() {
   const [seoContentData, setSeoContentData] = useState<HomeSeoContentData | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/homepage-content", { cache: "no-store" })
+    fetch(`/api/v1/homepage-content?t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.content) {

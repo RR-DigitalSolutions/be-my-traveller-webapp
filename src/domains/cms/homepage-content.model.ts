@@ -36,6 +36,7 @@ export interface IHomepageContent extends Document {
     codeBorder: string;
     codeText: string;
     enquiryName: string;
+    link?: string;
     isActive: boolean;
     sortOrder: number;
   }>;
@@ -202,6 +203,7 @@ const HomepageContentSchema = new Schema<IHomepageContent>(
       codeBorder: { type: String, default: "border-slate-950/20" },
       codeText: { type: String, default: "text-slate-950" },
       enquiryName: { type: String, default: "" },
+      link: { type: String, default: "" },
       isActive: { type: Boolean, default: true },
       sortOrder: { type: Number, default: 0 },
     }],

@@ -178,13 +178,18 @@ export default function SpecialOffersCarousel({
 
   // Fetch dynamic offers from admin content
   useEffect(() => {
-    fetch("/api/v1/homepage-content", { cache: "no-store" })
+    fetch(`/api/v1/homepage-content?t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Pragma: "no-cache", "Cache-Control": "no-cache" },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.content) {
-          if (Array.isArray(data.content.specialOffers) && data.content.specialOffers.length > 0) {
+          if (Array.isArray(data.content.specialOffers)) {
             const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
-            if (active.length > 0) setOffersList(active);
+            if (active.length > 0) {
+              setOffersList(active);
+            }
           }
           if (data.content.specialOffersMeta) {
             setSectionMeta({

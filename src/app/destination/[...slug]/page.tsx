@@ -848,36 +848,36 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           alt={`${current.name} Tour Packages`}
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent" />
 
         <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-10 relative z-10 w-full space-y-3">
           {/* SEO Breadcrumb Trail */}
-          <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-400 font-bold">
-            <Link href="/" className="hover:underline text-slate-300 hover:text-white">Home</Link>
-            <span className="text-slate-500">›</span>
+          <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-300 font-bold drop-shadow-sm">
+            <Link href="/" className="hover:underline text-slate-200 hover:text-white">Home</Link>
+            <span className="text-slate-400">›</span>
             {isCountryLevel ? (
-              <span className="text-amber-400">{current.name} Tours</span>
+              <span className="text-amber-300">{current.name} Tours</span>
             ) : (
               <>
                 <Link
                   href={buildDestinationUrl({ country: parentCountrySlug })}
-                  className="hover:underline text-slate-300 hover:text-white"
+                  className="hover:underline text-slate-200 hover:text-white"
                 >
                   {parentCountry === "India" ? "India Tours" : `${parentCountry} Tours`}
                 </Link>
                 {isCityLevel && current.stateName && current.name !== current.stateName && (
                   <>
-                    <span className="text-slate-500">›</span>
+                    <span className="text-slate-400">›</span>
                     <Link
                       href={buildDestinationUrl({ country: parentCountrySlug, state: current.stateSlug })}
-                      className="text-slate-300 hover:text-white hover:underline"
+                      className="text-slate-200 hover:text-white hover:underline"
                     >
                       {current.stateName}
                     </Link>
                   </>
                 )}
-                <span className="text-slate-500">›</span>
-                <span className="text-amber-400">{current.name}</span>
+                <span className="text-slate-400">›</span>
+                <span className="text-amber-300">{current.name}</span>
               </>
             )}
           </nav>
@@ -896,10 +896,10 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           </div>
 
           {/* Single H1 for Best SEO / SERP Ranking */}
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
             Best {current.name} Tour Packages
           </h1>
-          <p className="text-sm sm:text-base text-slate-200 max-w-3xl font-medium">
+          <p className="text-sm sm:text-base text-white/95 max-w-3xl font-medium drop-shadow-sm">
             {current.tagline}
           </p>
         </div>

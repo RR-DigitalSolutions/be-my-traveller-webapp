@@ -14,7 +14,9 @@ export async function GET() {
       { success: true, content: content || null },
       {
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          "CDN-Cache-Control": "no-store",
+          "Vercel-CDN-Cache-Control": "no-store",
           Pragma: "no-cache",
           Expires: "0",
         },

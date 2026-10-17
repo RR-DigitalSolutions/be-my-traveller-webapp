@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import connectDB from "@/lib/db/mongoose";
 import { HomepageContentModel } from "@/domains/cms/homepage-content.model";
 import { auth } from "@/lib/auth/auth";
@@ -58,6 +59,14 @@ export async function PATCH(req: NextRequest) {
       { $set: updateData },
       { new: true, upsert: true, runValidators: false }
     );
+
+    // Invalidate edge and page cache so updates immediately reflect on frontend
+    try {
+      revalidatePath("/");
+      revalidatePath("/admin/content/homepage");
+    } catch (e) {
+      console.warn("Revalidation warning:", e);
+    }
 
     return NextResponse.json({ success: true, content });
   } catch (err) {
