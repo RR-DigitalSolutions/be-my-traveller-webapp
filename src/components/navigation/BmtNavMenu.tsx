@@ -285,12 +285,21 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
           publishedStates.forEach((st: any) => {
             const rawRegion = st.region || "";
 
-            // Check if this entity is an Island or Union Territory (except J&K and Ladakh which have regional circuits)
+            // Check if this entity is an Island or Union Territory (strictly excluding regular states)
+            const isRegularState = [
+              "kerala", "karnataka", "tamil-nadu", "andhra-pradesh", "telangana",
+              "rajasthan", "goa", "maharashtra", "gujarat", "madhya-pradesh",
+              "himachal-pradesh", "uttarakhand", "jammu-kashmir",
+              "sikkim", "west-bengal", "meghalaya", "assam", "arunachal", "odisha",
+              "punjab", "haryana", "bihar"
+            ].includes(st.slug.trim());
+
             const isIslandOrUT =
-              /island|union territory|ut/i.test(rawRegion) ||
+              !isRegularState &&
+              (/island|union\s*territory/i.test(rawRegion) ||
               ["andaman", "andaman-islands", "lakshadweep", "puducherry", "pondicherry", "havelock", "daman-diu"].includes(st.slug) ||
               st.type === "ISLAND" ||
-              (st.type === "UNION_TERRITORY" && !["ladakh", "jammu-kashmir"].includes(st.slug));
+              (st.type === "UNION_TERRITORY" && !["ladakh", "jammu-kashmir"].includes(st.slug)));
 
             if (isIslandOrUT) {
               // Exclusively handled in the Islands & Union Territory bottom bar, skip adding to 4 regional state columns
@@ -362,16 +371,25 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             setIndiaRegions(finalRegions);
           }
 
-          // Islands & UTs: Dedicated bottom row with deduplication
+          // Islands & UTs: Dedicated bottom row with deduplication (ONLY true Islands & UTs, no regular states)
           const seenUtSlugs = new Set<string>();
           const uts = publishedStates
             .filter((d: any) => {
               if (d.status === "DRAFT") return false;
-              if (["jammu-kashmir"].includes(d.slug)) return false; // J&K is a primary northern state in Column 1
+              // Never include regular states in the bottom UT/Island bar
+              if ([
+                "kerala", "karnataka", "tamil-nadu", "andhra-pradesh", "telangana",
+                "rajasthan", "goa", "maharashtra", "gujarat", "madhya-pradesh",
+                "himachal-pradesh", "uttarakhand", "jammu-kashmir",
+                "sikkim", "west-bengal", "meghalaya", "assam", "arunachal", "odisha",
+                "punjab", "haryana", "bihar"
+              ].includes(d.slug.trim())) {
+                return false;
+              }
               const matchesUt =
                 d.type === "UNION_TERRITORY" ||
                 d.type === "ISLAND" ||
-                /island|union territory|ut/i.test(d.region || "") ||
+                /island|union\s*territory/i.test(d.region || "") ||
                 ["andaman", "andaman-islands", "ladakh", "lakshadweep", "puducherry", "pondicherry"].includes(d.slug);
               if (!matchesUt) return false;
               const normSlug = d.slug.replace(/-islands?$/, "").replace(/^pondi/, "pudu");
