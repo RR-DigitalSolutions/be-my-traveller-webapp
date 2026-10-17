@@ -85,10 +85,10 @@ export function buildTravelFolderPath(options: TravelFolderPathOptions): string 
   const clean = (s?: string) =>
     s
       ? s
-          .toLowerCase()
-          .replace(/[^a-z0-9_-]/g, "-")
-          .replace(/-+/g, "-")
-          .replace(/^-|-$/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
       : "";
 
   const cSlug = clean(countrySlug) || (category === "international" ? "international" : "india");
@@ -181,7 +181,7 @@ export async function uploadToCloudinary(
       },
       {
         quality: "auto:good",
-        fetch_format: "auto",
+        fetch_format: "webp",
       },
     ],
   };
