@@ -8,6 +8,7 @@ export interface AboutUsData {
   heading?: string;
   subheading?: string;
   story?: string;
+  operationalHubs?: string[];
   highlights?: Array<{
     id: string;
     icon: string;
@@ -33,6 +34,7 @@ const DEFAULT_ABOUT: Required<AboutUsData> = {
   heading: "Crafting Extraordinary Journeys Across India & Beyond",
   subheading: "Accredited tour operator and holiday specialist delivering bespoke itineraries, vetted luxury stays, and 24/7 on-trip concierge assistance.",
   story: "Headquartered in Manali with key regional desks in Ahmedabad (Gujarat) and New Delhi, Be My Traveller is a premier tour operator specializing in customized vacations. From thoughtful itineraries and signature tour packages with authentic Indian meals to verified 4★ and 5★ resort stays and private commercial cabs, we combine personalized high-touch service with seamless ground execution across the Himalayas, Southern backwaters, royal heritage circuits, and international escapes.",
+  operationalHubs: ["Manali (HQ)", "Ahmedabad (Gujarat)", "New Delhi"],
   highlights: [
     {
       id: "h1",
@@ -65,7 +67,7 @@ const DEFAULT_ABOUT: Required<AboutUsData> = {
     { id: "s3", number: "500+", label: "Curated Packages" },
     { id: "s4", number: "4.9 ★", label: "Customer Rating" },
   ],
-  image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1000&auto=format&fit=crop&q=80",
+  image: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/blogs/curating-seamless-journeys-you-cherish-for-a-lifetime-be-my-traveller/curating-seamless-journeys-you-cherish-for-a-lifetime-with-be-my-traveller?_a=BAMAROhM0",
   experienceYears: "7+",
   isActive: true,
 };
@@ -78,6 +80,9 @@ export default function AboutUsSection({ data }: AboutUsSectionProps) {
     heading: data?.heading || DEFAULT_ABOUT.heading,
     subheading: data?.subheading || DEFAULT_ABOUT.subheading,
     story: data?.story || DEFAULT_ABOUT.story,
+    operationalHubs: Array.isArray(data?.operationalHubs) && data.operationalHubs.length > 0
+      ? data.operationalHubs
+      : DEFAULT_ABOUT.operationalHubs,
     highlights: data?.highlights && data.highlights.length > 0 ? data.highlights : DEFAULT_ABOUT.highlights,
     stats: data?.stats && data.stats.length > 0 ? data.stats : DEFAULT_ABOUT.stats,
     image: data?.image || DEFAULT_ABOUT.image,
@@ -86,7 +91,7 @@ export default function AboutUsSection({ data }: AboutUsSectionProps) {
 
   return (
     <section className="py-8 px-4 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-t border-slate-200/80">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Top Header Block (Full Width, No Half-Screen Restriction) */}
         <div className="w-full space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -135,9 +140,14 @@ export default function AboutUsSection({ data }: AboutUsSectionProps) {
 
             <div className="pt-2 border-t border-slate-100 flex items-center gap-2 text-[11px] font-semibold text-amber-800 flex-wrap">
               <span>📍 Operational Hubs:</span>
-              <span className="bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 font-bold">Manali (HQ)</span>
-              <span className="bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 font-bold">Ahmedabad (Gujarat)</span>
-              <span className="bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 font-bold">New Delhi</span>
+              {about.operationalHubs.map((hub, idx) => (
+                <span
+                  key={idx}
+                  className="bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60 font-bold"
+                >
+                  {hub}
+                </span>
+              ))}
             </div>
           </div>
 

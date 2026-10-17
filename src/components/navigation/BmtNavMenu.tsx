@@ -303,7 +303,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             : "bg-slate-950/30 backdrop-blur-xs border-white/10 text-white/90"
         }`}
       >
-        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-7 text-[10.5px] sm:text-[11px]">
             {/* Left: info */}
             <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto scrollbar-none whitespace-nowrap">
@@ -344,13 +344,17 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-[52px] sm:h-[56px] gap-4">
-            {/* Logo (Clean, no black overlay line) */}
+            {/* Logo (Dynamic: Pre-scroll vs Post-scroll) */}
             <Link href="/" className="shrink-0 group flex items-center" aria-label="Be My Traveller — Home">
               <div className="relative w-[150px] h-[34px] sm:w-[170px] sm:h-[38px] flex items-center transition-all">
                 <Image
-                  src={settings.logoUrl || "/Logo for website PNG.webp"}
+                  src={
+                    isSolid
+                      ? (settings.logoScrolledUrl || settings.logoUrl || "/Logo for website PNG.webp")
+                      : (settings.logoUrl || "/Logo for website PNG.webp")
+                  }
                   alt={settings.tradeName || "Be My Traveller"}
                   fill
                   className="object-contain object-left"
@@ -824,7 +828,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
             <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center">
               <div className="relative w-36 h-10">
                 <Image
-                  src={settings.logoUrl || "/Logo for website PNG.webp"}
+                  src={settings.logoScrolledUrl || settings.logoUrl || "/Logo for website PNG.webp"}
                   alt={settings.tradeName || "Be My Traveller"}
                   fill
                   className="object-contain object-left"

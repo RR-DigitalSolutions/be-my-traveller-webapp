@@ -3,6 +3,9 @@ import connectDB from "@/lib/db/mongoose";
 import { PackageModel } from "@/domains/packages/package.model";
 import { auth } from "@/lib/auth/auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
@@ -18,11 +21,16 @@ export async function GET(req: NextRequest) {
 
     const query: Record<string, any> = {};
     if (status && status !== "ALL") {
-      query.status = status;
+      if (status === "ACTIVE") {
+        query.status = { $in: ["ACTIVE", "PUBLISHED"] };
+      } else {
+        query.status = status;
+      }
     }
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
+        { title: { $regex: search, $options: "i" } },
         { tagline: { $regex: search, $options: "i" } },
         { slug: { $regex: search, $options: "i" } },
       ];
@@ -32,7 +40,10 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ success: true, packages });
+    return NextResponse.json(
+      { success: true, packages },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
+    );
   } catch (error: any) {
     console.error("[ADMIN_PACKAGES_GET_ERROR]", error);
     return NextResponse.json(

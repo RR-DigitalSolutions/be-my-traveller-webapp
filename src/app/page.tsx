@@ -153,7 +153,7 @@ export default function HomePage() {
       tagline: "Manali, Shimla, Dharamshala, Spiti",
       packages: "24 Packages",
       price: "From ₹18,999",
-      img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489146/bemytraveller/homepage/why-book/kashmir-snow-mountains.webp",
       tag: "Top Selling",
     },
     {
@@ -162,7 +162,7 @@ export default function HomePage() {
       tagline: "Srinagar, Gulmarg, Pahalgam, Sonmarg",
       packages: "18 Packages",
       price: "From ₹24,500",
-      img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489146/bemytraveller/homepage/why-book/kashmir-snow-mountains.webp",
       tag: "Snow Specials",
     },
     {
@@ -171,7 +171,7 @@ export default function HomePage() {
       tagline: "Munnar, Alleppey Houseboat, Thekkady",
       packages: "21 Packages",
       price: "From ₹21,999",
-      img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489148/bemytraveller/homepage/why-book/kerala-tropical-beach.webp",
       tag: "Romantic",
     },
     {
@@ -180,7 +180,7 @@ export default function HomePage() {
       tagline: "Jaipur, Udaipur, Jodhpur, Jaisalmer",
       packages: "16 Packages",
       price: "From ₹19,500",
-      img: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489150/bemytraveller/homepage/why-book/luxury-resort-villa.webp",
       tag: "Heritage",
     },
     {
@@ -189,7 +189,7 @@ export default function HomePage() {
       tagline: "Havelock, Neil Island, Port Blair",
       packages: "14 Packages",
       price: "From ₹28,999",
-      img: "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489148/bemytraveller/homepage/why-book/kerala-tropical-beach.webp",
       tag: "Beach Holiday",
     },
     {
@@ -198,7 +198,7 @@ export default function HomePage() {
       tagline: "North Goa Beach Clubs, South Goa Stays",
       packages: "20 Packages",
       price: "From ₹12,999",
-      img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489148/bemytraveller/homepage/why-book/kerala-tropical-beach.webp",
       tag: "Trending",
     },
   ];
@@ -210,7 +210,7 @@ export default function HomePage() {
       tagline: "Burj Khalifa, Desert Safari, Marina Dhow",
       packages: "15 Packages",
       price: "From ₹48,999",
-      img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489150/bemytraveller/homepage/why-book/luxury-resort-villa.webp",
       tag: "Visa Included",
     },
     {
@@ -219,7 +219,7 @@ export default function HomePage() {
       tagline: "Ubud Jungles, Seminyak, Nusa Penida",
       packages: "19 Packages",
       price: "From ₹38,500",
-      img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489148/bemytraveller/homepage/why-book/kerala-tropical-beach.webp",
       tag: "Private Pool Stays",
     },
     {
@@ -228,7 +228,7 @@ export default function HomePage() {
       tagline: "Phuket, Krabi, Bangkok, Pattaya",
       packages: "22 Packages",
       price: "From ₹29,999",
-      img: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489152/bemytraveller/homepage/why-book/dolomites-alpine-lake.webp",
       tag: "Visa On Arrival",
     },
     {
@@ -237,7 +237,7 @@ export default function HomePage() {
       tagline: "Hanoi, Ha Long Bay Cruise, Da Nang",
       packages: "12 Packages",
       price: "From ₹44,999",
-      img: "https://images.unsplash.com/photo-1528127269322-539801943592?w=800&auto=format&fit=crop&q=80",
+      img: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489152/bemytraveller/homepage/why-book/dolomites-alpine-lake.webp",
       tag: "Trending 2026",
     },
   ];
@@ -253,14 +253,18 @@ export default function HomePage() {
   // Dynamic homepage destinations loaded from admin panel via API
   const [domesticList, setDomesticList] = useState(domesticDestinations);
   const [intlList, setIntlList] = useState(internationalDestinations);
+  const [featuredPackagesList, setFeaturedPackagesList] = useState<any[]>([]);
+  const [specialOffersList, setSpecialOffersList] = useState<any[]>([]);
+  const [themePackagesList, setThemePackagesList] = useState<any[]>([]);
 
-  // Dynamic About Us, FAQs, and SEO Content Area states
+  // Dynamic About Us, Why Book, FAQs, and SEO Content Area states
+  const [whyBookData, setWhyBookData] = useState<any>(null);
   const [aboutUsData, setAboutUsData] = useState<AboutUsData | null>(null);
   const [faqsData, setFaqsData] = useState<HomeFaqsData | null>(null);
   const [seoContentData, setSeoContentData] = useState<HomeSeoContentData | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/admin/homepage-content")
+    fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.content) {
@@ -274,6 +278,19 @@ export default function HomePage() {
               if (active.length > 0) setIntlList(active);
             }
           }
+          if (Array.isArray(data.content.featuredPackages) && data.content.featuredPackages.length > 0) {
+            const active = data.content.featuredPackages.filter((p: any) => p.isActive !== false);
+            if (active.length > 0) setFeaturedPackagesList(active);
+          }
+          if (Array.isArray(data.content.specialOffers) && data.content.specialOffers.length > 0) {
+            const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
+            if (active.length > 0) setSpecialOffersList(active);
+          }
+          if (Array.isArray(data.content.themePackages) && data.content.themePackages.length > 0) {
+            const active = data.content.themePackages.filter((t: any) => t.isActive !== false);
+            if (active.length > 0) setThemePackagesList(active);
+          }
+          if (data.content.whyBook) setWhyBookData(data.content.whyBook);
           if (data.content.aboutUs) setAboutUsData(data.content.aboutUs);
           if (data.content.faqs) setFaqsData(data.content.faqs);
           if (data.content.seoContent) setSeoContentData(data.content.seoContent);
@@ -298,7 +315,7 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="max-w-6xl mx-auto relative z-10 space-y-3.5 sm:space-y-4">
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-3.5 sm:space-y-4">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
               ★ India&apos;s Leading Custom Tour Platform
@@ -677,6 +694,7 @@ export default function HomePage() {
 
       {/* ── Special Offers & Exclusive Discounts Carousel (Above Popular Holiday Spots) ── */}
       <SpecialOffersCarousel
+        initialOffers={specialOffersList.length > 0 ? specialOffersList : undefined}
         onClaimOffer={(offerName) => {
           setEnquiryPackage(offerName);
           setIsEnquiryOpen(true);
@@ -684,7 +702,7 @@ export default function HomePage() {
       />
 
       {/* ── Popular Destinations Showcase (BMT Multi-Tab Directory) ── */}
-      <section className="py-8 px-4 max-w-7xl mx-auto w-full">
+      <section className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1300px] mx-auto w-full">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
           <div>
             <span className="text-xs uppercase font-bold text-amber-600 tracking-wider">Top Rated Destinations</span>
@@ -774,6 +792,7 @@ export default function HomePage() {
 
       {/* ── Best-Selling Holiday Packages Carousel ── */}
       <BestPackagesCarousel
+        adminPackages={featuredPackagesList.length > 0 ? featuredPackagesList : undefined}
         onEnquire={(packageTitle) => {
           setEnquiryPackage(packageTitle);
           setIsEnquiryOpen(true);
@@ -781,7 +800,9 @@ export default function HomePage() {
       />
 
       {/* ── Speciality Theme Packages (BMT Curated Collections) ── */}
-      <ThemePackagesSection />
+      <ThemePackagesSection
+        initialThemePackages={themePackagesList.length > 0 ? themePackagesList : undefined}
+      />
 
       {/* ── Custom Trip Planner Banner (BMT Interactive CTA) ── */}
       <section id="custom-planner" className="py-8 px-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -843,7 +864,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Why Choose Be My Traveller (Dynamic Two-Column) ── */}
-      <WhyBookSection />
+      <WhyBookSection data={whyBookData} />
 
       {/* ── About Us (About Be My Traveller) ── */}
       <AboutUsSection data={aboutUsData} />

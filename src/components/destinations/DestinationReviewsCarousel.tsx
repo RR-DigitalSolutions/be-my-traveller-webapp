@@ -226,7 +226,7 @@ export default function DestinationReviewsCarousel({
 
   return (
     <section className="mt-12 pt-10 border-t border-slate-200/90 w-full">
-      <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 space-y-6">
+      <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">

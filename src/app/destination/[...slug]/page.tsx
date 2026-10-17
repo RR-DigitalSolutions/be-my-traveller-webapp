@@ -630,7 +630,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
 
-        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pb-8 sm:pb-10 relative z-10 w-full space-y-3">
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-10 relative z-10 w-full space-y-3">
           {/* SEO Breadcrumb Trail */}
           <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-400 font-bold">
             <Link href="/" className="hover:underline text-slate-300 hover:text-white">Home</Link>
@@ -678,7 +678,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
 
       {/* ── Fast Facts Bar ── */}
       <div className="bg-white border-b border-slate-200 py-3.5 px-4 text-xs shadow-xs">
-        <div className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Starting From</span>
             <span className="text-amber-600 font-extrabold text-sm">{current.startingPrice} <span className="text-[10px] font-normal text-slate-500">/ person</span></span>
@@ -699,7 +699,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       </div>
 
       {/* ── Main Body ── */}
-      <main className="max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 sm:py-10 w-full flex-1">
+      <main className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 w-full flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
 
           {/* Left 2 Columns: Tour Packages (#1), Destination Carousel (#2), Overview (#3), Attractions (#4), Activities (#5), FAQs (#6) */}

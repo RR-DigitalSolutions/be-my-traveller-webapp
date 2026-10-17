@@ -3,12 +3,24 @@ import connectDB from "@/lib/db/mongoose";
 import { HomepageContentModel } from "@/domains/cms/homepage-content.model";
 import { auth } from "@/lib/auth/auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // Public GET - no auth needed (for frontend)
 export async function GET() {
   try {
     await connectDB();
     const content = await HomepageContentModel.findOne().lean();
-    return NextResponse.json({ success: true, content: content || null });
+    return NextResponse.json(
+      { success: true, content: content || null },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (err) {
     console.error("HomepageContent GET error:", err);
     return NextResponse.json({ success: false, error: "Failed to load homepage content" }, { status: 500 });

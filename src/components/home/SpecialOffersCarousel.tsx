@@ -144,18 +144,26 @@ export default function SpecialOffersCarousel({
   const [visibleCount, setVisibleCount] = useState(3);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch dynamic offers from admin content
   useEffect(() => {
-    fetch("/api/v1/admin/homepage-content")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.content?.specialOffers) && data.content.specialOffers.length > 0) {
-          const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
-          if (active.length > 0) setOffersList(active);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (initialOffers && initialOffers.length > 0) {
+      setOffersList(initialOffers);
+    }
+  }, [initialOffers]);
+
+  // Fetch dynamic offers from admin content if not provided by parent
+  useEffect(() => {
+    if (!initialOffers || initialOffers.length === 0) {
+      fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.content?.specialOffers) && data.content.specialOffers.length > 0) {
+            const active = data.content.specialOffers.filter((o: any) => o.isActive !== false);
+            if (active.length > 0) setOffersList(active);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialOffers]);
 
   // Responsive items count
   useEffect(() => {

@@ -103,9 +103,15 @@ const defaultThemePackages = [
   },
 ];
 
-export default function ThemePackagesSection() {
+interface ThemePackagesSectionProps {
+  initialThemePackages?: any[];
+}
+
+export default function ThemePackagesSection({ initialThemePackages }: ThemePackagesSectionProps = {}) {
   const [activeTheme, setActiveTheme] = useState<string>("ALL");
-  const [themePackagesList, setThemePackagesList] = useState(defaultThemePackages);
+  const [themePackagesList, setThemePackagesList] = useState(
+    initialThemePackages && initialThemePackages.length > 0 ? initialThemePackages : defaultThemePackages
+  );
   const [themes, setThemes] = useState([
     { id: "ALL", label: "🌟 All Signature Themes", icon: "✨" },
     { id: "HONEYMOON", label: "Honeymoon & Romance", icon: "💍" },
@@ -115,6 +121,12 @@ export default function ThemePackagesSection() {
     { id: "PILGRIMAGE", label: "Spiritual & Temple Circuits", icon: "🛕" },
     { id: "BEACH", label: "Beach & Island Villas", icon: "🏖️" },
   ]);
+
+  useEffect(() => {
+    if (initialThemePackages && initialThemePackages.length > 0) {
+      setThemePackagesList(initialThemePackages);
+    }
+  }, [initialThemePackages]);
 
   useEffect(() => {
     const loadThemes = async () => {
@@ -137,17 +149,19 @@ export default function ThemePackagesSection() {
 
     loadThemes();
 
-    // Load dynamic theme packages from admin content
-    fetch("/api/v1/admin/homepage-content")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.content?.themePackages) && data.content.themePackages.length > 0) {
-          const active = data.content.themePackages.filter((p: any) => p.isActive !== false);
-          if (active.length > 0) setThemePackagesList(active);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    // Load dynamic theme packages from admin content if not provided by parent
+    if (!initialThemePackages || initialThemePackages.length === 0) {
+      fetch("/api/v1/admin/homepage-content", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.content?.themePackages) && data.content.themePackages.length > 0) {
+            const active = data.content.themePackages.filter((p: any) => p.isActive !== false);
+            if (active.length > 0) setThemePackagesList(active);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [initialThemePackages]);
 
   const filteredPackages =
     activeTheme === "ALL"

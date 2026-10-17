@@ -19,10 +19,12 @@ export default function AdminSettingsPage() {
   const [toast, setToast] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Logo & Branding Upload States
-  const [uploadingLogo, setUploadingLogo] = useState<"header" | "footer" | null>(null);
-  const [mediaPickerTarget, setMediaPickerTarget] = useState<"header" | "footer" | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState<"header" | "scrolled" | "footer" | null>(null);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<"header" | "scrolled" | "footer" | null>(null);
   const [headerPreviewBg, setHeaderPreviewBg] = useState<"dark" | "transparent" | "light">("dark");
+  const [scrolledPreviewBg, setScrolledPreviewBg] = useState<"light" | "transparent" | "dark">("light");
   const headerFileInputRef = useRef<HTMLInputElement>(null);
+  const scrolledFileInputRef = useRef<HTMLInputElement>(null);
   const footerFileInputRef = useRef<HTMLInputElement>(null);
 
   // Test Modals State
@@ -53,6 +55,7 @@ export default function AdminSettingsPage() {
     brandDescription:
       "India's leading experiential luxury and mountain travel specialist, providing curated tour packages, point-to-point chauffeured fleet transfers, and bespoke holiday planning across Himachal Pradesh, Kashmir, Uttarakhand, Ladakh, Dubai, and Andaman.",
     logoUrl: "",
+    logoScrolledUrl: "",
     footerLogoUrl: "",
     faviconUrl: "",
     watermarkText: "RRDS",
@@ -266,7 +269,7 @@ export default function AdminSettingsPage() {
   }, []);
 
   // Direct Logo File Upload Handler (Uploads to Cloudinary)
-  const handleDirectLogoUpload = async (file: File, target: "header" | "footer") => {
+  const handleDirectLogoUpload = async (file: File, target: "header" | "scrolled" | "footer") => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       showToast("Please upload an image file (PNG, WebP, SVG, JPG)", "error");
@@ -278,7 +281,14 @@ export default function AdminSettingsPage() {
       body.append("file", file);
       body.append("folderType", "banners");
       body.append("customFolder", "brand-logos");
-      body.append("title", target === "header" ? "Website Header Navbar Logo" : "Website Footer Logo");
+      body.append(
+        "title",
+        target === "header"
+          ? "Website Header Navbar Logo (Pre-Scroll)"
+          : target === "scrolled"
+          ? "Website Header Navbar Logo (Post-Scroll White Bar)"
+          : "Website Footer Logo"
+      );
 
       const res = await fetch("/api/v1/cloudinary/upload", {
         method: "POST",
@@ -295,10 +305,14 @@ export default function AdminSettingsPage() {
 
       if (target === "header") {
         setFormData((prev) => ({ ...prev, logoUrl: uploadedUrl }));
+      } else if (target === "scrolled") {
+        setFormData((prev) => ({ ...prev, logoScrolledUrl: uploadedUrl }));
       } else {
         setFormData((prev) => ({ ...prev, footerLogoUrl: uploadedUrl }));
       }
-      showToast(`✓ ${target === "header" ? "Header Navbar" : "Footer Section"} logo uploaded!`);
+      showToast(
+        `✓ ${target === "header" ? "Header Pre-Scroll" : target === "scrolled" ? "Header Post-Scroll (Sticky Bar)" : "Footer Section"} logo uploaded!`
+      );
     } catch (err: any) {
       console.error(err);
       showToast(err.message || "Failed to upload logo image", "error");
@@ -567,20 +581,20 @@ export default function AdminSettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Card 1: Header Navbar Logo */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Card 1: Header Navbar Logo (Before Scroll) */}
                   <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="text-xs font-bold text-slate-200 flex items-center gap-1">
-                          <span>🏷️</span> Header Navbar Logo
+                          <span>🌅</span> Header Pre-Scroll Logo
                         </label>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20">
-                          Navbar & Mobile
+                          Transparent / Dark Hero
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 mb-2.5">
-                        Appears on desktop header navbar & mobile navigation drawer. Transparent background recommended.
+                        Appears at top of page over dark/transparent hero banner. Light/white or contrasting logo recommended.
                       </p>
 
                       {/* URL Input */}
@@ -609,7 +623,7 @@ export default function AdminSettingsPage() {
                             </>
                           ) : (
                             <>
-                              <span>⬆️</span> Upload from Device
+                              <span>⬆️</span> Upload
                             </>
                           )}
                         </button>
@@ -619,7 +633,7 @@ export default function AdminSettingsPage() {
                           onClick={() => setMediaPickerTarget("header")}
                           className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] transition-colors flex items-center gap-1 border border-slate-700"
                         >
-                          <span>📁</span> Media Library
+                          <span>📁</span> Library
                         </button>
 
                         <button
@@ -671,10 +685,10 @@ export default function AdminSettingsPage() {
                             : "bg-[radial-gradient(#334155_1px,transparent_1px)] bg-[size:10px_10px] bg-slate-900 border-slate-800"
                         }`}
                       >
-                        <div className="relative w-44 h-8 flex items-center justify-center">
+                        <div className="relative w-40 h-8 flex items-center justify-center">
                           <Image
                             src={formData.logoUrl || "/Logo for website PNG.webp"}
-                            alt={formData.tradeName || "Header Logo"}
+                            alt={formData.tradeName || "Header Pre-Scroll Logo"}
                             fill
                             className="object-contain"
                             unoptimized
@@ -684,7 +698,123 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
 
-                  {/* Card 2: Footer Section Logo */}
+                  {/* Card 2: Header Navbar Logo (After Scroll / Sticky Bar) */}
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-slate-200 flex items-center gap-1">
+                          <span>📌</span> Header Post-Scroll Logo
+                        </label>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">
+                          Sticky White Navbar
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mb-2.5">
+                        Appears when scrolled down on solid white sticky navbar. Dark/blue contrast logo recommended.
+                      </p>
+
+                      {/* URL Input */}
+                      <div className="mb-2.5">
+                        <input
+                          type="text"
+                          value={formData.logoScrolledUrl}
+                          onChange={(e) => setFormData({ ...formData, logoScrolledUrl: e.target.value })}
+                          placeholder={formData.logoUrl || "/Logo for website PNG.webp"}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 font-mono"
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                        <button
+                          type="button"
+                          disabled={uploadingLogo === "scrolled"}
+                          onClick={() => scrolledFileInputRef.current?.click()}
+                          className="px-2.5 py-1 rounded-lg bg-blue-500 hover:bg-blue-400 text-white font-bold text-[11px] transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {uploadingLogo === "scrolled" ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <span>⬆️</span> Upload
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setMediaPickerTarget("scrolled")}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] transition-colors flex items-center gap-1 border border-slate-700"
+                        >
+                          <span>📁</span> Library
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, logoScrolledUrl: formData.logoUrl })}
+                          className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-blue-400 text-[11px] transition-colors"
+                          title="Same as Pre-Scroll Logo"
+                        >
+                          🔗 Same
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Live Preview Container (Sticky White Navbar Preview) */}
+                    <div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                        <span>Sticky Bar Preview:</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setScrolledPreviewBg("light")}
+                            className={`px-1.5 py-0.5 rounded ${scrolledPreviewBg === "light" ? "bg-blue-500/20 text-blue-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            White
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setScrolledPreviewBg("transparent")}
+                            className={`px-1.5 py-0.5 rounded ${scrolledPreviewBg === "transparent" ? "bg-blue-500/20 text-blue-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            Grid
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setScrolledPreviewBg("dark")}
+                            className={`px-1.5 py-0.5 rounded ${scrolledPreviewBg === "dark" ? "bg-blue-500/20 text-blue-300 font-bold" : "text-slate-500 hover:text-slate-300"}`}
+                          >
+                            Dark
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`h-14 rounded-lg flex items-center justify-center p-2 border transition-all ${
+                          scrolledPreviewBg === "light"
+                            ? "bg-white border-slate-200 shadow-inner"
+                            : scrolledPreviewBg === "dark"
+                            ? "bg-slate-950 border-slate-800"
+                            : "bg-[radial-gradient(#334155_1px,transparent_1px)] bg-[size:10px_10px] bg-slate-900 border-slate-800"
+                        }`}
+                      >
+                        <div className="relative w-40 h-8 flex items-center justify-center">
+                          <Image
+                            src={formData.logoScrolledUrl || formData.logoUrl || "/Logo for website PNG.webp"}
+                            alt={formData.tradeName || "Header Post-Scroll Logo"}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Footer Section Logo */}
                   <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
@@ -725,7 +855,7 @@ export default function AdminSettingsPage() {
                             </>
                           ) : (
                             <>
-                              <span>⬆️</span> Upload from Device
+                              <span>⬆️</span> Upload
                             </>
                           )}
                         </button>
@@ -735,7 +865,7 @@ export default function AdminSettingsPage() {
                           onClick={() => setMediaPickerTarget("footer")}
                           className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-[11px] transition-colors flex items-center gap-1 border border-slate-700"
                         >
-                          <span>📁</span> Media Library
+                          <span>📁</span> Library
                         </button>
 
                         <button
@@ -744,16 +874,7 @@ export default function AdminSettingsPage() {
                           className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-amber-400 text-[11px] transition-colors"
                           title="Use same logo as Header"
                         >
-                          🔗 Same as Header
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setFormData({ ...formData, footerLogoUrl: "/Logo for website PNG.webp" })}
-                          className="px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[11px] transition-colors"
-                          title="Reset to default logo"
-                        >
-                          ↺ Default
+                          🔗 Same
                         </button>
                       </div>
                     </div>
@@ -761,12 +882,12 @@ export default function AdminSettingsPage() {
                     {/* Live Preview Container (Footer style) */}
                     <div>
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
-                        <span>Live Footer Preview (Dark Backdrop):</span>
+                        <span>Live Footer Preview:</span>
                         <span className="text-[9px] text-slate-500 font-mono">bg-slate-950</span>
                       </div>
 
                       <div className="h-14 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center p-2">
-                        <div className="relative w-44 h-8 flex items-center justify-center">
+                        <div className="relative w-40 h-8 flex items-center justify-center">
                           <Image
                             src={formData.footerLogoUrl || formData.logoUrl || "/Logo for website PNG.webp"}
                             alt={formData.tradeName || "Footer Logo"}
@@ -2293,6 +2414,17 @@ export default function AdminSettingsPage() {
       />
       <input
         type="file"
+        ref={scrolledFileInputRef}
+        accept="image/png,image/webp,image/svg+xml,image/jpeg"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleDirectLogoUpload(file, "scrolled");
+          e.target.value = "";
+        }}
+      />
+      <input
+        type="file"
         ref={footerFileInputRef}
         accept="image/png,image/webp,image/svg+xml,image/jpeg"
         className="hidden"
@@ -2307,14 +2439,23 @@ export default function AdminSettingsPage() {
       <MediaPickerModal
         isOpen={mediaPickerTarget !== null}
         onClose={() => setMediaPickerTarget(null)}
-        title={mediaPickerTarget === "header" ? "Select Header Navbar Logo" : "Select Footer Section Logo"}
+        title={
+          mediaPickerTarget === "header"
+            ? "Select Header Navbar Logo (Pre-Scroll)"
+            : mediaPickerTarget === "scrolled"
+            ? "Select Header Navbar Logo (Post-Scroll White Bar)"
+            : "Select Footer Section Logo"
+        }
         defaultFolderType="banners"
         customFolder="brand-logos"
         onSelect={(media: MediaItem) => {
           const selectedUrl = media.url || media.optimizedUrl || media.publicUrl || "";
           if (mediaPickerTarget === "header") {
             setFormData((prev) => ({ ...prev, logoUrl: selectedUrl }));
-            showToast("✓ Header Navbar Logo selected from library!");
+            showToast("✓ Pre-Scroll Header Logo selected from library!");
+          } else if (mediaPickerTarget === "scrolled") {
+            setFormData((prev) => ({ ...prev, logoScrolledUrl: selectedUrl }));
+            showToast("✓ Post-Scroll Header Logo selected from library!");
           } else if (mediaPickerTarget === "footer") {
             setFormData((prev) => ({ ...prev, footerLogoUrl: selectedUrl }));
             showToast("✓ Footer Section Logo selected from library!");

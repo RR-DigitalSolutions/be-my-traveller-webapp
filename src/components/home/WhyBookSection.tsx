@@ -49,10 +49,10 @@ const DEFAULT_POINTS: WhyBookPoint[] = [
 ];
 
 const DEFAULT_IMAGES: WhyBookImages = {
-  img1: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&auto=format&fit=crop&q=80",
-  img2: "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=600&auto=format&fit=crop&q=80",
-  img3: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80",
-  img4: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600&auto=format&fit=crop&q=80",
+  img1: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/banners/banners/authoritative-pricing-zero-hidden-fees-image-bemytraveller?_a=BAMAROhM0",
+  img2: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/banners/banners/100-tailored-and-flexible-itineraries-bemytraveller?_a=BAMAROhM0",
+  img3: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/banners/banners/booking-security-easy-rescheduling-with-be-my-traveller?_a=BAMAROhM0",
+  img4: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/blogs/direct-local-fleets-zero-middlemen/direct-local-fleets-zero-middlemen-bemytraveller?_a=BAMAROhM0",
 };
 
 const COLOR_MAP: Record<string, string> = {
@@ -62,30 +62,66 @@ const COLOR_MAP: Record<string, string> = {
   purple: "bg-purple-500/10 text-purple-600 border-purple-200/60",
 };
 
+interface WhyBookData {
+  heading?: string;
+  subheading?: string;
+  trustBadge?: string;
+  points?: WhyBookPoint[];
+  images?: WhyBookImages;
+}
+
 interface WhyBookSectionProps {
+  data?: WhyBookData | null;
   adminPoints?: WhyBookPoint[];
   adminImages?: WhyBookImages;
 }
 
-export default function WhyBookSection({ adminPoints, adminImages }: WhyBookSectionProps) {
-  const [points, setPoints] = useState<WhyBookPoint[]>(adminPoints && adminPoints.length > 0 ? adminPoints : DEFAULT_POINTS);
-  const [images, setImages] = useState<WhyBookImages>(adminImages || DEFAULT_IMAGES);
-  const [heading, setHeading] = useState("Why Book with Be My Traveller?");
-  const [subheading, setSubheading] = useState("We combine server-authoritative transparent pricing with direct local ground operations and guaranteed booking protection.");
-  const [trustBadge, setTrustBadge] = useState("TRANSPARENT · CUSTOMIZED · GUARANTEED");
+export default function WhyBookSection({ data, adminPoints, adminImages }: WhyBookSectionProps) {
+  const [points, setPoints] = useState<WhyBookPoint[]>(
+    data?.points && data.points.length > 0
+      ? data.points
+      : adminPoints && adminPoints.length > 0
+      ? adminPoints
+      : DEFAULT_POINTS
+  );
+  const [images, setImages] = useState<WhyBookImages>(
+    data?.images?.img1
+      ? (data.images as WhyBookImages)
+      : adminImages || DEFAULT_IMAGES
+  );
+  const [heading, setHeading] = useState(data?.heading || "Why Book with Be My Traveller?");
+  const [subheading, setSubheading] = useState(data?.subheading || "We combine server-authoritative transparent pricing with direct local ground operations and guaranteed booking protection.");
+  const [trustBadge, setTrustBadge] = useState(data?.trustBadge || "TRANSPARENT · CUSTOMIZED · GUARANTEED");
   const [activePoint, setActivePoint] = useState(0);
 
+  // Sync state if data prop arrives after initial mount
   useEffect(() => {
-    if (adminPoints && adminPoints.length > 0) return;
+    if (data) {
+      if (data.heading) setHeading(data.heading);
+      if (data.subheading) setSubheading(data.subheading);
+      if (data.trustBadge) setTrustBadge(data.trustBadge);
+      if (Array.isArray(data.points) && data.points.length > 0) setPoints(data.points);
+      if (data.images?.img1) {
+        setImages({
+          img1: data.images.img1 || DEFAULT_IMAGES.img1,
+          img2: data.images.img2 || DEFAULT_IMAGES.img2,
+          img3: data.images.img3 || DEFAULT_IMAGES.img3,
+          img4: data.images.img4 || DEFAULT_IMAGES.img4,
+        });
+      }
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (data || (adminPoints && adminPoints.length > 0)) return;
     fetch("/api/v1/admin/homepage-content")
       .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.content?.whyBook) {
-          const wb = data.content.whyBook;
+      .then((apiData) => {
+        if (apiData.success && apiData.content?.whyBook) {
+          const wb = apiData.content.whyBook;
           if (wb.heading) setHeading(wb.heading);
           if (wb.subheading) setSubheading(wb.subheading);
           if (wb.trustBadge) {
-            // If old trust badge mentions duplicate 25k travellers, modernize it
             if (wb.trustBadge.includes("25,000")) {
               setTrustBadge("TRANSPARENT · CUSTOMIZED · GUARANTEED");
             } else {
@@ -95,20 +131,19 @@ export default function WhyBookSection({ adminPoints, adminImages }: WhyBookSect
           if (Array.isArray(wb.points) && wb.points.length > 0) {
             const active = wb.points.filter((p: any) => p.isActive !== false);
             if (active.length > 0) {
-              // Sanitize any legacy duplicate points from old saves
               const sanitized = active.map((pt: any) => {
                 if (pt.title?.includes("Verified 4★") || pt.title?.includes("Verified 4*")) {
-                  return DEFAULT_POINTS[2]; // Booking Security
+                  return DEFAULT_POINTS[2];
                 }
                 if (pt.title?.includes("Concierge")) {
-                  return DEFAULT_POINTS[3]; // Direct Local Fleets
+                  return DEFAULT_POINTS[3];
                 }
                 return pt;
               });
               setPoints(sanitized);
             }
           }
-          if (wb.images) {
+          if (wb.images?.img1) {
             setImages((prev) => ({
               img1: wb.images.img1 || prev.img1,
               img2: wb.images.img2 || prev.img2,
@@ -119,10 +154,10 @@ export default function WhyBookSection({ adminPoints, adminImages }: WhyBookSect
         }
       })
       .catch(() => {});
-  }, [adminPoints]);
+  }, [data, adminPoints]);
 
   return (
-    <section className="py-8 sm:py-12 px-4 max-w-7xl mx-auto w-full">
+    <section className="py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-[1300px] mx-auto w-full">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10 space-y-2">
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">

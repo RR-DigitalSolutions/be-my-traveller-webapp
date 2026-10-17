@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import SeoContentEditor from "@/components/admin/SeoContentEditor";
+import MediaPickerModal, { MediaItem } from "@/components/common/MediaPickerModal";
 
 type ContentTab =
   | "PACKAGES"
@@ -60,7 +61,8 @@ interface OfferItem {
 // Lightweight catalog types from the DB
 interface DbPackage {
   _id: string;
-  name: string;
+  name?: string;
+  title?: string;
   slug: string;
   tagline?: string;
   coverImage?: string;
@@ -156,6 +158,7 @@ interface AboutUsState {
   stats: AboutStat[];
   image: string;
   experienceYears: string;
+  operationalHubs?: string[];
   isActive: boolean;
 }
 
@@ -466,8 +469,9 @@ const DEFAULT_ABOUT_US: AboutUsState = {
     { id: "s3", number: "500+", label: "Curated Packages" },
     { id: "s4", number: "4.9 ★", label: "Customer Rating" },
   ],
-  image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1200&auto=format&fit=crop&q=80",
+  image: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489155/bemytraveller/homepage/about-us/mountains-travel-hero.webp",
   experienceYears: "7+",
+  operationalHubs: ["Manali (HQ)", "Ahmedabad (Gujarat)", "New Delhi"],
   isActive: true,
 };
 
@@ -578,10 +582,10 @@ export default function HomepageContentAdmin() {
   const [whyBookTrustBadge, setWhyBookTrustBadge] = useState("TRANSPARENT · CUSTOMIZED · GUARANTEED");
   const [whyBookPoints, setWhyBookPoints] = useState<WhyBookPoint[]>(DEFAULT_POINTS);
   const [whyBookImages, setWhyBookImages] = useState({
-    img1: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
-    img2: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&auto=format&fit=crop&q=80",
-    img3: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&auto=format&fit=crop&q=80",
-    img4: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&auto=format&fit=crop&q=80",
+    img1: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489146/bemytraveller/homepage/why-book/kashmir-snow-mountains.webp",
+    img2: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489148/bemytraveller/homepage/why-book/kerala-tropical-beach.webp",
+    img3: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489150/bemytraveller/homepage/why-book/luxury-resort-villa.webp",
+    img4: "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489152/bemytraveller/homepage/why-book/dolomites-alpine-lake.webp",
   });
   const [reviews, setReviews] = useState<ReviewItem[]>(DEFAULT_REVIEWS);
 
@@ -594,6 +598,10 @@ export default function HomepageContentAdmin() {
   const [aboutStats, setAboutStats] = useState<AboutStat[]>(DEFAULT_ABOUT_US.stats);
   const [aboutImage, setAboutImage] = useState(DEFAULT_ABOUT_US.image);
   const [aboutExperienceYears, setAboutExperienceYears] = useState(DEFAULT_ABOUT_US.experienceYears);
+  const [aboutOperationalHubs, setAboutOperationalHubs] = useState<string[]>(
+    DEFAULT_ABOUT_US.operationalHubs || ["Manali (HQ)", "Ahmedabad (Gujarat)", "New Delhi"]
+  );
+  const [newHubInput, setNewHubInput] = useState("");
   const [aboutIsActive, setAboutIsActive] = useState(DEFAULT_ABOUT_US.isActive);
 
   // ── FAQs States ──
@@ -621,6 +629,68 @@ export default function HomepageContentAdmin() {
   const [editPoint, setEditPoint] = useState<WhyBookPoint | null>(null);
   const [editReview, setEditReview] = useState<ReviewItem | null>(null);
 
+  // ── Media & Direct Upload States ──
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [mediaPickerConfig, setMediaPickerConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    folderType: "destinations" | "packages" | "banners";
+    customFolder?: string;
+    onSelect: (url: string) => void;
+  } | null>(null);
+  const generalFileInputRef = useRef<HTMLInputElement>(null);
+  const uploadCallbackRef = useRef<((url: string) => void) | null>(null);
+  const uploadFolderRef = useRef<"destinations" | "packages" | "banners">("destinations");
+
+  const triggerDirectUpload = (
+    folder: "destinations" | "packages" | "banners",
+    onDone: (url: string) => void
+  ) => {
+    uploadFolderRef.current = folder;
+    uploadCallbackRef.current = onDone;
+    generalFileInputRef.current?.click();
+  };
+
+  const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file (PNG, WebP, JPG, SVG)", "error");
+      e.target.value = "";
+      return;
+    }
+    setUploadingImage(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("folderType", uploadFolderRef.current);
+      body.append("customFolder", `homepage-${uploadFolderRef.current}`);
+      body.append("title", file.name);
+
+      const res = await fetch("/api/v1/cloudinary/upload", {
+        method: "POST",
+        body,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to upload image.");
+      }
+      const uploadedUrl = data.url || data.secure_url || data.media?.url;
+      if (!uploadedUrl) throw new Error("Empty URL returned from server.");
+
+      if (uploadCallbackRef.current) {
+        uploadCallbackRef.current(uploadedUrl);
+      }
+      showToast("✓ Image uploaded to Cloudinary CDN successfully!");
+    } catch (err: any) {
+      console.error(err);
+      showToast(err.message || "Failed to upload image", "error");
+    } finally {
+      setUploadingImage(false);
+      e.target.value = "";
+    }
+  };
+
   // ── DB Picker States ──
   // Packages picker
   const [showPkgPicker, setShowPkgPicker] = useState(false);
@@ -643,11 +713,11 @@ export default function HomepageContentAdmin() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch DB packages for picker
+  // Fetch DB packages for picker (Fetch all published and active packages)
   const fetchDbPackages = async () => {
     setDbPkgLoading(true);
     try {
-      const res = await fetch("/api/v1/admin/packages?status=ACTIVE");
+      const res = await fetch("/api/v1/admin/packages?status=ALL", { cache: "no-store" });
       const data = await res.json();
       if (data.success && Array.isArray(data.packages)) {
         setDbPackages(data.packages);
@@ -663,7 +733,7 @@ export default function HomepageContentAdmin() {
   const fetchDbDestinations = async () => {
     setDbDestLoading(true);
     try {
-      const res = await fetch("/api/v1/admin/destinations");
+      const res = await fetch("/api/v1/admin/destinations", { cache: "no-store" });
       const data = await res.json();
       if (Array.isArray(data.destinations)) {
         setDbDestinations(data.destinations);
@@ -678,23 +748,26 @@ export default function HomepageContentAdmin() {
   };
 
   // Convert a DB package to a homepage PackageItem card
-  const dbPkgToCard = (p: DbPackage): PackageItem => ({
-    id: p._id,
-    slug: p.slug,
-    title: p.name,
-    destination: p.tagline || p.name,
-    nights: p.nights && p.days ? `${p.nights}N / ${p.days}D` : "5N / 6D",
-    originalPrice: p.basePrice ? `₹${p.basePrice.toLocaleString("en-IN")}` : "₹30,000",
-    price: p.startingPrice ? `₹${p.startingPrice.toLocaleString("en-IN")}` : "₹22,999",
-    discount: p.basePrice && p.startingPrice ? `${Math.round(((p.basePrice - p.startingPrice) / p.basePrice) * 100)}% OFF` : "25% OFF",
-    rating: 4.8,
-    reviews: 100,
-    inclusions: ["Hotel Stay", "Private Cab", "Daily Meals"],
-    img: p.coverImage || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
-    tag: "Featured",
-    isActive: true,
-    sortOrder: packages.length,
-  });
+  const dbPkgToCard = (p: DbPackage): PackageItem => {
+    const pkgTitle = p.title || p.name || p.slug || "Holiday Tour Package";
+    return {
+      id: p._id,
+      slug: p.slug,
+      title: pkgTitle,
+      destination: p.tagline || (p.nights ? `${p.nights}N / ${p.days || p.nights + 1}D Tour` : pkgTitle),
+      nights: p.nights && p.days ? `${p.nights}N / ${p.days}D` : "5N / 6D",
+      originalPrice: p.basePrice ? `₹${p.basePrice.toLocaleString("en-IN")}` : "₹30,000",
+      price: p.startingPrice ? `₹${p.startingPrice.toLocaleString("en-IN")}` : "₹22,999",
+      discount: p.basePrice && p.startingPrice ? `${Math.round(((p.basePrice - p.startingPrice) / p.basePrice) * 100)}% OFF` : "25% OFF",
+      rating: 4.8,
+      reviews: 100,
+      inclusions: ["Hotel Stay", "Private Cab", "Daily Meals"],
+      img: p.coverImage || "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489146/bemytraveller/homepage/why-book/kashmir-snow-mountains.webp",
+      tag: "Featured",
+      isActive: true,
+      sortOrder: packages.length,
+    };
+  };
 
   // Convert a DB destination to a homepage DestinationCard
   const dbDestToCard = (d: DbDestination, type: "domestic" | "international"): DestinationCard => ({
@@ -703,7 +776,7 @@ export default function HomepageContentAdmin() {
     tagline: d.tagline || d.name,
     packages: "View Packages",
     price: "From ₹15,000",
-    img: d.coverImage || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
+    img: d.coverImage || "https://res.cloudinary.com/djvp4qmyk/image/upload/v1773489146/bemytraveller/homepage/why-book/kashmir-snow-mountains.webp",
     tag: d.region || (type === "international" ? "International" : "Domestic"),
     isActive: true,
     sortOrder: type === "domestic" ? domesticSpots.length : intlSpots.length,
@@ -714,7 +787,7 @@ export default function HomepageContentAdmin() {
     const fetchContent = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/v1/admin/homepage-content");
+        const res = await fetch("/api/v1/admin/homepage-content", { cache: "no-store" });
         const data = await res.json();
         if (data.success && data.content) {
           const c = data.content;
@@ -738,6 +811,9 @@ export default function HomepageContentAdmin() {
             if (c.aboutUs.stats?.length > 0) setAboutStats(c.aboutUs.stats);
             if (c.aboutUs.image) setAboutImage(c.aboutUs.image);
             if (c.aboutUs.experienceYears) setAboutExperienceYears(c.aboutUs.experienceYears);
+            if (Array.isArray(c.aboutUs.operationalHubs) && c.aboutUs.operationalHubs.length > 0) {
+              setAboutOperationalHubs(c.aboutUs.operationalHubs);
+            }
             if (typeof c.aboutUs.isActive === "boolean") setAboutIsActive(c.aboutUs.isActive);
           }
           if (c.faqs) {
@@ -794,6 +870,7 @@ export default function HomepageContentAdmin() {
             stats: aboutStats,
             image: aboutImage,
             experienceYears: aboutExperienceYears,
+            operationalHubs: aboutOperationalHubs,
             isActive: aboutIsActive,
           },
           faqs: {
@@ -1672,6 +1749,123 @@ export default function HomepageContentAdmin() {
                 </div>
               </div>
 
+              {/* Operational Hubs Section */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>📍</span> Operational Hubs &amp; Regional Desks
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      These locations appear as live badges next to &quot;📍 Operational Hubs:&quot; in the frontend About Us section.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                    {aboutOperationalHubs.length} Active Hubs
+                  </span>
+                </div>
+
+                {/* Badges List */}
+                <div className="flex flex-wrap gap-2 items-center p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/60 min-h-[48px]">
+                  {aboutOperationalHubs.length === 0 ? (
+                    <span className="text-xs text-slate-400 italic">No operational hubs added. Add at least one hub below.</span>
+                  ) : (
+                    aboutOperationalHubs.map((hub, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100/80 text-amber-950 font-bold text-xs border border-amber-300 shadow-2xs group"
+                      >
+                        <span>📍</span>
+                        <span>{hub}</span>
+                        <button
+                          type="button"
+                          onClick={() => setAboutOperationalHubs(aboutOperationalHubs.filter((_, i) => i !== idx))}
+                          className="ml-1 w-4 h-4 rounded-full bg-amber-200 hover:bg-red-500 hover:text-white flex items-center justify-center text-[10px] text-amber-900 transition-colors"
+                          title={`Remove ${hub}`}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
+
+                {/* Add New Hub Input */}
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={newHubInput}
+                    onChange={(e) => setNewHubInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const val = newHubInput.trim();
+                        if (val && !aboutOperationalHubs.includes(val)) {
+                          setAboutOperationalHubs([...aboutOperationalHubs, val]);
+                          setNewHubInput("");
+                        }
+                      }
+                    }}
+                    placeholder="Enter hub name (e.g. Manali (HQ), Ahmedabad (Gujarat), New Delhi)..."
+                    className="flex-1 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = newHubInput.trim();
+                      if (val && !aboutOperationalHubs.includes(val)) {
+                        setAboutOperationalHubs([...aboutOperationalHubs, val]);
+                        setNewHubInput("");
+                      }
+                    }}
+                    disabled={!newHubInput.trim()}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  >
+                    <span>➕</span> Add Hub
+                  </button>
+                </div>
+
+                {/* Quick Add Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-500">
+                  <span className="font-semibold text-slate-600">Quick Presets:</span>
+                  {[
+                    "Manali (HQ)",
+                    "Ahmedabad (Gujarat)",
+                    "New Delhi",
+                    "Srinagar (J&K)",
+                    "Shimla Desk",
+                    "Kochi (Kerala)",
+                    "Dubai (UAE)",
+                  ].map((preset) => {
+                    const isAdded = aboutOperationalHubs.includes(preset);
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        disabled={isAdded}
+                        onClick={() => setAboutOperationalHubs([...aboutOperationalHubs, preset])}
+                        className={`px-2 py-0.5 rounded-md border text-[11px] transition-colors ${
+                          isAdded
+                            ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-amber-400 hover:text-amber-800"
+                        }`}
+                      >
+                        {isAdded ? `✓ ${preset}` : `+ ${preset}`}
+                      </button>
+                    );
+                  })}
+                  {aboutOperationalHubs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAboutOperationalHubs(["Manali (HQ)", "Ahmedabad (Gujarat)", "New Delhi"])}
+                      className="ml-auto text-amber-700 hover:text-amber-900 underline text-[11px] font-medium"
+                    >
+                      Reset to Default 3 Hubs
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* 4 Feature Highlights */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -2046,12 +2240,73 @@ export default function HomepageContentAdmin() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Cover Image URL</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Cover Image</label>
+                  <span className="text-[10px] text-slate-400">CDN WebP recommended</span>
+                </div>
+
+                {editPkg.img && (
+                  <div className="relative mb-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group">
+                    <img
+                      src={editPkg.img}
+                      alt={editPkg.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerDirectUpload("packages", (url) =>
+                            setEditPkg((prev) => (prev ? { ...prev, img: url } : null))
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 shadow-md"
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    disabled={uploadingImage}
+                    onClick={() =>
+                      triggerDirectUpload("packages", (url) =>
+                        setEditPkg((prev) => (prev ? { ...prev, img: url } : null))
+                      )
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                  >
+                    <span>{uploadingImage ? "⏳ Uploading..." : "⬆️ Upload from Device"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMediaPickerConfig({
+                        isOpen: true,
+                        title: "Select Package Cover Image",
+                        folderType: "packages",
+                        customFolder: "packages",
+                        onSelect: (url) => {
+                          setEditPkg((prev) => (prev ? { ...prev, img: url } : null));
+                          setMediaPickerConfig(null);
+                        },
+                      })
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>📁 Media Library</span>
+                  </button>
+                </div>
+
                 <input
                   type="text"
+                  placeholder="Or paste cover image URL..."
                   value={editPkg.img}
                   onChange={(e) => setEditPkg({ ...editPkg, img: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg text-xs"
                 />
               </div>
 
@@ -2098,24 +2353,70 @@ export default function HomepageContentAdmin() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t">
+            <div className="flex items-center justify-between pt-3 border-t">
               <button onClick={() => setEditPkg(null)} className="px-4 py-2 rounded-lg bg-slate-100 font-bold text-xs text-slate-700">Cancel</button>
-              <button
-                onClick={() => {
-                  const existingIdx = packages.findIndex((p) => p.id === editPkg.id);
-                  if (existingIdx >= 0) {
-                    const next = [...packages];
-                    next[existingIdx] = editPkg;
-                    setPackages(next);
-                  } else {
-                    setPackages([...packages, editPkg]);
-                  }
-                  setEditPkg(null);
-                }}
-                className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400"
-              >
-                Apply Changes
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const existingIdx = packages.findIndex((p) => p.id === editPkg.id);
+                    if (existingIdx >= 0) {
+                      const next = [...packages];
+                      next[existingIdx] = editPkg;
+                      setPackages(next);
+                    } else {
+                      setPackages([...packages, editPkg]);
+                    }
+                    setEditPkg(null);
+                    showToast("✓ Package card updated! Click 'SAVE & PUBLISH CHANGES' to push live.");
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-200 font-bold text-xs text-slate-800 hover:bg-slate-300"
+                >
+                  Apply Locally
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={async () => {
+                    let updatedPackages = packages;
+                    const existingIdx = packages.findIndex((p) => p.id === editPkg.id);
+                    if (existingIdx >= 0) {
+                      const next = [...packages];
+                      next[existingIdx] = editPkg;
+                      setPackages(next);
+                      updatedPackages = next;
+                    } else {
+                      const next = [...packages, editPkg];
+                      setPackages(next);
+                      updatedPackages = next;
+                    }
+                    setEditPkg(null);
+                    try {
+                      setSaving(true);
+                      const res = await fetch("/api/v1/admin/homepage-content", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          featuredPackages: updatedPackages,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast("✓ Best-Selling packages published live to homepage!");
+                      } else {
+                        showToast(data.error || "Failed to publish changes", "error");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || "Failed to save to database", "error");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? "Saving..." : "Save & Publish Live"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2304,12 +2605,73 @@ export default function HomepageContentAdmin() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Image URL</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Destination Image</label>
+                  <span className="text-[10px] text-slate-400">CDN WebP recommended</span>
+                </div>
+                
+                {editSpot.spot.img && (
+                  <div className="relative mb-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group">
+                    <img
+                      src={editSpot.spot.img}
+                      alt={editSpot.spot.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerDirectUpload("destinations", (url) =>
+                            setEditSpot((prev) => (prev ? { ...prev, spot: { ...prev.spot, img: url } } : null))
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 shadow-md"
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    disabled={uploadingImage}
+                    onClick={() =>
+                      triggerDirectUpload("destinations", (url) =>
+                        setEditSpot((prev) => (prev ? { ...prev, spot: { ...prev.spot, img: url } } : null))
+                      )
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                  >
+                    <span>{uploadingImage ? "⏳ Uploading..." : "⬆️ Upload from Device"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMediaPickerConfig({
+                        isOpen: true,
+                        title: "Select Destination Cover Image",
+                        folderType: "destinations",
+                        customFolder: "destinations",
+                        onSelect: (url) => {
+                          setEditSpot((prev) => (prev ? { ...prev, spot: { ...prev.spot, img: url } } : null));
+                          setMediaPickerConfig(null);
+                        },
+                      })
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>📁 Media Library</span>
+                  </button>
+                </div>
+
                 <input
                   type="text"
+                  placeholder="Or paste image URL here..."
                   value={editSpot.spot.img}
                   onChange={(e) => setEditSpot({ ...editSpot, spot: { ...editSpot.spot, img: e.target.value } })}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg text-xs"
                 />
               </div>
 
@@ -2324,33 +2686,101 @@ export default function HomepageContentAdmin() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t">
+            <div className="flex items-center justify-between pt-3 border-t">
               <button onClick={() => setEditSpot(null)} className="px-4 py-2 rounded-lg bg-slate-100 font-bold text-xs text-slate-700">Cancel</button>
-              <button
-                onClick={() => {
-                  if (editSpot.type === "domestic") {
-                    if (editSpot.index >= 0) {
-                      const next = [...domesticSpots];
-                      next[editSpot.index] = editSpot.spot;
-                      setDomesticSpots(next);
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    let updatedDomestic = domesticSpots;
+                    let updatedIntl = intlSpots;
+                    if (editSpot.type === "domestic") {
+                      if (editSpot.index >= 0) {
+                        const next = [...domesticSpots];
+                        next[editSpot.index] = editSpot.spot;
+                        setDomesticSpots(next);
+                        updatedDomestic = next;
+                      } else {
+                        const next = [...domesticSpots, editSpot.spot];
+                        setDomesticSpots(next);
+                        updatedDomestic = next;
+                      }
                     } else {
-                      setDomesticSpots([...domesticSpots, editSpot.spot]);
+                      if (editSpot.index >= 0) {
+                        const next = [...intlSpots];
+                        next[editSpot.index] = editSpot.spot;
+                        setIntlSpots(next);
+                        updatedIntl = next;
+                      } else {
+                        const next = [...intlSpots, editSpot.spot];
+                        setIntlSpots(next);
+                        updatedIntl = next;
+                      }
                     }
-                  } else {
-                    if (editSpot.index >= 0) {
-                      const next = [...intlSpots];
-                      next[editSpot.index] = editSpot.spot;
-                      setIntlSpots(next);
+                    setEditSpot(null);
+                    showToast("✓ Destination updated! Click 'SAVE & PUBLISH CHANGES' to push live.");
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-200 font-bold text-xs text-slate-800 hover:bg-slate-300"
+                >
+                  Apply Locally
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={async () => {
+                    let updatedDomestic = domesticSpots;
+                    let updatedIntl = intlSpots;
+                    if (editSpot.type === "domestic") {
+                      if (editSpot.index >= 0) {
+                        const next = [...domesticSpots];
+                        next[editSpot.index] = editSpot.spot;
+                        setDomesticSpots(next);
+                        updatedDomestic = next;
+                      } else {
+                        const next = [...domesticSpots, editSpot.spot];
+                        setDomesticSpots(next);
+                        updatedDomestic = next;
+                      }
                     } else {
-                      setIntlSpots([...intlSpots, editSpot.spot]);
+                      if (editSpot.index >= 0) {
+                        const next = [...intlSpots];
+                        next[editSpot.index] = editSpot.spot;
+                        setIntlSpots(next);
+                        updatedIntl = next;
+                      } else {
+                        const next = [...intlSpots, editSpot.spot];
+                        setIntlSpots(next);
+                        updatedIntl = next;
+                      }
                     }
-                  }
-                  setEditSpot(null);
-                }}
-                className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400"
-              >
-                Apply Changes
-              </button>
+                    setEditSpot(null);
+                    // Instant direct save to MongoDB & live deployment
+                    try {
+                      setSaving(true);
+                      const res = await fetch("/api/v1/admin/homepage-content", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          popularDestinations: { domestic: updatedDomestic, international: updatedIntl },
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast("✓ Destination image & details published live to homepage!");
+                      } else {
+                        showToast(data.error || "Failed to publish changes", "error");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || "Failed to save to database", "error");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? "Saving..." : "Save & Publish Live"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2435,34 +2865,139 @@ export default function HomepageContentAdmin() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Image URL</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Theme Card Image</label>
+                  <span className="text-[10px] text-slate-400">CDN WebP recommended</span>
+                </div>
+
+                {editThemePkg.img && (
+                  <div className="relative mb-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group">
+                    <img
+                      src={editThemePkg.img}
+                      alt={editThemePkg.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          triggerDirectUpload("packages", (url) =>
+                            setEditThemePkg((prev) => (prev ? { ...prev, img: url } : null))
+                          )
+                        }
+                        className="px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 shadow-md"
+                      >
+                        Change Image
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mb-2">
+                  <button
+                    type="button"
+                    disabled={uploadingImage}
+                    onClick={() =>
+                      triggerDirectUpload("packages", (url) =>
+                        setEditThemePkg((prev) => (prev ? { ...prev, img: url } : null))
+                      )
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs disabled:opacity-50"
+                  >
+                    <span>{uploadingImage ? "⏳ Uploading..." : "⬆️ Upload from Device"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMediaPickerConfig({
+                        isOpen: true,
+                        title: "Select Theme Package Image",
+                        folderType: "packages",
+                        customFolder: "packages",
+                        onSelect: (url) => {
+                          setEditThemePkg((prev) => (prev ? { ...prev, img: url } : null));
+                          setMediaPickerConfig(null);
+                        },
+                      })
+                    }
+                    className="flex-1 py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>📁 Media Library</span>
+                  </button>
+                </div>
+
                 <input
                   type="text"
+                  placeholder="Or paste image URL here..."
                   value={editThemePkg.img}
                   onChange={(e) => setEditThemePkg({ ...editThemePkg, img: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg text-xs"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t">
+            <div className="flex items-center justify-between pt-3 border-t">
               <button onClick={() => setEditThemePkg(null)} className="px-4 py-2 rounded-lg bg-slate-100 font-bold text-xs text-slate-700">Cancel</button>
-              <button
-                onClick={() => {
-                  const existingIdx = themePackages.findIndex((tp) => tp.id === editThemePkg.id);
-                  if (existingIdx >= 0) {
-                    const next = [...themePackages];
-                    next[existingIdx] = editThemePkg;
-                    setThemePackages(next);
-                  } else {
-                    setThemePackages([...themePackages, editThemePkg]);
-                  }
-                  setEditThemePkg(null);
-                }}
-                className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400"
-              >
-                Apply Changes
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const existingIdx = themePackages.findIndex((tp) => tp.id === editThemePkg.id);
+                    if (existingIdx >= 0) {
+                      const next = [...themePackages];
+                      next[existingIdx] = editThemePkg;
+                      setThemePackages(next);
+                    } else {
+                      setThemePackages([...themePackages, editThemePkg]);
+                    }
+                    setEditThemePkg(null);
+                    showToast("✓ Theme package updated! Click 'SAVE & PUBLISH CHANGES' to push live.");
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-200 font-bold text-xs text-slate-800 hover:bg-slate-300"
+                >
+                  Apply Locally
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={async () => {
+                    let updatedThemePackages = themePackages;
+                    const existingIdx = themePackages.findIndex((tp) => tp.id === editThemePkg.id);
+                    if (existingIdx >= 0) {
+                      const next = [...themePackages];
+                      next[existingIdx] = editThemePkg;
+                      setThemePackages(next);
+                      updatedThemePackages = next;
+                    } else {
+                      const next = [...themePackages, editThemePkg];
+                      setThemePackages(next);
+                      updatedThemePackages = next;
+                    }
+                    setEditThemePkg(null);
+                    try {
+                      setSaving(true);
+                      const res = await fetch("/api/v1/admin/homepage-content", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ themePackages: updatedThemePackages }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast("✓ Theme package published live to homepage!");
+                      } else {
+                        showToast(data.error || "Failed to publish", "error");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || "Failed to save to database", "error");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 shadow-sm"
+                >
+                  {saving ? "Saving..." : "Save & Publish Live"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2782,10 +3317,16 @@ export default function HomepageContentAdmin() {
             ) : (
               <div className="space-y-2">
                 {dbPackages
-                  .filter((p) => !dbPkgSearch || p.name.toLowerCase().includes(dbPkgSearch.toLowerCase()) || p.slug.toLowerCase().includes(dbPkgSearch.toLowerCase()))
+                  .filter((p) => {
+                    const titleOrName = (p.title || p.name || "").toLowerCase();
+                    const slug = (p.slug || "").toLowerCase();
+                    const s = dbPkgSearch.toLowerCase();
+                    return !s || titleOrName.includes(s) || slug.includes(s);
+                  })
                   .map((p) => {
                     const alreadyAdded = packages.some((hp) => hp.slug === p.slug);
                     const isSelected = selectedDbPkgIds.has(p._id);
+                    const displayName = p.title || p.name || p.slug;
                     return (
                       <div
                         key={p._id}
@@ -2806,14 +3347,25 @@ export default function HomepageContentAdmin() {
                         }}
                       >
                         {p.coverImage ? (
-                          <img src={p.coverImage} alt={p.name} className="w-14 h-10 rounded-lg object-cover shrink-0" />
+                          <img src={p.coverImage} alt={displayName} className="w-14 h-12 rounded-lg object-cover shrink-0" />
                         ) : (
-                          <div className="w-14 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-lg shrink-0">📦</div>
+                          <div className="w-14 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-lg shrink-0">📦</div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-900 truncate">{p.name}</p>
-                          <p className="text-[10px] text-slate-500 truncate">{p.tagline || p.slug}</p>
-                          {p.startingPrice && <p className="text-[10px] font-extrabold text-amber-600 mt-0.5">From ₹{p.startingPrice.toLocaleString("en-IN")}</p>}
+                          <p className="text-xs font-bold text-slate-900 line-clamp-1">{displayName}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500">
+                            <span>🕒 {p.nights && p.days ? `${p.nights}N / ${p.days}D` : (p.tagline || p.slug)}</span>
+                            {p.status && (
+                              <span className="font-bold text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                                {p.status}
+                              </span>
+                            )}
+                          </div>
+                          {(p.startingPrice || p.basePrice) && (
+                            <p className="text-[10px] font-extrabold text-amber-600 mt-0.5">
+                              From ₹{(p.startingPrice || p.basePrice)?.toLocaleString("en-IN")}
+                            </p>
+                          )}
                         </div>
                         <div className="shrink-0">
                           {alreadyAdded ? (
@@ -2848,11 +3400,44 @@ export default function HomepageContentAdmin() {
                     setShowPkgPicker(false);
                     setDbPkgSearch("");
                     setSelectedDbPkgIds(new Set());
-                    showToast(`✓ Added ${newCards.length} package(s) to homepage section.`);
+                    showToast(`✓ Added ${newCards.length} package(s) to homepage. Remember to Save & Publish!`);
                   }}
-                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-slate-200 font-bold text-xs text-slate-800 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Selected to Homepage
+                  Add Selected
+                </button>
+                <button
+                  disabled={selectedDbPkgIds.size === 0 || saving}
+                  onClick={async () => {
+                    const toAdd = dbPackages.filter((p) => selectedDbPkgIds.has(p._id));
+                    const newCards = toAdd.map(dbPkgToCard);
+                    const updated = [...packages, ...newCards];
+                    setPackages(updated);
+                    setShowPkgPicker(false);
+                    setDbPkgSearch("");
+                    setSelectedDbPkgIds(new Set());
+                    try {
+                      setSaving(true);
+                      const res = await fetch("/api/v1/admin/homepage-content", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ featuredPackages: updated }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast(`✓ Published ${newCards.length} package(s) live to Best-Selling section!`);
+                      } else {
+                        showToast(data.error || "Failed to publish", "error");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || "Failed to save to database", "error");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {saving ? "Saving..." : "Add & Publish Live"}
                 </button>
               </div>
             </div>
@@ -3000,6 +3585,30 @@ export default function HomepageContentAdmin() {
             </div>
           </div>
         </div>
+      )}
+      {/* Hidden File Input for Direct Device Uploads */}
+      <input
+        type="file"
+        ref={generalFileInputRef}
+        accept="image/png,image/webp,image/jpeg,image/svg+xml"
+        className="hidden"
+        onChange={handleFilePicked}
+      />
+
+      {/* Cloudinary Media Picker Modal */}
+      {mediaPickerConfig && (
+        <MediaPickerModal
+          isOpen={mediaPickerConfig.isOpen}
+          onClose={() => setMediaPickerConfig(null)}
+          title={mediaPickerConfig.title}
+          defaultFolderType={mediaPickerConfig.folderType}
+          customFolder={mediaPickerConfig.customFolder}
+          onSelect={(media: MediaItem) => {
+            const url = media.url || media.optimizedUrl || media.publicUrl || "";
+            if (url) mediaPickerConfig.onSelect(url);
+            setMediaPickerConfig(null);
+          }}
+        />
       )}
     </div>
   );

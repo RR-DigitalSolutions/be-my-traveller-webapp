@@ -117,6 +117,7 @@ export interface IHomepageContent extends Document {
     heading: string;
     subheading: string;
     story: string;
+    operationalHubs?: string[];
     highlights: Array<{
       id: string;
       icon: string;
@@ -279,6 +280,10 @@ const HomepageContentSchema = new Schema<IHomepageContent>(
         type: String,
         default: "Headquartered in Manali with dedicated regional operations across Ahmedabad, Gujarat, New Delhi, and major tourist hubs, Be My Traveller is India's trusted travel partner. We specialize in personalized holiday itineraries, signature tour packages with authentic Indian food, verified 4★ and 5★ accommodations, and chauffeur-driven sanitized cabs. Whether you are seeking snow-draped peaks in Kashmir and Himachal, tranquil backwaters in Kerala, royal palaces in Rajasthan, or tropical retreats in Bali and Dubai, our 24/7 on-trip concierge ensures every moment of your vacation is comfortable, safe, and tailored exactly to your rhythm."
       },
+      operationalHubs: {
+        type: [String],
+        default: ["Manali (HQ)", "Ahmedabad (Gujarat)", "New Delhi"],
+      },
       highlights: [{
         id: { type: String },
         icon: { type: String, default: "🏨" },
@@ -290,7 +295,7 @@ const HomepageContentSchema = new Schema<IHomepageContent>(
         number: { type: String, default: "" },
         label: { type: String, default: "" },
       }],
-      image: { type: String, default: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1000&auto=format&fit=crop&q=80" },
+      image: { type: String, default: "https://res.cloudinary.com/oxi3tetk/image/upload/f_auto,q_auto:good/v1/bemytraveller/blogs/curating-seamless-journeys-you-cherish-for-a-lifetime-be-my-traveller/curating-seamless-journeys-you-cherish-for-a-lifetime-with-be-my-traveller?_a=BAMAROhM0" },
       experienceYears: { type: String, default: "7+" },
       isActive: { type: Boolean, default: true },
     },
