@@ -1235,7 +1235,7 @@ export default function AdminPackagesPage() {
 
             {/* Modal Navigation Tabs Bar */}
             <div className="flex items-center gap-1.5 px-6 pt-3 bg-slate-950/40 border-b border-slate-800 overflow-x-auto scrollbar-none">
-              {PACKAGE_TABS.map((tab) => (
+              {PACKAGE_TABS.map((tab, idx) => (
                 <button
                   key={tab.id}
                   type="button"
@@ -1249,6 +1249,7 @@ export default function AdminPackagesPage() {
                       : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
                   }`}
                 >
+                  <span className="opacity-60 text-[10px] font-mono">{idx + 1}.</span>
                   <span>{tab.icon}</span>
                   <span>{tab.label}</span>
                 </button>
@@ -2939,6 +2940,15 @@ export default function AdminPackagesPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Final Step Guidance Banner */}
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-xs text-emerald-300">
+                    <span className="text-xl">🎉</span>
+                    <div>
+                      <p className="font-bold text-white">Step 7 of 7: Final Step</p>
+                      <p className="text-[11px] text-slate-400">All tabs completed! Click the &quot;{editingPkg ? "Update Tour Package" : "Save Tour Package"}&quot; button below to save and publish your tour package.</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -2981,7 +2991,7 @@ export default function AdminPackagesPage() {
                     <button
                       type="button"
                       onClick={handlePrevTab}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                      className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5"
                     >
                       <span>←</span>
                       <span>Previous</span>
@@ -2992,21 +3002,16 @@ export default function AdminPackagesPage() {
                     <button
                       type="button"
                       onClick={handleNextTab}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
+                      className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
                     >
                       <span>Next</span>
-                      {nextTab && (
-                        <span className="hidden sm:inline font-semibold text-[11px] opacity-85">
-                          ({nextTab.label})
-                        </span>
-                      )}
                       <span>→</span>
                     </button>
                   ) : (
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center gap-2"
+                      className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center gap-2"
                     >
                       {submitting ? (
                         <>
@@ -3016,7 +3021,7 @@ export default function AdminPackagesPage() {
                       ) : (
                         <>
                           <span>💾</span>
-                          <span>{editingPkg ? "Update Tour Package" : "Create Tour Package"}</span>
+                          <span>{editingPkg ? "Update Tour Package" : "Save Tour Package"}</span>
                         </>
                       )}
                     </button>
