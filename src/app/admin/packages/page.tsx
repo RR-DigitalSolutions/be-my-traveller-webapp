@@ -12,6 +12,9 @@ interface ItineraryDay {
   meals: string;
   hotel: string;
   transport?: string;
+  transportIcons?: string[];
+  stayType?: "HOTEL" | "OVERNIGHT_JOURNEY" | "CHECKOUT";
+  overnightNote?: string;
   hotelsByTier?: {
     budget?: string;
     standard?: string;
@@ -816,6 +819,9 @@ export default function AdminPackagesPage() {
         meals: typeof d.meals === 'string' ? d.meals : "Breakfast & Dinner",
         hotel: typeof d.hotel === 'string' ? d.hotel : "Verified 4★ Mountain Resort",
         transport: typeof d.transport === 'string' ? d.transport : (pkg.transportType || "Private AC Sedan / SUV"),
+        transportIcons: Array.isArray(d.transportIcons) ? d.transportIcons : undefined,
+        stayType: (d.stayType as any) || (/overnight/i.test(d.hotel || "") || /overnight/i.test(d.title || "") ? "OVERNIGHT_JOURNEY" : (/tour concludes|checkout/i.test(d.hotel || "") ? "CHECKOUT" : "HOTEL")),
+        overnightNote: d.overnightNote || "",
         hotelsByTier: d.hotelsByTier && typeof d.hotelsByTier === 'object' ? d.hotelsByTier : {
           budget: d.hotel || "",
           standard: d.hotel || "",
@@ -1109,7 +1115,14 @@ export default function AdminPackagesPage() {
 
       const sanitizedItinerary = (formData.itinerary || []).map((dayItem: any) => {
         const hMap = dayItem.hotelsByTier || {};
-        const activeHotel = hMap.deluxe || hMap.standard || hMap.budget || hMap.luxury || dayItem.hotel || "";
+        let activeHotel = dayItem.hotel || "";
+        if (dayItem.stayType === "OVERNIGHT_JOURNEY") {
+          activeHotel = dayItem.overnightNote?.trim() || dayItem.hotel?.trim() || "Overnight Journey (In Transit)";
+        } else if (dayItem.stayType === "CHECKOUT") {
+          activeHotel = dayItem.hotel?.trim() || "Tour Concludes (Checkout)";
+        } else {
+          activeHotel = hMap.deluxe || hMap.standard || hMap.budget || hMap.luxury || dayItem.hotel || "Verified Mountain Resort";
+        }
         return {
           ...dayItem,
           hotel: activeHotel,
@@ -2950,202 +2963,438 @@ export default function AdminPackagesPage() {
                           </div>
 
                           {/* Mode of Transportation & Meals */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
-                            <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-                                <span>🚗</span> Mode of Transportation (Starts before Meals)
-                              </label>
-                              <div className="flex gap-1.5">
-                                <select
-                                  value={
-                                    [
-                                      "Private AC Sedan",
-                                      "Private AC SUV",
-                                      "Tempo Traveller",
-                                      "Luxury Tourist Bus",
-                                      "Train / Rail Journey",
-                                      "Flight Transfer",
-                                      "Walking / Sightseeing Tour",
-                                    ].includes(dayItem.transport || "")
-                                      ? dayItem.transport
-                                      : "CUSTOM"
-                                  }
-                                  onChange={(e) => {
-                                    const val = e.target.value === "CUSTOM" ? (dayItem.transport || "Private AC SUV") : e.target.value;
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, transport: val } : d)),
-                                    }));
-                                  }}
-                                  className="w-2/5 px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-amber-500 cursor-pointer"
-                                >
-                                  <option value="Private AC Sedan">🚗 Sedan</option>
-                                  <option value="Private AC SUV">🚙 SUV</option>
-                                  <option value="Tempo Traveller">🚐 Tempo</option>
-                                  <option value="Luxury Tourist Bus">🚌 Bus</option>
-                                  <option value="Train / Rail Journey">🚂 Train</option>
-                                  <option value="Flight Transfer">✈️ Flight</option>
-                                  <option value="Walking / Sightseeing Tour">🚶 Walk</option>
-                                  <option value="CUSTOM">✏️ Other</option>
-                                </select>
+                          <div className="space-y-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/80">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                              {/* Transportation */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+                                    <span>🚗</span> Mode of Transportation (Select Multiple Icons)
+                                  </label>
+                                  <span className="text-[10px] text-slate-400">Click to toggle icons</span>
+                                </div>
+
+                                {/* Multi-Select Vehicle Icon Badges */}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {[
+                                    { icon: "🚗", label: "Sedan" },
+                                    { icon: "🚙", label: "SUV" },
+                                    { icon: "🚐", label: "Tempo" },
+                                    { icon: "🚌", label: "Volvo / Bus" },
+                                    { icon: "🚂", label: "Train" },
+                                    { icon: "✈️", label: "Flight" },
+                                    { icon: "🚤", label: "Ferry / Boat" },
+                                    { icon: "🚶", label: "Walk / Trek" },
+                                  ].map((v) => {
+                                    const currentIcons: string[] = Array.isArray(dayItem.transportIcons) && dayItem.transportIcons.length > 0
+                                      ? dayItem.transportIcons
+                                      : (() => {
+                                          const t = (dayItem.transport || "").toLowerCase();
+                                          const auto: string[] = [];
+                                          if (t.includes("sedan") || t.includes("cab") || t.includes("dzire") || t.includes("etios") || t.includes("taxi")) auto.push("🚗");
+                                          if (t.includes("suv") || t.includes("innova") || t.includes("crysta") || t.includes("ertiga")) auto.push("🚙");
+                                          if (t.includes("tempo") || t.includes("traveller") || t.includes("van")) auto.push("🚐");
+                                          if (t.includes("bus") || t.includes("volvo") || t.includes("coach")) auto.push("🚌");
+                                          if (t.includes("train") || t.includes("rail")) auto.push("🚂");
+                                          if (t.includes("flight") || t.includes("air")) auto.push("✈️");
+                                          if (t.includes("boat") || t.includes("ferry") || t.includes("cruise") || t.includes("speedboat")) auto.push("🚤");
+                                          if (t.includes("walk") || t.includes("trek") || t.includes("leisure")) auto.push("🚶");
+                                          return auto.length > 0 ? auto : ["🚗"];
+                                        })();
+
+                                    const isSelected = currentIcons.includes(v.icon);
+
+                                    return (
+                                      <button
+                                        key={v.icon}
+                                        type="button"
+                                        onClick={() => {
+                                          let nextIcons: string[];
+                                          if (isSelected) {
+                                            nextIcons = currentIcons.filter((ic) => ic !== v.icon);
+                                            if (nextIcons.length === 0) nextIcons = [v.icon];
+                                          } else {
+                                            nextIcons = [...currentIcons, v.icon];
+                                          }
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            itinerary: prev.itinerary.map((d, i) =>
+                                              i === idx ? { ...d, transportIcons: nextIcons } : d
+                                            ),
+                                          }));
+                                        }}
+                                        className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer border ${
+                                          isSelected
+                                            ? "bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-xs ring-1 ring-amber-400/30"
+                                            : "bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200"
+                                        }`}
+                                      >
+                                        <span>{v.icon}</span>
+                                        <span className="text-[11px]">{v.label}</span>
+                                        {isSelected && <span className="text-[10px] text-amber-400 font-black">✓</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Open Manual Text Input - not clobbered by icon clicks */}
+                                <div className="pt-0.5">
+                                  <input
+                                    type="text"
+                                    value={dayItem.transport || ""}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, transport: e.target.value } : d)),
+                                      }))
+                                    }
+                                    placeholder="e.g. Drop by Cab + Overnight AC Volvo to Manali"
+                                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                  />
+                                  <span className="text-[10px] text-slate-500 mt-1 block">
+                                    Type manually any custom route or combination (e.g. &quot;Cab to ISBT + Overnight Volvo&quot;). Selecting icons will not overwrite your text.
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Meals Plan */}
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                                  <span>🍽️</span> Meals Plan for Day
+                                </label>
                                 <input
                                   type="text"
-                                  value={dayItem.transport || ""}
+                                  value={dayItem.meals}
                                   onChange={(e) =>
                                     setFormData((prev) => ({
                                       ...prev,
-                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, transport: e.target.value } : d)),
+                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, meals: e.target.value } : d)),
                                     }))
                                   }
-                                  placeholder="e.g. Private AC SUV (Innova / Ertiga)"
-                                  className="flex-1 px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                  placeholder="e.g. Dinner Included or Breakfast & Dinner"
+                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
                                 />
+                                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                  {["Breakfast Included", "Breakfast & Dinner", "All Meals (B+L+D)", "Dinner Included", "No Meals (Self)"].map((m) => (
+                                    <button
+                                      key={m}
+                                      type="button"
+                                      onClick={() =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, meals: m } : d)),
+                                        }))
+                                      }
+                                      className={`px-2 py-0.5 text-[10px] rounded-md font-medium border cursor-pointer ${
+                                        dayItem.meals === m
+                                          ? "bg-slate-800 text-amber-300 border-amber-500/50"
+                                          : "bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-300"
+                                      }`}
+                                    >
+                                      {m}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
-                                <span>🍽️</span> Meals Plan
-                              </label>
-                              <input
-                                type="text"
-                                value={dayItem.meals}
-                                onChange={(e) =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, meals: e.target.value } : d)),
-                                  }))
-                                }
-                                placeholder="e.g. Dinner Included or Breakfast & Dinner"
-                                className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                              />
                             </div>
                           </div>
 
-                          {/* Hotel Stays by Package Category */}
-                          <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-                                <span>🏨</span> Day Hotel Stays by Category (Multiple alternative hotels allowed, separate with /)
-                              </span>
-                              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
-                                Changes live on client tier selection
-                              </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                              {/* 1. Budget 2★ / Special Stays */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
-                                  <span>🏠</span> 2★ Budget / Tent / Cottage / Homestay Stays
-                                </label>
-                                <input
-                                  type="text"
-                                  value={dayHotels.budget || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      itinerary: prev.itinerary.map((d, i) =>
-                                        i === idx
-                                          ? {
-                                              ...d,
-                                              hotel: d.hotel || val,
-                                              hotelsByTier: { ...(d.hotelsByTier || {}), budget: val },
-                                            }
-                                          : d
-                                      ),
-                                    }));
-                                  }}
-                                  placeholder="e.g. Riverside Camping Tent / Cozy Homestay / Budget Stay"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                />
+                          {/* Hotel Stays / Overnight Journey / Checkout Day */}
+                          <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                                  <span>🏨</span> Night Stay Arrangement:
+                                </span>
                               </div>
 
-                              {/* 2. Deluxe 3★ Stays */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
-                                  <span>🏨</span> 3★ Deluxe Stays
-                                </label>
-                                <input
-                                  type="text"
-                                  value={dayHotels.standard || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
+                              {/* Stay Type Selector */}
+                              <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     setFormData((prev) => ({
                                       ...prev,
                                       itinerary: prev.itinerary.map((d, i) =>
-                                        i === idx
-                                          ? {
-                                              ...d,
-                                              hotel: d.hotel || val,
-                                              hotelsByTier: { ...(d.hotelsByTier || {}), standard: val },
-                                            }
-                                          : d
+                                        i === idx ? { ...d, stayType: "HOTEL" } : d
                                       ),
                                     }));
                                   }}
-                                  placeholder="e.g. Pine View Boutique Stay / Snow Peak Stay"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                />
-                              </div>
+                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                                    (dayItem.stayType || "HOTEL") === "HOTEL"
+                                      ? "bg-amber-500 text-slate-950 shadow-xs font-black"
+                                      : "text-slate-400 hover:text-white"
+                                  }`}
+                                >
+                                  🏨 Hotel Stays (4 Categories)
+                                </button>
 
-                              {/* 3. Super Deluxe 4★ Stays */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
-                                  <span>🌟</span> 4★ Super Deluxe Stays
-                                </label>
-                                <input
-                                  type="text"
-                                  value={dayHotels.deluxe || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     setFormData((prev) => ({
                                       ...prev,
                                       itinerary: prev.itinerary.map((d, i) =>
                                         i === idx
                                           ? {
                                               ...d,
-                                              hotel: val || d.hotel,
-                                              hotelsByTier: { ...(d.hotelsByTier || {}), deluxe: val },
+                                              stayType: "OVERNIGHT_JOURNEY",
+                                              overnightNote: d.overnightNote || "Overnight Journey (In Volvo / Train)",
+                                              hotel: d.overnightNote || "Overnight Journey (In Transit)",
                                             }
                                           : d
                                       ),
                                     }));
                                   }}
-                                  placeholder="e.g. Riverfront Grand Resort / Woodridge Chalet"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                />
-                              </div>
+                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                                    dayItem.stayType === "OVERNIGHT_JOURNEY"
+                                      ? "bg-indigo-600 text-white shadow-xs font-black"
+                                      : "text-slate-400 hover:text-white"
+                                  }`}
+                                >
+                                  🌙 Overnight Journey (No Hotel)
+                                </button>
 
-                              {/* 4. Luxury 5★ Resort Stays */}
-                              <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
-                                  <span>👑</span> 5★ Luxury Resort Stays
-                                </label>
-                                <input
-                                  type="text"
-                                  value={dayHotels.luxury || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     setFormData((prev) => ({
                                       ...prev,
                                       itinerary: prev.itinerary.map((d, i) =>
                                         i === idx
                                           ? {
                                               ...d,
-                                              hotel: d.hotel || val,
-                                              hotelsByTier: { ...(d.hotelsByTier || {}), luxury: val },
+                                              stayType: "CHECKOUT",
+                                              hotel: d.hotel && !d.hotel.includes("★") ? d.hotel : "Tour Concludes (Checkout)",
                                             }
                                           : d
                                       ),
                                     }));
                                   }}
-                                  placeholder="e.g. The Oberoi Cecil / Span Resort & Spa"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-purple-500"
-                                />
+                                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                                    dayItem.stayType === "CHECKOUT"
+                                      ? "bg-emerald-600 text-white shadow-xs font-black"
+                                      : "text-slate-400 hover:text-white"
+                                  }`}
+                                >
+                                  🏁 Checkout Day (No Hotel)
+                                </button>
                               </div>
                             </div>
+
+                            {/* CASE 1: OVERNIGHT JOURNEY */}
+                            {dayItem.stayType === "OVERNIGHT_JOURNEY" && (
+                              <div className="bg-indigo-950/30 border border-indigo-800/60 rounded-xl p-3.5 space-y-2.5 animate-in fade-in duration-150">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-2.5">
+                                    <span className="text-2xl mt-0.5">🌙</span>
+                                    <div>
+                                      <h5 className="text-xs font-bold text-indigo-300">
+                                        Overnight Travel Night — No Hotel Accommodation Offered
+                                      </h5>
+                                      <p className="text-[11px] text-indigo-400/80 leading-relaxed mt-0.5">
+                                        Guests will be traveling overnight (e.g. Overnight Volvo bus journey, sleeper train, or flight). Hotel stays are omitted for this night.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] uppercase font-black text-indigo-300 bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700/50 shrink-0">
+                                    Overnight Stay
+                                  </span>
+                                </div>
+
+                                <div className="pt-1">
+                                  <label className="text-[10px] font-bold text-slate-300 block mb-1">
+                                    Overnight Journey Label (Shown in itinerary header &amp; details):
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayItem.overnightNote || dayItem.hotel || "Overnight Journey (In Volvo / Train)"}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx ? { ...d, overnightNote: val, hotel: val } : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Overnight AC Volvo Bus Journey / Overnight Train Sleeper"
+                                    className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-indigo-800/80 rounded-lg text-slate-200 focus:outline-hidden focus:border-indigo-400"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* CASE 2: CHECKOUT / TOUR CONCLUDES */}
+                            {dayItem.stayType === "CHECKOUT" && (
+                              <div className="bg-emerald-950/30 border border-emerald-800/60 rounded-xl p-3.5 space-y-2.5 animate-in fade-in duration-150">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-2.5">
+                                    <span className="text-2xl mt-0.5">🏁</span>
+                                    <div>
+                                      <h5 className="text-xs font-bold text-emerald-300">
+                                        Tour Concludes / Checkout Day — No Night Hotel Accommodation
+                                      </h5>
+                                      <p className="text-[11px] text-emerald-400/80 leading-relaxed mt-0.5">
+                                        Final departure day. Guests check out after breakfast and transfer to airport or railway station. No night stay is booked.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] uppercase font-black text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded border border-emerald-700/50 shrink-0">
+                                    Checkout Day
+                                  </span>
+                                </div>
+
+                                <div className="pt-1">
+                                  <label className="text-[10px] font-bold text-slate-300 block mb-1">
+                                    Departure Label (Shown in itinerary header &amp; details):
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayItem.hotel || "Tour Concludes (Checkout)"}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx ? { ...d, hotel: val } : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Tour Concludes / Drop at Delhi Airport"
+                                    className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-emerald-800/80 rounded-lg text-slate-200 focus:outline-hidden focus:border-emerald-400"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* CASE 3: REGULAR HOTEL STAYS */}
+                            {(dayItem.stayType || "HOTEL") === "HOTEL" && (
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10.5px] text-slate-400 font-medium">
+                                    Multiple alternative hotels allowed per tier, separate with <code className="text-amber-400 font-bold bg-slate-950 px-1 py-0.5 rounded">/</code>
+                                  </span>
+                                  <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                                    Changes live on client tier selection
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                                  {/* 1. Budget 2★ / Special Stays */}
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                      <span>🏠</span> 2★ Budget / Tent / Cottage / Homestay Stays
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={dayHotels.budget || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          itinerary: prev.itinerary.map((d, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...d,
+                                                  hotel: d.hotel || val,
+                                                  hotelsByTier: { ...(d.hotelsByTier || {}), budget: val },
+                                                }
+                                              : d
+                                          ),
+                                        }));
+                                      }}
+                                      placeholder="e.g. Riverside Camping Tent / Cozy Homestay / Budget Stay"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                    />
+                                  </div>
+
+                                  {/* 2. Deluxe 3★ Stays */}
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                      <span>🏨</span> 3★ Deluxe Stays
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={dayHotels.standard || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          itinerary: prev.itinerary.map((d, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...d,
+                                                  hotel: d.hotel || val,
+                                                  hotelsByTier: { ...(d.hotelsByTier || {}), standard: val },
+                                                }
+                                              : d
+                                          ),
+                                        }));
+                                      }}
+                                      placeholder="e.g. Pine View Boutique Stay / Snow Peak Stay"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                    />
+                                  </div>
+
+                                  {/* 3. Super Deluxe 4★ Stays */}
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                                      <span>🌟</span> 4★ Super Deluxe Stays
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={dayHotels.deluxe || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          itinerary: prev.itinerary.map((d, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...d,
+                                                  hotel: val || d.hotel,
+                                                  hotelsByTier: { ...(d.hotelsByTier || {}), deluxe: val },
+                                                }
+                                              : d
+                                          ),
+                                        }));
+                                      }}
+                                      placeholder="e.g. Riverfront Grand Resort / Woodridge Chalet"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                    />
+                                  </div>
+
+                                  {/* 4. Luxury 5★ Resort Stays */}
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
+                                      <span>👑</span> 5★ Luxury Resort Stays
+                                    </label>
+                                    <input
+                                      type="text"
+                                      value={dayHotels.luxury || ""}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          itinerary: prev.itinerary.map((d, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...d,
+                                                  hotel: val || d.hotel,
+                                                  hotelsByTier: { ...(d.hotelsByTier || {}), luxury: val },
+                                                }
+                                              : d
+                                          ),
+                                        }));
+                                      }}
+                                      placeholder="e.g. The Oberoi Cecil / Span Resort & Spa"
+                                      className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-purple-500"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Day Sightseeing Description */}

@@ -160,8 +160,10 @@ const pkgRegistry: Record<string, PackageData> = {
         title: "Chandigarh Departure with Warm Memories",
         desc: "After a leisurely breakfast, your private vehicle will transfer you to Chandigarh Airport / Railway Station for your onward journey. Tour concludes with warm memories of the majestic Himalayas.",
         meals: "Breakfast Included",
-        hotel: "Tour Concludes",
+        hotel: "Tour Concludes (Checkout)",
+        stayType: "CHECKOUT",
         transport: "Private Sedan / SUV",
+        transportIcons: ["🚗"],
         hotelsByTier: {
           budget: "Tour Concludes",
           standard: "Tour Concludes",
@@ -287,6 +289,12 @@ async function getPackageData(slug: string): Promise<PackageData> {
                 }
               }
 
+              const stayType = (d.stayType as any) || (
+                /overnight|night travel|night journey/i.test(rawHotel) || /overnight/i.test(d.title || "")
+                  ? "OVERNIGHT_JOURNEY"
+                  : (/tour concludes|checkout/i.test(rawHotel) ? "CHECKOUT" : "HOTEL")
+              );
+
               return {
                 day: d.day || i + 1,
                 title: d.title || `Day ${i + 1}`,
@@ -294,6 +302,9 @@ async function getPackageData(slug: string): Promise<PackageData> {
                 meals: typeof d.meals === "string" ? d.meals : "Breakfast & Dinner",
                 hotel: hotelsByTier.deluxe || hotelsByTier.standard || rawHotel || "Verified Mountain Resort",
                 transport: typeof d.transport === "string" && d.transport.trim() ? d.transport : (dbPkg.transportType || "Private AC Sedan / SUV"),
+                transportIcons: Array.isArray(d.transportIcons) ? d.transportIcons : undefined,
+                stayType,
+                overnightNote: d.overnightNote || "",
                 hotelsByTier,
               };
             })

@@ -59,6 +59,9 @@ export interface PackageData {
     meals: string;
     hotel: string;
     transport?: string;
+    transportIcons?: string[];
+    stayType?: "HOTEL" | "OVERNIGHT_JOURNEY" | "CHECKOUT";
+    overnightNote?: string;
     hotelsByTier?: {
       budget?: string;
       standard?: string;
@@ -121,40 +124,94 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
     ((!activeTierData.pricePerAdult || activeTierData.pricePerAdult === 0) && activeTierData.priceOnRequest)
   );
 
-  // Helper for hotel based on current selected tier
-  const getDayHotel = (dayItem: PackageData["itinerary"][number]) => {
-    // 1. If explicit hotelsByTier entry exists for the active tier, use it!
-    if (dayItem.hotelsByTier && dayItem.hotelsByTier[hotelTier]?.trim()) {
-      return dayItem.hotelsByTier[hotelTier]!.trim();
+  // Helper for night stay based on current selected tier & stayType (supports Overnight Journey & Checkout days)
+  const getDayStayInfo = (dayItem: PackageData["itinerary"][number]) => {
+    // 1. Overnight Journey Day
+    if (
+      dayItem.stayType === "OVERNIGHT_JOURNEY" ||
+      /overnight|night travel|night journey/i.test(dayItem.hotel || "") ||
+      /overnight/i.test(dayItem.title || "")
+    ) {
+      return {
+        isOvernight: true,
+        isCheckout: false,
+        icon: "🌙",
+        label: dayItem.overnightNote?.trim() || dayItem.hotel?.trim() || "Overnight Journey (In Transit)",
+      };
     }
 
-    // 2. If dayItem.hotel contains multiple slash-separated tier stays, intelligently extract the active tier
+    // 2. Checkout / Departure Day
+    if (
+      dayItem.stayType === "CHECKOUT" ||
+      /tour concludes|checkout|check-out|departure/i.test(dayItem.hotel || "") ||
+      (dayItem.day === pkg.itinerary.length && /departure|farewell|concludes/i.test(dayItem.title || ""))
+    ) {
+      return {
+        isOvernight: false,
+        isCheckout: true,
+        icon: "🏁",
+        label: dayItem.hotel?.trim() || "Tour Concludes (Checkout)",
+      };
+    }
+
+    // 3. Regular Hotel Stays - check active tier
+    if (dayItem.hotelsByTier && dayItem.hotelsByTier[hotelTier]?.trim()) {
+      return {
+        isOvernight: false,
+        isCheckout: false,
+        icon: "🏨",
+        label: dayItem.hotelsByTier[hotelTier]!.trim(),
+      };
+    }
+
+    // 4. Intelligent fallback from slash-separated stays
     const raw = (dayItem.hotel || "").trim();
     if (raw.includes("/")) {
       const parts = raw.split("/").map((p) => p.trim());
       if (hotelTier === "budget") {
         const match = parts.find((p) => p.includes("2★") || /budget|homestay|tent|cottage|camp/i.test(p));
-        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
-        return parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw;
+        return {
+          isOvernight: false,
+          isCheckout: false,
+          icon: "🏨",
+          label: match ? match.replace(/\s*\([2-5]★\)/g, "").trim() : (parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw),
+        };
       }
       if (hotelTier === "standard") {
         const match = parts.find((p) => p.includes("3★") || /standard|deluxe 3|3 star/i.test(p));
-        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
-        return parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw;
+        return {
+          isOvernight: false,
+          isCheckout: false,
+          icon: "🏨",
+          label: match ? match.replace(/\s*\([2-5]★\)/g, "").trim() : (parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw),
+        };
       }
       if (hotelTier === "deluxe") {
         const match = parts.find((p) => p.includes("4★") || /super deluxe|4 star/i.test(p));
-        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
-        return parts[1] || parts[0];
+        return {
+          isOvernight: false,
+          isCheckout: false,
+          icon: "🏨",
+          label: match ? match.replace(/\s*\([2-5]★\)/g, "").trim() : (parts[1] || parts[0]),
+        };
       }
       if (hotelTier === "luxury") {
         const match = parts.find((p) => p.includes("5★") || /luxury|5 star|resort|spa/i.test(p));
-        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
-        return parts[parts.length - 1] || parts[0];
+        return {
+          isOvernight: false,
+          isCheckout: false,
+          icon: "🏨",
+          label: match ? match.replace(/\s*\([2-5]★\)/g, "").trim() : (parts[parts.length - 1] || parts[0]),
+        };
       }
     }
 
-    return raw || "Verified Mountain Stay";
+    return {
+      isOvernight: false,
+      isCheckout: false,
+      icon: "🏨",
+      label: raw || "Verified Mountain Stay",
+    };
   };
 
   // Helper for day transport
@@ -162,17 +219,24 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
     return dayItem.transport?.trim() || pkg.transportType?.trim() || "Private Sedan / SUV";
   };
 
-  // Helper for transport icons
-  const getTransportIcon = (transport: string) => {
-    const t = (transport || "").toLowerCase();
-    if (t.includes("suv") || t.includes("innova") || t.includes("crysta") || t.includes("ertiga")) return "🚙";
-    if (t.includes("sedan") || t.includes("dzire") || t.includes("etios") || t.includes("amaze")) return "🚗";
-    if (t.includes("tempo") || t.includes("traveller") || t.includes("van")) return "🚐";
-    if (t.includes("bus") || t.includes("coach") || t.includes("volvo")) return "🚌";
-    if (t.includes("train") || t.includes("rail")) return "🚂";
-    if (t.includes("flight") || t.includes("air")) return "✈️";
-    if (t.includes("walk") || t.includes("trek") || t.includes("leisure")) return "🚶";
-    return "🚗";
+  // Helper to extract or return all applicable transport icons (multi-icon support)
+  const getDayTransportIcons = (dayItem: PackageData["itinerary"][number]) => {
+    if (Array.isArray(dayItem.transportIcons) && dayItem.transportIcons.length > 0) {
+      return dayItem.transportIcons;
+    }
+    const t = (dayItem.transport || pkg.transportType || "").toLowerCase();
+    const icons: string[] = [];
+    if (t.includes("suv") || t.includes("innova") || t.includes("crysta") || t.includes("ertiga")) icons.push("🚙");
+    if (t.includes("sedan") || t.includes("dzire") || t.includes("etios") || t.includes("amaze") || t.includes("cab") || t.includes("taxi")) {
+      if (!icons.includes("🚙") && !icons.includes("🚗")) icons.push("🚗");
+    }
+    if (t.includes("tempo") || t.includes("traveller") || t.includes("van")) icons.push("🚐");
+    if (t.includes("bus") || t.includes("coach") || t.includes("volvo")) icons.push("🚌");
+    if (t.includes("train") || t.includes("rail") || t.includes("express")) icons.push("🚂");
+    if (t.includes("flight") || t.includes("air") || t.includes("plane")) icons.push("✈️");
+    if (t.includes("boat") || t.includes("ferry") || t.includes("cruise") || t.includes("speedboat")) icons.push("🚤");
+    if (t.includes("walk") || t.includes("trek") || t.includes("leisure")) icons.push("🚶");
+    return icons.length > 0 ? icons : ["🚗"];
   };
 
   // Check if selected travelDate falls within any configured peak season date range
@@ -560,8 +624,9 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
               <div className="space-y-2.5">
                 {pkg.itinerary.map((dayItem) => {
                   const isOpen = openDay === dayItem.day;
-                  const dayHotel = getDayHotel(dayItem);
+                  const stayInfo = getDayStayInfo(dayItem);
                   const dayTransport = getDayTransport(dayItem);
+                  const dayTransportIcons = getDayTransportIcons(dayItem);
 
                   return (
                     <div
@@ -588,10 +653,10 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                           <p className={`font-bold text-sm leading-snug truncate ${isOpen ? "text-amber-900" : "text-slate-800"}`}>
                             {dayItem.title}
                           </p>
-                          {/* Transport start before meals, followed by dynamic hotel for active tier */}
+                          {/* Transport start before meals, followed by dynamic stay for active tier */}
                           <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-2">
                             <span className="flex items-center gap-1 text-slate-600 font-medium">
-                              <span>{getTransportIcon(dayTransport)}</span>
+                              <span className="flex items-center gap-0.5">{dayTransportIcons.map((ic, i) => <span key={i}>{ic}</span>)}</span>
                               <span>{dayTransport}</span>
                             </span>
                             <span>•</span>
@@ -600,9 +665,11 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                               <span>{dayItem.meals}</span>
                             </span>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-slate-700 font-medium truncate max-w-[280px] sm:max-w-md">
-                              <span>🏨</span>
-                              <span className="truncate">{dayHotel}</span>
+                            <span className={`flex items-center gap-1 font-medium truncate max-w-[280px] sm:max-w-md ${
+                              stayInfo.isOvernight ? "text-indigo-600 font-semibold" : (stayInfo.isCheckout ? "text-emerald-600 font-semibold" : "text-slate-700")
+                            }`}>
+                              <span>{stayInfo.icon}</span>
+                              <span className="truncate">{stayInfo.label}</span>
                             </span>
                           </div>
                         </div>
@@ -618,10 +685,27 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                         </svg>
                       </button>
 
-                      {/* Clean description without duplicate bottom chips */}
+                      {/* Clean description with contextual stay info banner */}
                       {isOpen && (
                         <div className="px-5 py-4 border-t border-amber-100/60 bg-white space-y-3 text-sm animate-in fade-in duration-150">
                           <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">{dayItem.desc}</p>
+
+                          {stayInfo.isOvernight ? (
+                            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200/80 text-xs text-indigo-900 font-medium">
+                              <span className="text-lg">🌙</span>
+                              <span><strong>Overnight Travel Night:</strong> {stayInfo.label}. No hotel room accommodation is scheduled for tonight.</span>
+                            </div>
+                          ) : stayInfo.isCheckout ? (
+                            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-xs text-emerald-900 font-medium">
+                              <span className="text-lg">🏁</span>
+                              <span><strong>Tour Concludes / Checkout:</strong> {stayInfo.label}. Safe journey back home!</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 font-medium">
+                              <span className="text-lg">🏨</span>
+                              <span><strong>Night Stay ({activeTierData.title}):</strong> {stayInfo.label}</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
