@@ -206,6 +206,7 @@ async function getPackageData(slug: string): Promise<PackageData> {
         cancellationPolicies: Array.isArray(dbPkg.cancellationPolicies) && dbPkg.cancellationPolicies.length > 0
           ? dbPkg.cancellationPolicies
           : fallback.cancellationPolicies,
+        transportType: dbPkg.transportType || "Private AC Sedan / SUV",
         itinerary: Array.isArray(dbPkg.itinerary) && dbPkg.itinerary.length > 0
           ? dbPkg.itinerary.map((d: any, i: number) => ({
               day: d.day || i + 1,
@@ -213,12 +214,23 @@ async function getPackageData(slug: string): Promise<PackageData> {
               desc: typeof d.description === "string" ? d.description : (d.desc || ""),
               meals: typeof d.meals === "string" ? d.meals : "Breakfast & Dinner",
               hotel: typeof d.hotel === "string" ? d.hotel : "Verified 4★ Mountain Resort",
+              transport: typeof d.transport === "string" && d.transport.trim() ? d.transport : (dbPkg.transportType || "Private AC Sedan / SUV"),
+              hotelsByTier: d.hotelsByTier || {},
             }))
-          : fallback.itinerary,
+          : fallback.itinerary.map((d) => ({
+              ...d,
+              transport: d.transport || fallback.transportType || "Private AC Sedan / SUV",
+              hotelsByTier: d.hotelsByTier || {
+                standard: d.hotel,
+                deluxe: d.hotel,
+                luxury: d.hotel,
+              },
+            })),
         hotelTiers: dbPkg.hotelTiers || {
-          standard: { title: "Deluxe 3★", pricePerAdult: Math.round(startingPrice * 0.8) || 18999, desc: "Cozy boutique verified stays with mountain views" },
-          deluxe: { title: "Super Deluxe 4★", pricePerAdult: startingPrice || 24999, desc: "Valley/river view premium rooms with private balcony & buffet meals" },
-          luxury: { title: "Luxury 5★ Resort", pricePerAdult: Math.round(startingPrice * 1.6) || 38999, desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access" },
+          budget: { title: "Budget 2★", pricePerAdult: Math.round(startingPrice * 0.7) || 14999, desc: "Clean & verified budget stays and homestays with essential amenities", enabled: false },
+          standard: { title: "Deluxe 3★", pricePerAdult: Math.round(startingPrice * 0.8) || 18999, desc: "Cozy boutique verified stays with mountain views", enabled: true },
+          deluxe: { title: "Super Deluxe 4★", pricePerAdult: startingPrice || 24999, desc: "Valley/river view premium rooms with private balcony & buffet meals", enabled: true },
+          luxury: { title: "Luxury 5★ Resort", pricePerAdult: Math.round(startingPrice * 1.6) || 38999, desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access", enabled: true },
         },
         faq: Array.isArray(dbPkg.faqs) && dbPkg.faqs.length > 0
           ? dbPkg.faqs

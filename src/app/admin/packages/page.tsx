@@ -11,12 +11,25 @@ interface ItineraryDay {
   desc: string;
   meals: string;
   hotel: string;
+  transport?: string;
+  hotelsByTier?: {
+    budget?: string;
+    standard?: string;
+    deluxe?: string;
+    luxury?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 interface HotelTier {
   title: string;
   pricePerAdult: number;
   desc: string;
+  enabled?: boolean;
+  priceOnRequest?: boolean;
+  originalPrice?: number;
+  discountPct?: number;
+  badge?: string;
 }
 
 interface FaqItem {
@@ -77,10 +90,13 @@ interface IPackageItem {
   inclusions?: string[];
   exclusions?: string[];
   itinerary?: ItineraryDay[];
+  transportType?: string;
   hotelTiers?: {
+    budget?: HotelTier;
     standard: HotelTier;
     deluxe: HotelTier;
     luxury: HotelTier;
+    [key: string]: any;
   };
   paymentPolicies?: string[];
   importantInfo?: string[];
@@ -312,21 +328,35 @@ export default function AdminPackagesPage() {
       "7 to 14 days prior to departure: 50% cancellation charge",
       "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
     ],
+    transportType: "Private AC Sedan / SUV",
     hotelTiers: {
+      budget: {
+        title: "Standard 2★",
+        pricePerAdult: 13999,
+        desc: "Clean & verified budget hotels / homestays with essential amenities",
+        enabled: false,
+        priceOnRequest: false,
+      },
       standard: {
         title: "Deluxe 3★",
         pricePerAdult: 18999,
         desc: "Cozy verified boutique stays with daily breakfast & dinner",
+        enabled: true,
+        priceOnRequest: false,
       },
       deluxe: {
         title: "Super Deluxe 4★",
         pricePerAdult: 24999,
         desc: "Valley/river view premium rooms with private balcony & buffet meals",
+        enabled: true,
+        priceOnRequest: false,
       },
       luxury: {
         title: "Luxury 5★ Resort",
         pricePerAdult: 38999,
         desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access",
+        enabled: true,
+        priceOnRequest: false,
       },
     },
     itinerary: [
@@ -336,6 +366,13 @@ export default function AdminPackagesPage() {
         desc: "Meet and greet at Delhi/Chandigarh. Board your private SUV and commence your scenic drive up the Himalayan foothills. Check in to your Shimla hotel and enjoy evening views on Mall Road.",
         meals: "Dinner Included",
         hotel: "Pine View Boutique Stay (3★) / Riverfront Resort (4★) / Oberoi Cecil (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Pine View Budget / Similar",
+          standard: "Pine View Boutique Stay / Snow Peak Stay",
+          deluxe: "Riverfront Grand Resort / Woodridge Chalet",
+          luxury: "Oberoi Cecil / Wildflower Hall",
+        },
       },
       {
         day: 2,
@@ -343,6 +380,13 @@ export default function AdminPackagesPage() {
         desc: "Excursion to Kufri (8,600 ft). Enjoy pony rides, Himalayan Nature Park, and panoramic snow peaks. Visit Viceregal Lodge, Jakhoo Temple, and Christ Church.",
         meals: "Breakfast & Dinner",
         hotel: "Pine View Boutique Stay (3★) / Riverfront Resort (4★) / Oberoi Cecil (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Pine View Budget / Similar",
+          standard: "Pine View Boutique Stay / Snow Peak Stay",
+          deluxe: "Riverfront Grand Resort / Woodridge Chalet",
+          luxury: "Oberoi Cecil / Wildflower Hall",
+        },
       },
       {
         day: 3,
@@ -350,6 +394,13 @@ export default function AdminPackagesPage() {
         desc: "Scenic drive from Shimla to Manali along the Beas River. Stop at Pandoh Dam, Hanogi Mata Temple, and Kullu Shawl factory. Check in to mountain resort.",
         meals: "Breakfast & Dinner",
         hotel: "Snow Peak Retreat (3★) / Riverfront Resort (4★) / Span Resort & Spa (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Snow Retreat Budget / River Inn",
+          standard: "Snow Peak Retreat / Himalayan River Resort",
+          deluxe: "Riverfront Resort / Apple Country Resort",
+          luxury: "Span Resort & Spa / The Himalayan",
+        },
       },
       {
         day: 4,
@@ -357,6 +408,13 @@ export default function AdminPackagesPage() {
         desc: "Visit the 450-year-old Hadimba Devi wooden temple in cedar forest, Vashisht Hot Sulphur Springs, and Old Manali riverside cafes.",
         meals: "Breakfast & Dinner",
         hotel: "Snow Peak Retreat (3★) / Riverfront Resort (4★) / Span Resort & Spa (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Snow Retreat Budget / River Inn",
+          standard: "Snow Peak Retreat / Himalayan River Resort",
+          deluxe: "Riverfront Resort / Apple Country Resort",
+          luxury: "Span Resort & Spa / The Himalayan",
+        },
       },
       {
         day: 5,
@@ -364,6 +422,13 @@ export default function AdminPackagesPage() {
         desc: "Early morning snow expedition to Rohtang Pass (13,050 ft) and Solang Valley. Paragliding, zorbing, ATV rides, and Himalayan panoramas.",
         meals: "Breakfast & Dinner",
         hotel: "Snow Peak Retreat (3★) / Riverfront Resort (4★) / Span Resort & Spa (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Snow Retreat Budget / River Inn",
+          standard: "Snow Peak Retreat / Himalayan River Resort",
+          deluxe: "Riverfront Resort / Apple Country Resort",
+          luxury: "Span Resort & Spa / The Himalayan",
+        },
       },
       {
         day: 6,
@@ -371,6 +436,13 @@ export default function AdminPackagesPage() {
         desc: "Drive to Chandigarh via Kullu and Manikaran Sahib hot springs. Visit Rock Garden and Sukhna Lake. Check in to hotel.",
         meals: "Breakfast & Dinner",
         hotel: "Hotel Mountview (4★) / JW Marriott (5★)",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Hotel Chandigarh Residency / Similar",
+          standard: "Hotel Mountview / The Fern Residency",
+          deluxe: "Hyatt Regency / Radisson Red",
+          luxury: "JW Marriott Hotel Chandigarh / Taj",
+        },
       },
       {
         day: 7,
@@ -378,6 +450,13 @@ export default function AdminPackagesPage() {
         desc: "After breakfast, transfer to Chandigarh Airport / Railway Station for your onward journey with warm memories.",
         meals: "Breakfast Included",
         hotel: "Tour Concludes",
+        transport: "Private AC SUV",
+        hotelsByTier: {
+          budget: "Tour Concludes",
+          standard: "Tour Concludes",
+          deluxe: "Tour Concludes",
+          luxury: "Tour Concludes",
+        },
       },
     ] as ItineraryDay[],
     faqs: [
@@ -573,10 +652,63 @@ export default function AdminPackagesPage() {
     setFormError(null);
     setActiveTab("basic");
 
-    const initHotelTiers = pkg.hotelTiers || {
-      standard: { title: "Deluxe 3★", pricePerAdult: pkg.startingPrice || 18999, desc: "Cozy boutique verified stays with daily breakfast & dinner" },
-      deluxe: { title: "Super Deluxe 4★", pricePerAdult: Math.round((pkg.startingPrice || 18999) * 1.25) || 23999, desc: "Valley/river view premium rooms with private balcony & buffet meals" },
-      luxury: { title: "Luxury 5★ Resort", pricePerAdult: Math.round((pkg.startingPrice || 18999) * 1.65) || 31999, desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access" },
+    const pkgTiers = (pkg.hotelTiers || {}) as any;
+    const defaultTiers = {
+      budget: {
+        title: "Standard 2★",
+        pricePerAdult: 13999,
+        desc: "Clean & verified budget hotels / homestays with essential amenities",
+        enabled: false,
+        priceOnRequest: false,
+      },
+      standard: {
+        title: "Deluxe 3★",
+        pricePerAdult: pkg.startingPrice || 18999,
+        desc: "Cozy boutique verified stays with daily breakfast & dinner",
+        enabled: true,
+        priceOnRequest: false,
+      },
+      deluxe: {
+        title: "Super Deluxe 4★",
+        pricePerAdult: Math.round((pkg.startingPrice || 18999) * 1.25) || 23999,
+        desc: "Valley/river view premium rooms with private balcony & buffet meals",
+        enabled: true,
+        priceOnRequest: false,
+      },
+      luxury: {
+        title: "Luxury 5★ Resort",
+        pricePerAdult: Math.round((pkg.startingPrice || 18999) * 1.65) || 31999,
+        desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access",
+        enabled: true,
+        priceOnRequest: false,
+      },
+    };
+
+    const initHotelTiers = {
+      budget: {
+        ...defaultTiers.budget,
+        ...(pkgTiers.budget || {}),
+        enabled: pkgTiers.budget ? pkgTiers.budget.enabled !== false : false,
+        priceOnRequest: !!pkgTiers.budget?.priceOnRequest,
+      },
+      standard: {
+        ...defaultTiers.standard,
+        ...(pkgTiers.standard || {}),
+        enabled: pkgTiers.standard ? pkgTiers.standard.enabled !== false : true,
+        priceOnRequest: !!pkgTiers.standard?.priceOnRequest,
+      },
+      deluxe: {
+        ...defaultTiers.deluxe,
+        ...(pkgTiers.deluxe || {}),
+        enabled: pkgTiers.deluxe ? pkgTiers.deluxe.enabled !== false : true,
+        priceOnRequest: !!pkgTiers.deluxe?.priceOnRequest,
+      },
+      luxury: {
+        ...defaultTiers.luxury,
+        ...(pkgTiers.luxury || {}),
+        enabled: pkgTiers.luxury ? pkgTiers.luxury.enabled !== false : true,
+        priceOnRequest: !!pkgTiers.luxury?.priceOnRequest,
+      },
     };
 
     const startP = initHotelTiers.standard.pricePerAdult || pkg.startingPrice || 18999;
@@ -675,6 +807,7 @@ export default function AdminPackagesPage() {
         "7 to 14 days prior to departure: 50% cancellation charge",
         "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
       ],
+      transportType: pkg.transportType || "Private AC Sedan / SUV",
       hotelTiers: initHotelTiers,
       itinerary: Array.isArray(pkg.itinerary) && pkg.itinerary.length > 0 ? pkg.itinerary.map((d: any, i: number) => ({
         day: d.day || i + 1,
@@ -682,6 +815,13 @@ export default function AdminPackagesPage() {
         desc: typeof d.description === 'string' ? d.description : (d.desc || ""),
         meals: typeof d.meals === 'string' ? d.meals : "Breakfast & Dinner",
         hotel: typeof d.hotel === 'string' ? d.hotel : "Verified 4★ Mountain Resort",
+        transport: typeof d.transport === 'string' ? d.transport : (pkg.transportType || "Private AC Sedan / SUV"),
+        hotelsByTier: d.hotelsByTier && typeof d.hotelsByTier === 'object' ? d.hotelsByTier : {
+          budget: d.hotel || "",
+          standard: d.hotel || "",
+          deluxe: d.hotel || "",
+          luxury: d.hotel || "",
+        },
       })) : [],
       faqs: Array.isArray(pkg.faqs) ? pkg.faqs : [],
       seo: {
@@ -784,21 +924,35 @@ export default function AdminPackagesPage() {
         "7 to 14 days prior to departure: 50% cancellation charge",
         "Less than 7 days / No-Show: 100% non-refundable as per peak vendor contracts",
       ],
+      transportType: "Private AC Sedan / SUV",
       hotelTiers: {
+        budget: {
+          title: "Standard 2★",
+          pricePerAdult: 13999,
+          desc: "Clean & verified budget hotels / homestays with essential amenities",
+          enabled: false,
+          priceOnRequest: false,
+        },
         standard: {
           title: "Deluxe 3★",
           pricePerAdult: 18999,
           desc: "Cozy verified boutique stays with daily breakfast & dinner",
+          enabled: true,
+          priceOnRequest: false,
         },
         deluxe: {
           title: "Super Deluxe 4★",
           pricePerAdult: 24999,
           desc: "Valley/river view premium rooms with private balcony & buffet meals",
+          enabled: true,
+          priceOnRequest: false,
         },
         luxury: {
           title: "Luxury 5★ Resort",
           pricePerAdult: 38999,
           desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access",
+          enabled: true,
+          priceOnRequest: false,
         },
       },
       itinerary: [
@@ -808,6 +962,13 @@ export default function AdminPackagesPage() {
           desc: "Meet and greet at Delhi/Chandigarh. Board your private SUV and commence your scenic drive up the Himalayan foothills.",
           meals: "Dinner Included",
           hotel: "Pine View Boutique Stay (3★) / Riverfront Resort (4★) / Oberoi Cecil (5★)",
+          transport: "Private AC SUV",
+          hotelsByTier: {
+            budget: "Hotel Pine View Budget / Similar",
+            standard: "Pine View Boutique Stay / Snow Peak Stay",
+            deluxe: "Riverfront Grand Resort / Woodridge Chalet",
+            luxury: "Oberoi Cecil / Wildflower Hall",
+          },
         },
         {
           day: 2,
@@ -815,6 +976,13 @@ export default function AdminPackagesPage() {
           desc: "Excursion to Kufri (8,600 ft). Enjoy pony rides, Himalayan Nature Park, and panoramic snow peaks.",
           meals: "Breakfast & Dinner",
           hotel: "Pine View Boutique Stay (3★) / Riverfront Resort (4★) / Oberoi Cecil (5★)",
+          transport: "Private AC SUV",
+          hotelsByTier: {
+            budget: "Hotel Pine View Budget / Similar",
+            standard: "Pine View Boutique Stay / Snow Peak Stay",
+            deluxe: "Riverfront Grand Resort / Woodridge Chalet",
+            luxury: "Oberoi Cecil / Wildflower Hall",
+          },
         },
         {
           day: 3,
@@ -822,6 +990,13 @@ export default function AdminPackagesPage() {
           desc: "Scenic drive from Shimla to Manali along the Beas River. Stop at Pandoh Dam and Kullu Shawl factory.",
           meals: "Breakfast & Dinner",
           hotel: "Snow Peak Retreat (3★) / Riverfront Resort (4★) / Span Resort & Spa (5★)",
+          transport: "Private AC SUV",
+          hotelsByTier: {
+            budget: "Hotel Snow Retreat Budget / River Inn",
+            standard: "Snow Peak Retreat / Himalayan River Resort",
+            deluxe: "Riverfront Resort / Apple Country Resort",
+            luxury: "Span Resort & Spa / The Himalayan",
+          },
         },
       ],
       faqs: [
@@ -918,7 +1093,15 @@ export default function AdminPackagesPage() {
         : "/api/v1/admin/packages";
       const method = editingPkg ? "PATCH" : "POST";
 
-      const standardPrice = Number(formData.hotelTiers.standard.pricePerAdult) || 18999;
+      // Calculate lowest starting price from active, non-priceOnRequest tiers
+      const activePrices = Object.values(formData.hotelTiers || {})
+        .filter((t: any) => t && t.enabled !== false && !t.priceOnRequest && Number(t.pricePerAdult) > 0)
+        .map((t: any) => Number(t.pricePerAdult));
+
+      const standardPrice = activePrices.length > 0
+        ? Math.min(...activePrices)
+        : (Number(formData.hotelTiers?.standard?.pricePerAdult) || 18999);
+
       const discPercent = Number(formData.discountPercent) || 0;
       const computedOriginal = discPercent > 0
         ? Math.round(standardPrice / (1 - discPercent / 100))
@@ -1661,6 +1844,63 @@ export default function AdminPackagesPage() {
                       </select>
                     </div>
                   </div>
+
+                  {/* Mode of Transportation (Vehicle Category) */}
+                  <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>🚗</span> Mode of Transportation (Vehicle Category)
+                      </label>
+                      <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                        Shows in itinerary header before Meals
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <select
+                          value={
+                            [
+                              "Private AC Sedan (Dzire / Etios)",
+                              "Private AC SUV (Innova / Ertiga / Crysta)",
+                              "Tempo Traveller (12 / 17 / 26 Seater)",
+                              "Luxury Tourist Bus / Volvo",
+                              "Train / Rail Journey",
+                              "Flight Included",
+                              "Walking / Trekking Tour",
+                              "Private AC Sedan / SUV",
+                            ].includes(formData.transportType)
+                              ? formData.transportType
+                              : "CUSTOM"
+                          }
+                          onChange={(e) => {
+                            if (e.target.value !== "CUSTOM") {
+                              setFormData({ ...formData, transportType: e.target.value });
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer"
+                        >
+                          <option value="Private AC Sedan (Dzire / Etios)">🚗 Sedan (Dzire / Etios)</option>
+                          <option value="Private AC SUV (Innova / Ertiga / Crysta)">🚙 SUV (Innova / Ertiga / Crysta)</option>
+                          <option value="Private AC Sedan / SUV">🚗/🚙 Private AC Sedan / SUV</option>
+                          <option value="Tempo Traveller (12 / 17 / 26 Seater)">🚐 Tempo Traveller (12 / 17 / 26 Seater)</option>
+                          <option value="Luxury Tourist Bus / Volvo">🚌 Luxury Bus / Volvo</option>
+                          <option value="Train / Rail Journey">🚂 Train / Rail Tour</option>
+                          <option value="Flight Included">✈️ Flight Transfer</option>
+                          <option value="Walking / Trekking Tour">🚶 Walking / Trekking</option>
+                          <option value="CUSTOM">✏️ Custom Transportation Mode</option>
+                        </select>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={formData.transportType}
+                          onChange={(e) => setFormData({ ...formData, transportType: e.target.value })}
+                          placeholder="e.g. Private AC SUV / Sedan"
+                          className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1705,6 +1945,7 @@ export default function AdminPackagesPage() {
                   </div>
 
                   {/* ── SECTION 1: 🏨 3-TIER HOTEL CUSTOMIZATION & PRICING MATRIX ── */}
+                  {/* ── SECTION 1: 🏨 HOTEL CATEGORIES & PRICING MATRIX (2★, 3★, 4★, 5★) ── */}
                   <div className="p-5 bg-slate-950/70 rounded-2xl border border-slate-800 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                       <div>
@@ -1712,82 +1953,288 @@ export default function AdminPackagesPage() {
                           Core Package Purchasing Options
                         </span>
                         <h4 className="text-sm font-bold text-white mt-0.5">
-                          3-Tier Hotel Customization &amp; Pricing Categories
+                          Hotel Customization &amp; Pricing Categories (2★, 3★, 4★ &amp; 5★)
                         </h4>
                       </div>
                       <span className="text-[11px] text-slate-400 font-medium">
-                        Clients select between Deluxe 3★, Super Deluxe 4★ &amp; Luxury 5★ live on the site.
+                        Select and enable available hotel categories. 5★ resorts and bespoke stays can be set as &quot;Price on Request&quot;.
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Tier 1: Deluxe 3★ (Standard) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Tier: Budget 2★ */}
                       {(() => {
-                        const t1Price = Number(formData.hotelTiers.standard.pricePerAdult) || 18999;
+                        const tier = formData.hotelTiers.budget || {
+                          title: "Standard 2★",
+                          pricePerAdult: 13999,
+                          desc: "Clean & verified budget hotels / homestays with essential amenities",
+                          enabled: false,
+                          priceOnRequest: false,
+                        };
+                        const isEnabled = tier.enabled !== false;
+                        const isOnReq = !!tier.priceOnRequest;
+                        const price = Number(tier.pricePerAdult) || 13999;
                         const disc = Number(formData.discountPercent) || 0;
-                        const t1Orig = disc > 0 ? Math.round(t1Price / (1 - disc / 100)) : Math.round(t1Price * 1.25);
-                        const t1Sav = t1Orig - t1Price;
+                        const orig = disc > 0 ? Math.round(price / (1 - disc / 100)) : Math.round(price * 1.25);
+                        const sav = orig - price;
                         const hike = formData.seasonalHike?.enabled
                           ? (formData.seasonalHike.hikeType === "PERCENTAGE"
-                              ? Math.round(t1Price * (formData.seasonalHike.hikeValue / 100))
+                              ? Math.round(price * (formData.seasonalHike.hikeValue / 100))
                               : formData.seasonalHike.hikeValue)
                           : 0;
 
                         return (
-                          <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3 flex flex-col justify-between">
+                          <div className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all ${
+                            isEnabled
+                              ? "bg-slate-900/80 border-slate-700 shadow-sm"
+                              : "bg-slate-950/40 border-slate-800/60 opacity-60"
+                          }`}>
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                                  <span>🏨</span> Tier 1: Deluxe 3★
+                                  <span>🏠</span> Standard 2★
                                 </span>
-                                <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono font-bold">
-                                  Standard
-                                </span>
+                                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-300">
+                                  <input
+                                    type="checkbox"
+                                    checked={isEnabled}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          budget: { ...tier, enabled: e.target.checked },
+                                        },
+                                      }))
+                                    }
+                                    className="accent-amber-500 rounded cursor-pointer"
+                                  />
+                                  <span>{isEnabled ? "Active" : "Disabled"}</span>
+                                </label>
                               </div>
+
                               <input
                                 type="text"
-                                value={formData.hotelTiers.standard.title}
+                                value={tier.title}
                                 onChange={(e) =>
                                   setFormData((prev) => ({
                                     ...prev,
                                     hotelTiers: {
                                       ...prev.hotelTiers,
-                                      standard: { ...prev.hotelTiers.standard, title: e.target.value },
+                                      budget: { ...tier, title: e.target.value },
+                                    },
+                                  }))
+                                }
+                                placeholder="Tier Title (e.g. Standard 2★)"
+                                className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 font-bold focus:outline-hidden focus:border-amber-500"
+                              />
+
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[11px] font-bold text-slate-300">Price Per Adult (₹)</label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-[10px] font-bold text-amber-400">
+                                    <input
+                                      type="checkbox"
+                                      checked={isOnReq}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            budget: { ...tier, priceOnRequest: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-amber-500 rounded cursor-pointer"
+                                    />
+                                    <span>On Request</span>
+                                  </label>
+                                </div>
+                                {isOnReq ? (
+                                  <div className="px-3 py-2 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 font-bold text-center">
+                                    💬 Price on Request
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={tier.pricePerAdult}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          budget: { ...tier, pricePerAdult: Number(e.target.value) },
+                                        },
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-emerald-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
+                                  />
+                                )}
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-medium text-slate-400">Stays Description</label>
+                                <textarea
+                                  rows={2}
+                                  value={tier.desc}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      hotelTiers: {
+                                        ...prev.hotelTiers,
+                                        budget: { ...tier, desc: e.target.value },
+                                      },
+                                    }))
+                                  }
+                                  placeholder="Clean & verified budget hotels / homestays with essential amenities"
+                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+                            </div>
+
+                            {!isOnReq && isEnabled && (
+                              <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
+                                {disc > 0 && (
+                                  <div className="flex items-center justify-between text-slate-400">
+                                    <span>Original: <span className="line-through">{formatINR(orig)}</span></span>
+                                    <span className="text-emerald-400 font-bold">Save {formatINR(sav)}</span>
+                                  </div>
+                                )}
+                                {formData.seasonalHike?.enabled && hike > 0 && (
+                                  <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                                    <span>Peak Fare:</span>
+                                    <span>{formatINR(price + hike)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Tier: Deluxe 3★ (Standard) */}
+                      {(() => {
+                        const tier = formData.hotelTiers.standard || {
+                          title: "Deluxe 3★",
+                          pricePerAdult: 18999,
+                          desc: "Cozy verified boutique stays with daily breakfast & dinner",
+                          enabled: true,
+                          priceOnRequest: false,
+                        };
+                        const isEnabled = tier.enabled !== false;
+                        const isOnReq = !!tier.priceOnRequest;
+                        const price = Number(tier.pricePerAdult) || 18999;
+                        const disc = Number(formData.discountPercent) || 0;
+                        const orig = disc > 0 ? Math.round(price / (1 - disc / 100)) : Math.round(price * 1.25);
+                        const sav = orig - price;
+                        const hike = formData.seasonalHike?.enabled
+                          ? (formData.seasonalHike.hikeType === "PERCENTAGE"
+                              ? Math.round(price * (formData.seasonalHike.hikeValue / 100))
+                              : formData.seasonalHike.hikeValue)
+                          : 0;
+
+                        return (
+                          <div className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all ${
+                            isEnabled
+                              ? "bg-slate-900/80 border-slate-700 shadow-sm"
+                              : "bg-slate-950/40 border-slate-800/60 opacity-60"
+                          }`}>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                                  <span>🏨</span> Deluxe 3★
+                                </span>
+                                <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-300">
+                                  <input
+                                    type="checkbox"
+                                    checked={isEnabled}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          standard: { ...tier, enabled: e.target.checked },
+                                        },
+                                      }))
+                                    }
+                                    className="accent-amber-500 rounded cursor-pointer"
+                                  />
+                                  <span>{isEnabled ? "Active" : "Disabled"}</span>
+                                </label>
+                              </div>
+
+                              <input
+                                type="text"
+                                value={tier.title}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    hotelTiers: {
+                                      ...prev.hotelTiers,
+                                      standard: { ...tier, title: e.target.value },
                                     },
                                   }))
                                 }
                                 placeholder="Tier Title (e.g. Deluxe 3★)"
                                 className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 font-bold focus:outline-hidden focus:border-amber-500"
                               />
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-300">Price Per Adult (₹) *</label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={formData.hotelTiers.standard.pricePerAdult}
-                                  onChange={(e) =>
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      hotelTiers: {
-                                        ...prev.hotelTiers,
-                                        standard: { ...prev.hotelTiers.standard, pricePerAdult: Number(e.target.value) },
-                                      },
-                                    }))
-                                  }
-                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-emerald-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
-                                />
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[11px] font-bold text-slate-300">Price Per Adult (₹) *</label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-[10px] font-bold text-amber-400">
+                                    <input
+                                      type="checkbox"
+                                      checked={isOnReq}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            standard: { ...tier, priceOnRequest: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-amber-500 rounded cursor-pointer"
+                                    />
+                                    <span>On Request</span>
+                                  </label>
+                                </div>
+                                {isOnReq ? (
+                                  <div className="px-3 py-2 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 font-bold text-center">
+                                    💬 Price on Request
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={tier.pricePerAdult}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          standard: { ...tier, pricePerAdult: Number(e.target.value) },
+                                        },
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-emerald-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
+                                  />
+                                )}
                               </div>
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-medium text-slate-400">Hotel Stays Description</label>
+                                <label className="text-[11px] font-medium text-slate-400">Stays Description</label>
                                 <textarea
                                   rows={2}
-                                  value={formData.hotelTiers.standard.desc}
+                                  value={tier.desc}
                                   onChange={(e) =>
                                     setFormData((prev) => ({
                                       ...prev,
                                       hotelTiers: {
                                         ...prev.hotelTiers,
-                                        standard: { ...prev.hotelTiers.standard, desc: e.target.value },
+                                        standard: { ...tier, desc: e.target.value },
                                       },
                                     }))
                                   }
@@ -1797,92 +2244,153 @@ export default function AdminPackagesPage() {
                               </div>
                             </div>
 
-                            {/* Live Calculation Footer */}
-                            <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
-                              {disc > 0 && (
-                                <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">{formatINR(t1Orig)}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save {formatINR(t1Sav)} ({disc}% OFF)</span>
-                                </div>
-                              )}
-                              {formData.seasonalHike?.enabled && hike > 0 && (
-                                <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                                  <span>Peak Season Fare:</span>
-                                  <span>{formatINR(t1Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
-                                </div>
-                              )}
-                            </div>
+                            {!isOnReq && isEnabled && (
+                              <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
+                                {disc > 0 && (
+                                  <div className="flex items-center justify-between text-slate-400">
+                                    <span>Original: <span className="line-through">{formatINR(orig)}</span></span>
+                                    <span className="text-emerald-400 font-bold">Save {formatINR(sav)} ({disc}% OFF)</span>
+                                  </div>
+                                )}
+                                {formData.seasonalHike?.enabled && hike > 0 && (
+                                  <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                                    <span>Peak Fare:</span>
+                                    <span>{formatINR(price + hike)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
 
-                      {/* Tier 2: Super Deluxe 4★ (Recommended) */}
+                      {/* Tier: Super Deluxe 4★ (Recommended) */}
                       {(() => {
-                        const t2Price = Number(formData.hotelTiers.deluxe.pricePerAdult) || 23999;
+                        const tier = formData.hotelTiers.deluxe || {
+                          title: "Super Deluxe 4★",
+                          pricePerAdult: 24999,
+                          desc: "Valley/river view premium rooms with private balcony & buffet meals",
+                          enabled: true,
+                          priceOnRequest: false,
+                        };
+                        const isEnabled = tier.enabled !== false;
+                        const isOnReq = !!tier.priceOnRequest;
+                        const price = Number(tier.pricePerAdult) || 24999;
                         const disc = Number(formData.discountPercent) || 0;
-                        const t2Orig = disc > 0 ? Math.round(t2Price / (1 - disc / 100)) : Math.round(t2Price * 1.25);
-                        const t2Sav = t2Orig - t2Price;
+                        const orig = disc > 0 ? Math.round(price / (1 - disc / 100)) : Math.round(price * 1.25);
+                        const sav = orig - price;
                         const hike = formData.seasonalHike?.enabled
                           ? (formData.seasonalHike.hikeType === "PERCENTAGE"
-                              ? Math.round(t2Price * (formData.seasonalHike.hikeValue / 100))
+                              ? Math.round(price * (formData.seasonalHike.hikeValue / 100))
                               : formData.seasonalHike.hikeValue)
                           : 0;
 
                         return (
-                          <div className="p-4 bg-slate-900/80 rounded-2xl border border-amber-500/50 space-y-3 flex flex-col justify-between shadow-lg shadow-amber-500/5">
+                          <div className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all ${
+                            isEnabled
+                              ? "bg-slate-900/80 border-amber-500/50 shadow-lg shadow-amber-500/5"
+                              : "bg-slate-950/40 border-slate-800/60 opacity-60"
+                          }`}>
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                                  <span>🌟</span> Tier 2: Super Deluxe 4★
+                                  <span>🌟</span> Super Deluxe 4★
                                 </span>
-                                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-mono font-black">
-                                  Recommended
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-mono font-black">
+                                    Recommended
+                                  </span>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-300">
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            deluxe: { ...tier, enabled: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-amber-500 rounded cursor-pointer"
+                                    />
+                                    <span>{isEnabled ? "Active" : "Disabled"}</span>
+                                  </label>
+                                </div>
                               </div>
+
                               <input
                                 type="text"
-                                value={formData.hotelTiers.deluxe.title}
+                                value={tier.title}
                                 onChange={(e) =>
                                   setFormData((prev) => ({
                                     ...prev,
                                     hotelTiers: {
                                       ...prev.hotelTiers,
-                                      deluxe: { ...prev.hotelTiers.deluxe, title: e.target.value },
+                                      deluxe: { ...tier, title: e.target.value },
                                     },
                                   }))
                                 }
                                 placeholder="Tier Title (e.g. Super Deluxe 4★)"
                                 className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 font-bold focus:outline-hidden focus:border-amber-500"
                               />
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-amber-300">Price Per Adult (₹) *</label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={formData.hotelTiers.deluxe.pricePerAdult}
-                                  onChange={(e) =>
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      hotelTiers: {
-                                        ...prev.hotelTiers,
-                                        deluxe: { ...prev.hotelTiers.deluxe, pricePerAdult: Number(e.target.value) },
-                                      },
-                                    }))
-                                  }
-                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-amber-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
-                                />
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[11px] font-bold text-amber-300">Price Per Adult (₹) *</label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-[10px] font-bold text-amber-400">
+                                    <input
+                                      type="checkbox"
+                                      checked={isOnReq}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            deluxe: { ...tier, priceOnRequest: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-amber-500 rounded cursor-pointer"
+                                    />
+                                    <span>On Request</span>
+                                  </label>
+                                </div>
+                                {isOnReq ? (
+                                  <div className="px-3 py-2 text-xs bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 font-bold text-center">
+                                    💬 Price on Request
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={tier.pricePerAdult}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          deluxe: { ...tier, pricePerAdult: Number(e.target.value) },
+                                        },
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-amber-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
+                                  />
+                                )}
                               </div>
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-medium text-slate-400">Hotel Stays Description</label>
+                                <label className="text-[11px] font-medium text-slate-400">Stays Description</label>
                                 <textarea
                                   rows={2}
-                                  value={formData.hotelTiers.deluxe.desc}
+                                  value={tier.desc}
                                   onChange={(e) =>
                                     setFormData((prev) => ({
                                       ...prev,
                                       hotelTiers: {
                                         ...prev.hotelTiers,
-                                        deluxe: { ...prev.hotelTiers.deluxe, desc: e.target.value },
+                                        deluxe: { ...tier, desc: e.target.value },
                                       },
                                     }))
                                   }
@@ -1892,116 +2400,178 @@ export default function AdminPackagesPage() {
                               </div>
                             </div>
 
-                            {/* Live Calculation Footer */}
-                            <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
-                              {disc > 0 && (
-                                <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">{formatINR(t2Orig)}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save {formatINR(t2Sav)} ({disc}% OFF)</span>
-                                </div>
-                              )}
-                              {formData.seasonalHike?.enabled && hike > 0 && (
-                                <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                                  <span>Peak Season Fare:</span>
-                                  <span>{formatINR(t2Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
-                                </div>
-                              )}
-                            </div>
+                            {!isOnReq && isEnabled && (
+                              <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
+                                {disc > 0 && (
+                                  <div className="flex items-center justify-between text-slate-400">
+                                    <span>Original: <span className="line-through">{formatINR(orig)}</span></span>
+                                    <span className="text-emerald-400 font-bold">Save {formatINR(sav)} ({disc}% OFF)</span>
+                                  </div>
+                                )}
+                                {formData.seasonalHike?.enabled && hike > 0 && (
+                                  <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                                    <span>Peak Fare:</span>
+                                    <span>{formatINR(price + hike)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
 
-                      {/* Tier 3: Luxury 5★ Resort (Premium VIP) */}
+                      {/* Tier: Luxury 5★ Resort */}
                       {(() => {
-                        const t3Price = Number(formData.hotelTiers.luxury.pricePerAdult) || 31999;
+                        const tier = formData.hotelTiers.luxury || {
+                          title: "Luxury 5★ Resort",
+                          pricePerAdult: 38999,
+                          desc: "Mountain spa resorts & Swiss luxury chalets with heated pool access",
+                          enabled: true,
+                          priceOnRequest: false,
+                        };
+                        const isEnabled = tier.enabled !== false;
+                        const isOnReq = !!tier.priceOnRequest;
+                        const price = Number(tier.pricePerAdult) || 38999;
                         const disc = Number(formData.discountPercent) || 0;
-                        const t3Orig = disc > 0 ? Math.round(t3Price / (1 - disc / 100)) : Math.round(t3Price * 1.25);
-                        const t3Sav = t3Orig - t3Price;
+                        const orig = disc > 0 ? Math.round(price / (1 - disc / 100)) : Math.round(price * 1.25);
+                        const sav = orig - price;
                         const hike = formData.seasonalHike?.enabled
                           ? (formData.seasonalHike.hikeType === "PERCENTAGE"
-                              ? Math.round(t3Price * (formData.seasonalHike.hikeValue / 100))
+                              ? Math.round(price * (formData.seasonalHike.hikeValue / 100))
                               : formData.seasonalHike.hikeValue)
                           : 0;
 
                         return (
-                          <div className="p-4 bg-slate-900/80 rounded-2xl border border-purple-500/40 space-y-3 flex flex-col justify-between shadow-lg shadow-purple-500/5">
+                          <div className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all ${
+                            isEnabled
+                              ? "bg-slate-900/80 border-purple-500/40 shadow-lg shadow-purple-500/5"
+                              : "bg-slate-950/40 border-slate-800/60 opacity-60"
+                          }`}>
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-purple-400 flex items-center gap-1.5">
-                                  <span>👑</span> Tier 3: Luxury 5★ Resort
+                                  <span>👑</span> Luxury 5★ Resort
                                 </span>
-                                <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded font-mono font-black">
-                                  Premium VIP
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded font-mono font-black">
+                                    VIP Luxury
+                                  </span>
+                                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-bold text-slate-300">
+                                    <input
+                                      type="checkbox"
+                                      checked={isEnabled}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            luxury: { ...tier, enabled: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-purple-500 rounded cursor-pointer"
+                                    />
+                                    <span>{isEnabled ? "Active" : "Disabled"}</span>
+                                  </label>
+                                </div>
                               </div>
+
                               <input
                                 type="text"
-                                value={formData.hotelTiers.luxury.title}
+                                value={tier.title}
                                 onChange={(e) =>
                                   setFormData((prev) => ({
                                     ...prev,
                                     hotelTiers: {
                                       ...prev.hotelTiers,
-                                      luxury: { ...prev.hotelTiers.luxury, title: e.target.value },
+                                      luxury: { ...tier, title: e.target.value },
                                     },
                                   }))
                                 }
                                 placeholder="Tier Title (e.g. Luxury 5★ Resort)"
-                                className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 font-bold focus:outline-hidden focus:border-amber-500"
+                                className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 font-bold focus:outline-hidden focus:border-purple-500"
                               />
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-purple-300">Price Per Adult (₹) *</label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={formData.hotelTiers.luxury.pricePerAdult}
-                                  onChange={(e) =>
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      hotelTiers: {
-                                        ...prev.hotelTiers,
-                                        luxury: { ...prev.hotelTiers.luxury, pricePerAdult: Number(e.target.value) },
-                                      },
-                                    }))
-                                  }
-                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-purple-400 font-black text-sm focus:outline-hidden focus:border-amber-500"
-                                />
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[11px] font-bold text-purple-300">Price Per Adult (₹)</label>
+                                  <label className="flex items-center gap-1 cursor-pointer text-[10px] font-bold text-purple-400">
+                                    <input
+                                      type="checkbox"
+                                      checked={isOnReq}
+                                      onChange={(e) =>
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          hotelTiers: {
+                                            ...prev.hotelTiers,
+                                            luxury: { ...tier, priceOnRequest: e.target.checked },
+                                          },
+                                        }))
+                                      }
+                                      className="accent-purple-500 rounded cursor-pointer"
+                                    />
+                                    <span>Price on Request</span>
+                                  </label>
+                                </div>
+                                {isOnReq ? (
+                                  <div className="px-3 py-2 text-xs bg-purple-500/15 border border-purple-500/30 rounded-xl text-purple-300 font-bold text-center">
+                                    👑 Quote On Request (Custom 5★)
+                                  </div>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={tier.pricePerAdult}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        hotelTiers: {
+                                          ...prev.hotelTiers,
+                                          luxury: { ...tier, pricePerAdult: Number(e.target.value) },
+                                        },
+                                      }))
+                                    }
+                                    className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-purple-400 font-black text-sm focus:outline-hidden focus:border-purple-500"
+                                  />
+                                )}
                               </div>
+
                               <div className="space-y-1">
-                                <label className="text-[11px] font-medium text-slate-400">Hotel Stays Description</label>
+                                <label className="text-[11px] font-medium text-slate-400">Stays Description</label>
                                 <textarea
                                   rows={2}
-                                  value={formData.hotelTiers.luxury.desc}
+                                  value={tier.desc}
                                   onChange={(e) =>
                                     setFormData((prev) => ({
                                       ...prev,
                                       hotelTiers: {
                                         ...prev.hotelTiers,
-                                        luxury: { ...prev.hotelTiers.luxury, desc: e.target.value },
+                                        luxury: { ...tier, desc: e.target.value },
                                       },
                                     }))
                                   }
                                   placeholder="Mountain spa resorts & Swiss luxury chalets with heated pool access"
-                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-amber-500"
+                                  className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-purple-500"
                                 />
                               </div>
                             </div>
 
-                            {/* Live Calculation Footer */}
-                            <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
-                              {disc > 0 && (
-                                <div className="flex items-center justify-between text-slate-400">
-                                  <span>Original: <span className="line-through">{formatINR(t3Orig)}</span></span>
-                                  <span className="text-emerald-400 font-bold">Save {formatINR(t3Sav)} ({disc}% OFF)</span>
-                                </div>
-                              )}
-                              {formData.seasonalHike?.enabled && hike > 0 && (
-                                <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
-                                  <span>Peak Season Fare:</span>
-                                  <span>{formatINR(t3Price + hike)} (+{formData.seasonalHike.hikeValue}{formData.seasonalHike.hikeType === "PERCENTAGE" ? "%" : "₹"})</span>
-                                </div>
-                              )}
-                            </div>
+                            {!isOnReq && isEnabled && (
+                              <div className="pt-2 border-t border-slate-800/80 space-y-1 text-[11px]">
+                                {disc > 0 && (
+                                  <div className="flex items-center justify-between text-slate-400">
+                                    <span>Original: <span className="line-through">{formatINR(orig)}</span></span>
+                                    <span className="text-emerald-400 font-bold">Save {formatINR(sav)} ({disc}% OFF)</span>
+                                  </div>
+                                )}
+                                {formData.seasonalHike?.enabled && hike > 0 && (
+                                  <div className="flex items-center justify-between text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-bold">
+                                    <span>Peak Fare:</span>
+                                    <span>{formatINR(price + hike)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -2358,6 +2928,13 @@ export default function AdminPackagesPage() {
                               desc: "",
                               meals: "Breakfast & Dinner",
                               hotel: "Verified 4★ Resort",
+                              transport: prev.transportType || "Private AC SUV",
+                              hotelsByTier: {
+                                budget: "",
+                                standard: "",
+                                deluxe: "",
+                                luxury: "",
+                              },
                             },
                           ],
                         }))
@@ -2369,81 +2946,280 @@ export default function AdminPackagesPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {formData.itinerary.map((dayItem, idx) => (
-                      <div key={idx} className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-black text-amber-400 uppercase tracking-wider">
-                            Day {dayItem.day}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                itinerary: prev.itinerary.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day: i + 1 })),
-                              }))
-                            }
-                            className="text-red-400 hover:text-red-300 text-xs font-bold cursor-pointer"
-                          >
-                            ✕ Remove Day
-                          </button>
-                        </div>
+                    {formData.itinerary.map((dayItem, idx) => {
+                      const dayHotels = dayItem.hotelsByTier || {};
+                      const isBudgetActive = formData.hotelTiers.budget?.enabled !== false;
+                      const isStandardActive = formData.hotelTiers.standard?.enabled !== false;
+                      const isDeluxeActive = formData.hotelTiers.deluxe?.enabled !== false;
+                      const isLuxuryActive = formData.hotelTiers.luxury?.enabled !== false;
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <input
-                            type="text"
-                            value={dayItem.title}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, title: e.target.value } : d)),
-                              }))
-                            }
-                            placeholder="Day Title (e.g. Arrival in Shimla · Mall Road Walk)"
-                            className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
-                          />
-                          <div className="grid grid-cols-2 gap-2">
+                      return (
+                        <div key={idx} className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-3.5">
+                          {/* Day Header */}
+                          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+                            <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs font-black border border-amber-500/30">
+                                D{dayItem.day}
+                              </span>
+                              <span>Day {dayItem.day} Itinerary</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  itinerary: prev.itinerary.filter((_, i) => i !== idx).map((d, i) => ({ ...d, day: i + 1 })),
+                                }))
+                              }
+                              className="text-red-400 hover:text-red-300 text-xs font-bold cursor-pointer flex items-center gap-1"
+                            >
+                              <span>✕</span>
+                              <span>Remove Day</span>
+                            </button>
+                          </div>
+
+                          {/* Day Title */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-300">Day Title &amp; Route</label>
                             <input
                               type="text"
-                              value={dayItem.meals}
+                              value={dayItem.title}
                               onChange={(e) =>
                                 setFormData((prev) => ({
                                   ...prev,
-                                  itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, meals: e.target.value } : d)),
+                                  itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, title: e.target.value } : d)),
                                 }))
                               }
-                              placeholder="Meals (e.g. Breakfast & Dinner)"
-                              className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                              placeholder="e.g. Arrival in Shimla · Scenic Himalayan Foothills Drive"
+                              className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 font-semibold focus:outline-hidden focus:border-amber-500"
                             />
-                            <input
-                              type="text"
-                              value={dayItem.hotel}
+                          </div>
+
+                          {/* Mode of Transportation & Meals */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                                <span>🚗</span> Mode of Transportation (Starts before Meals)
+                              </label>
+                              <div className="flex gap-1.5">
+                                <select
+                                  value={
+                                    [
+                                      "Private AC Sedan",
+                                      "Private AC SUV",
+                                      "Tempo Traveller",
+                                      "Luxury Tourist Bus",
+                                      "Train / Rail Journey",
+                                      "Flight Transfer",
+                                      "Walking / Sightseeing Tour",
+                                    ].includes(dayItem.transport || "")
+                                      ? dayItem.transport
+                                      : "CUSTOM"
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value === "CUSTOM" ? (dayItem.transport || "Private AC SUV") : e.target.value;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, transport: val } : d)),
+                                    }));
+                                  }}
+                                  className="w-2/5 px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-amber-500 cursor-pointer"
+                                >
+                                  <option value="Private AC Sedan">🚗 Sedan</option>
+                                  <option value="Private AC SUV">🚙 SUV</option>
+                                  <option value="Tempo Traveller">🚐 Tempo</option>
+                                  <option value="Luxury Tourist Bus">🚌 Bus</option>
+                                  <option value="Train / Rail Journey">🚂 Train</option>
+                                  <option value="Flight Transfer">✈️ Flight</option>
+                                  <option value="Walking / Sightseeing Tour">🚶 Walk</option>
+                                  <option value="CUSTOM">✏️ Other</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={dayItem.transport || ""}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, transport: e.target.value } : d)),
+                                    }))
+                                  }
+                                  placeholder="e.g. Private AC SUV (Innova / Ertiga)"
+                                  className="flex-1 px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                                <span>🍽️</span> Meals Plan
+                              </label>
+                              <input
+                                type="text"
+                                value={dayItem.meals}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, meals: e.target.value } : d)),
+                                  }))
+                                }
+                                placeholder="e.g. Dinner Included or Breakfast & Dinner"
+                                className="w-full px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Hotel Stays by Package Category */}
+                          <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                                <span>🏨</span> Hotel Stays by Package Category (Multiple Hotels allowed, separated by /)
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                Dynamic switches when client selects category
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                              {isBudgetActive && (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                                    <span>🏠</span> 2★ Budget Stays
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayHotels.budget || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx
+                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), budget: val } }
+                                            : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Hotel Green View Budget / Similar"
+                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                  />
+                                </div>
+                              )}
+
+                              {isStandardActive && (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                    <span>🏨</span> 3★ Deluxe Stays
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayHotels.standard || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx
+                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), standard: val } }
+                                            : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Pine View Boutique Stay / Snow Peak Stay"
+                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                  />
+                                </div>
+                              )}
+
+                              {isDeluxeActive && (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                                    <span>🌟</span> 4★ Super Deluxe Stays
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayHotels.deluxe || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx
+                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), deluxe: val } }
+                                            : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Riverfront Grand Resort / Woodridge Chalet"
+                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                  />
+                                </div>
+                              )}
+
+                              {isLuxuryActive && (
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
+                                    <span>👑</span> 5★ Luxury Resort Stays
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={dayHotels.luxury || ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        itinerary: prev.itinerary.map((d, i) =>
+                                          i === idx
+                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), luxury: val } }
+                                            : d
+                                        ),
+                                      }));
+                                    }}
+                                    placeholder="e.g. Oberoi Cecil / Wildflower Hall"
+                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-purple-500"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Fallback default hotel */}
+                              <div className="space-y-1 sm:col-span-2">
+                                <label className="text-[10px] font-medium text-slate-400">
+                                  Default / Fallback Hotel Summary (Used if specific tier stay is blank)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={dayItem.hotel}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, hotel: e.target.value } : d)),
+                                    }))
+                                  }
+                                  placeholder="e.g. Verified Boutique Mountain Resort"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-400 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Day Sightseeing Description */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-medium text-slate-400">Day Description &amp; Sightseeing Plan</label>
+                            <textarea
+                              rows={2}
+                              value={dayItem.desc}
                               onChange={(e) =>
                                 setFormData((prev) => ({
                                   ...prev,
-                                  itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, hotel: e.target.value } : d)),
+                                  itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, desc: e.target.value } : d)),
                                 }))
                               }
-                              placeholder="Hotel / Stay Details"
-                              className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                              placeholder="Day description and sightseeing details..."
+                              className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 leading-relaxed focus:outline-hidden focus:border-amber-500"
                             />
                           </div>
                         </div>
-
-                        <textarea
-                          rows={2}
-                          value={dayItem.desc}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, desc: e.target.value } : d)),
-                            }))
-                          }
-                          placeholder="Day description and sightseeing details..."
-                          className="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-200 leading-relaxed"
-                        />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

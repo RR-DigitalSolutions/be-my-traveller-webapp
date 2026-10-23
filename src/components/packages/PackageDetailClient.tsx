@@ -52,19 +52,52 @@ export interface PackageData {
   paymentPolicies?: string[];
   importantInfo?: string[];
   cancellationPolicies?: string[];
-  itinerary: { day: number; title: string; desc: string; meals: string; hotel: string }[];
+  itinerary: {
+    day: number;
+    title: string;
+    desc: string;
+    meals: string;
+    hotel: string;
+    transport?: string;
+    hotelsByTier?: {
+      budget?: string;
+      standard?: string;
+      deluxe?: string;
+      luxury?: string;
+      [key: string]: string | undefined;
+    };
+  }[];
+  transportType?: string;
   hotelTiers: {
-    standard: { title: string; pricePerAdult: number; desc: string };
-    deluxe: { title: string; pricePerAdult: number; desc: string };
-    luxury: { title: string; pricePerAdult: number; desc: string };
+    budget?: { title: string; pricePerAdult: number; desc: string; priceOnRequest?: boolean; enabled?: boolean };
+    standard: { title: string; pricePerAdult: number; desc: string; priceOnRequest?: boolean; enabled?: boolean };
+    deluxe: { title: string; pricePerAdult: number; desc: string; priceOnRequest?: boolean; enabled?: boolean };
+    luxury: { title: string; pricePerAdult: number; desc: string; priceOnRequest?: boolean; enabled?: boolean };
+    [key: string]: { title: string; pricePerAdult: number; desc: string; priceOnRequest?: boolean; enabled?: boolean } | undefined;
   };
   faq: { q: string; a: string }[];
 }
 
+export type TierKey = "budget" | "standard" | "deluxe" | "luxury";
+
 export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
   const { cleanWhatsApp, cleanPhone, helplinePhone } = useSiteSettings();
   const [openDay, setOpenDay] = useState<number>(1);
-  const [hotelTier, setHotelTier] = useState<"standard" | "deluxe" | "luxury">("deluxe");
+
+  // Available Tiers Filter: only show tiers that exist and are enabled
+  const availableTierKeys: TierKey[] = (["budget", "standard", "deluxe", "luxury"] as const).filter((key) => {
+    const tier = pkg.hotelTiers?.[key];
+    if (!tier) return false;
+    if (typeof tier.enabled === "boolean") return tier.enabled;
+    if (key === "budget") return Boolean(tier.pricePerAdult || tier.priceOnRequest);
+    return true;
+  });
+
+  const [hotelTier, setHotelTier] = useState<TierKey>(() => {
+    if (availableTierKeys.includes("deluxe")) return "deluxe";
+    return availableTierKeys[0] || "deluxe";
+  });
+
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
   const [travelDate, setTravelDate] = useState("2026-11-15");
@@ -75,10 +108,43 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
   const [activeGallery, setActiveGallery] = useState(0);
 
   // Dynamic Hotel Tier and Price Calculations
-  const activeTierData = pkg.hotelTiers[hotelTier] || pkg.hotelTiers.deluxe || {
+  const activeTierData = pkg.hotelTiers[hotelTier] || pkg.hotelTiers.deluxe || pkg.hotelTiers.standard || {
     title: "Super Deluxe 4★",
     pricePerAdult: pkg.basePriceAdult,
     desc: "4★ Valley & river view premium rooms with private balcony",
+    priceOnRequest: false,
+    enabled: true,
+  };
+
+  const isPriceOnRequest = Boolean(
+    activeTierData.priceOnRequest ||
+    ((!activeTierData.pricePerAdult || activeTierData.pricePerAdult === 0) && activeTierData.priceOnRequest)
+  );
+
+  // Helper for hotel based on current selected tier
+  const getDayHotel = (dayItem: PackageData["itinerary"][number]) => {
+    if (dayItem.hotelsByTier && dayItem.hotelsByTier[hotelTier]?.trim()) {
+      return dayItem.hotelsByTier[hotelTier]!.trim();
+    }
+    return dayItem.hotel || "Verified Mountain Stay";
+  };
+
+  // Helper for day transport
+  const getDayTransport = (dayItem: PackageData["itinerary"][number]) => {
+    return dayItem.transport?.trim() || pkg.transportType?.trim() || "Private Sedan / SUV";
+  };
+
+  // Helper for transport icons
+  const getTransportIcon = (transport: string) => {
+    const t = (transport || "").toLowerCase();
+    if (t.includes("suv") || t.includes("innova") || t.includes("crysta") || t.includes("ertiga")) return "🚙";
+    if (t.includes("sedan") || t.includes("dzire") || t.includes("etios") || t.includes("amaze")) return "🚗";
+    if (t.includes("tempo") || t.includes("traveller") || t.includes("van")) return "🚐";
+    if (t.includes("bus") || t.includes("coach") || t.includes("volvo")) return "🚌";
+    if (t.includes("train") || t.includes("rail")) return "🚂";
+    if (t.includes("flight") || t.includes("air")) return "✈️";
+    if (t.includes("walk") || t.includes("trek") || t.includes("leisure")) return "🚶";
+    return "🚗";
   };
 
   // Check if selected travelDate falls within any configured peak season date range
@@ -87,11 +153,11 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
     return travelDate >= hike.startDate && travelDate <= hike.endDate;
   });
 
-  const baseTierPrice = activeTierData.pricePerAdult || pkg.basePriceAdult;
+  const baseTierPrice = isPriceOnRequest ? 0 : (activeTierData.pricePerAdult || pkg.basePriceAdult);
 
   // Calculate seasonal surcharge if matched; otherwise normal off-peak price applies
   let seasonalSurcharge = 0;
-  if (activePeakHike && activePeakHike.hikeValue > 0) {
+  if (!isPriceOnRequest && activePeakHike && activePeakHike.hikeValue > 0) {
     if (activePeakHike.hikeType === "PERCENTAGE") {
       seasonalSurcharge = Math.round(baseTierPrice * (activePeakHike.hikeValue / 100));
     } else {
@@ -103,7 +169,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
   const activeDiscountPercent = pkg.discountPercent && pkg.discountPercent > 0 ? pkg.discountPercent : 20;
 
   // Compute dynamic strikethrough original price from discount percent
-  const tierOriginalPrice = Math.round(unitPrice / (1 - activeDiscountPercent / 100));
+  const tierOriginalPrice = isPriceOnRequest ? 0 : Math.round(unitPrice / (1 - activeDiscountPercent / 100));
   const savingsPerAdult = Math.max(0, tierOriginalPrice - unitPrice);
 
   const childPrice = Math.round(unitPrice * 0.5);
@@ -219,16 +285,10 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
           </h1>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 font-medium">
-            <span>📍 {pkg.route || pkg.destination}</span>
-            {pkg.cities && pkg.cities.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1">
-                {pkg.cities.map((city, idx) => (
-                  <span key={idx} className="text-[11px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-md border border-slate-200 capitalize">
-                    📍 {city}
-                  </span>
-                ))}
-              </div>
-            )}
+            <span className="flex items-center gap-1.5 font-semibold text-slate-800">
+              <span className="text-rose-500">📍</span>
+              <span>{pkg.route || pkg.destination}</span>
+            </span>
             <span className="text-emerald-700 font-semibold flex items-center gap-1">
               <span>✓</span> Zero Hidden Charges
             </span>
@@ -347,13 +407,15 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {(["standard", "deluxe", "luxury"] as const).map((tier) => {
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${availableTierKeys.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-3.5`}>
+                {availableTierKeys.map((tier) => {
                   const t = pkg.hotelTiers[tier];
+                  if (!t) return null;
                   const isSelected = hotelTier === tier;
+                  const isTierOnRequest = Boolean(t.priceOnRequest || (t.pricePerAdult === 0 && t.priceOnRequest));
                   const baseRate = t.pricePerAdult || pkg.basePriceAdult;
                   let tierSurcharge = 0;
-                  if (activePeakHike && activePeakHike.hikeValue > 0) {
+                  if (activePeakHike && activePeakHike.hikeValue > 0 && !isTierOnRequest) {
                     tierSurcharge = activePeakHike.hikeType === "PERCENTAGE"
                       ? Math.round(baseRate * (activePeakHike.hikeValue / 100))
                       : activePeakHike.hikeValue;
@@ -383,6 +445,11 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                           VIP Luxury
                         </span>
                       )}
+                      {tier === "budget" && (
+                        <span className="absolute top-0 right-0 bg-blue-600 text-white font-black text-[9px] uppercase px-2 py-0.5 rounded-bl-lg tracking-wider">
+                          Value Saver
+                        </span>
+                      )}
 
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -397,25 +464,39 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                             ✓
                           </span>
                         </div>
-                        <div className="flex items-baseline gap-1.5">
-                          <p className="text-amber-600 font-black text-lg">
-                            {formatINR(tierRate)}
-                            <span className="text-[10px] font-normal text-slate-500"> / adult</span>
-                          </p>
-                          <span className="text-[10.5px] text-slate-400 line-through">
-                            {formatINR(tierOrig)}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          <span className="text-[9.5px] font-black uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                            Save {formatINR(tierSav)} ({activeDiscountPercent}% OFF)
-                          </span>
-                          {activePeakHike && (
-                            <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300/50">
-                              ⚡ Peak Session (+{activePeakHike.hikeType === "PERCENTAGE" ? `${activePeakHike.hikeValue}%` : `₹${activePeakHike.hikeValue}`})
+
+                        {isTierOnRequest ? (
+                          <div className="pt-0.5 space-y-0.5">
+                            <p className="text-purple-700 font-black text-base">Price on Request</p>
+                            <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 inline-block">
+                              VIP Custom Quote
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-1.5">
+                              <p className="text-amber-600 font-black text-lg">
+                                {formatINR(tierRate)}
+                                <span className="text-[10px] font-normal text-slate-500"> / adult</span>
+                              </p>
+                              {activeDiscountPercent > 0 && (
+                                <span className="text-[10.5px] text-slate-400 line-through">
+                                  {formatINR(tierOrig)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              <span className="text-[9.5px] font-black uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                Save {formatINR(tierSav)} ({activeDiscountPercent}% OFF)
+                              </span>
+                              {activePeakHike && (
+                                <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300/50">
+                                  ⚡ Peak Session (+{activePeakHike.hikeType === "PERCENTAGE" ? `${activePeakHike.hikeValue}%` : `₹${activePeakHike.hikeValue}`})
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       <p className="text-[11px] text-slate-600 mt-2 leading-relaxed border-t border-slate-100 pt-2">
@@ -451,6 +532,9 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
               <div className="space-y-2.5">
                 {pkg.itinerary.map((dayItem) => {
                   const isOpen = openDay === dayItem.day;
+                  const dayHotel = getDayHotel(dayItem);
+                  const dayTransport = getDayTransport(dayItem);
+
                   return (
                     <div
                       key={dayItem.day}
@@ -476,11 +560,23 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                           <p className={`font-bold text-sm leading-snug truncate ${isOpen ? "text-amber-900" : "text-slate-800"}`}>
                             {dayItem.title}
                           </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                            <span>🍽️ {dayItem.meals}</span>
+                          {/* Transport start before meals, followed by dynamic hotel for active tier */}
+                          <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200/80">
+                              <span>{getTransportIcon(dayTransport)}</span>
+                              <span>{dayTransport}</span>
+                            </span>
                             <span>•</span>
-                            <span className="truncate">🏨 {dayItem.hotel}</span>
-                          </p>
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <span>🍽️</span>
+                              <span>{dayItem.meals}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1 text-slate-700 font-medium truncate max-w-[280px] sm:max-w-md">
+                              <span>🏨</span>
+                              <span className="truncate">{dayHotel}</span>
+                            </span>
+                          </div>
                         </div>
                         <svg
                           className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
@@ -494,17 +590,10 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                         </svg>
                       </button>
 
+                      {/* Clean description without duplicate bottom chips */}
                       {isOpen && (
                         <div className="px-5 py-4 border-t border-amber-100/60 bg-white space-y-3 text-sm animate-in fade-in duration-150">
                           <p className="text-slate-600 leading-relaxed text-xs sm:text-sm">{dayItem.desc}</p>
-                          <div className="flex flex-wrap gap-2.5 pt-1">
-                            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                              🍽️ Meals: {dayItem.meals}
-                            </span>
-                            <span className="flex items-center gap-1.5 text-xs font-semibold text-blue-800 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
-                              🏨 Stay ({activeTierData.title}): {dayItem.hotel}
-                            </span>
-                          </div>
                         </div>
                       )}
                     </div>
@@ -684,7 +773,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
                     {activeTierData.title}
                   </span>
-                  {tierOriginalPrice > unitPrice && (
+                  {tierOriginalPrice > unitPrice && !isPriceOnRequest && (
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-slate-400 line-through">
                         {formatINR(tierOriginalPrice)}
@@ -696,15 +785,26 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   )}
                 </div>
 
-                <div className="flex items-baseline gap-2 pt-1">
-                  <span className="text-3xl font-black text-slate-900">
-                    {formatINR(unitPrice)}
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium">/ adult</span>
-                </div>
-                <p className="text-[11px] text-emerald-600 font-semibold">
-                  Includes private cab, {activeTierData.title} stays, daily meals &amp; sightseeing
-                </p>
+                {isPriceOnRequest ? (
+                  <div className="pt-1.5 space-y-1">
+                    <span className="text-2xl font-black text-purple-700">Price on Request</span>
+                    <p className="text-[11px] text-purple-800 font-semibold">
+                      👑 VIP Luxury Tailored Quotation for your dates
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="text-3xl font-black text-slate-900">
+                        {formatINR(unitPrice)}
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium">/ adult</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-600 font-semibold">
+                      Includes private cab, {activeTierData.title} stays, daily meals &amp; sightseeing
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Passenger & Date Controls */}
@@ -717,7 +817,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                     onChange={(e) => setTravelDate(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-hidden focus:border-amber-500 cursor-pointer"
                   />
-                  {activePeakHike ? (
+                  {activePeakHike && !isPriceOnRequest ? (
                     <div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 text-[11px] font-bold flex items-center justify-between">
                       <span className="flex items-center gap-1">
                         <span>⚡</span>
@@ -729,8 +829,8 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                     </div>
                   ) : (
                     <div className="mt-1 text-[10.5px] text-slate-500 flex items-center gap-1 font-medium">
-                      <span className="text-emerald-600 font-bold">✓ Standard Off-Peak Rates</span>
-                      <span>· No Seasonal Surcharge</span>
+                      <span className="text-emerald-600 font-bold">✓ Direct Operator Rates</span>
+                      <span>· Transparent Pricing</span>
                     </div>
                   )}
                 </div>
@@ -779,45 +879,57 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   </div>
                 </div>
 
-                {/* Live Cost Breakdown with Instant Savings Banner */}
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-[11px]">
-                  {totalSavings > 0 && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-lg p-2 flex items-center justify-between text-emerald-800 font-bold">
-                      <span className="flex items-center gap-1">
-                        <span>🎉</span>
-                        <span>Instant Savings Applied</span>
-                      </span>
-                      <span>-{formatINR(totalSavings)} ({activeDiscountPercent}% OFF)</span>
+                {/* Live Cost Breakdown or Price On Request Notice */}
+                {isPriceOnRequest ? (
+                  <div className="bg-purple-50/70 p-3.5 rounded-xl border border-purple-200/80 space-y-2 text-[11px] text-purple-900">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <span>👑</span>
+                      <span>5★ Luxury Custom Pricing</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-slate-500 line-through">
-                    <span>Standard Total Value</span>
-                    <span>{formatINR(originalSubtotal)}</span>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">
+                      Luxury resort suites and seasonal VIP packages are priced on request. Submit an inquiry or chat with us for immediate custom rates.
+                    </p>
                   </div>
-                  <div className="flex justify-between text-slate-700 font-medium">
-                    <span>{adults} Adults × {formatINR(unitPrice)}</span>
-                    <span className="font-semibold">{formatINR(unitPrice * adults)}</span>
-                  </div>
-                  {children > 0 && (
+                ) : (
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-[11px]">
+                    {totalSavings > 0 && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-lg p-2 flex items-center justify-between text-emerald-800 font-bold">
+                        <span className="flex items-center gap-1">
+                          <span>🎉</span>
+                          <span>Instant Savings Applied</span>
+                        </span>
+                        <span>-{formatINR(totalSavings)} ({activeDiscountPercent}% OFF)</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-500 line-through">
+                      <span>Standard Total Value</span>
+                      <span>{formatINR(originalSubtotal)}</span>
+                    </div>
                     <div className="flex justify-between text-slate-700 font-medium">
-                      <span>{children} Child × {formatINR(childPrice)}</span>
-                      <span className="font-semibold">{formatINR(childPrice * children)}</span>
+                      <span>{adults} Adults × {formatINR(unitPrice)}</span>
+                      <span className="font-semibold">{formatINR(unitPrice * adults)}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-slate-600">
-                    <span>GST (5%)</span>
-                    <span className="font-semibold">{formatINR(gst)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-900 font-black text-sm pt-1.5 border-t border-slate-200">
-                    <div>
-                      <span>Total Quoted Cost</span>
-                      {totalSavings > 0 && (
-                        <span className="block text-[10px] text-emerald-600 font-bold">You save {formatINR(totalSavings)}</span>
-                      )}
+                    {children > 0 && (
+                      <div className="flex justify-between text-slate-700 font-medium">
+                        <span>{children} Child × {formatINR(childPrice)}</span>
+                        <span className="font-semibold">{formatINR(childPrice * children)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-600">
+                      <span>GST (5%)</span>
+                      <span className="font-semibold">{formatINR(gst)}</span>
                     </div>
-                    <span className="text-amber-600 font-black text-base">{formatINR(total)}</span>
+                    <div className="flex justify-between text-slate-900 font-black text-sm pt-1.5 border-t border-slate-200">
+                      <div>
+                        <span>Total Quoted Cost</span>
+                        {totalSavings > 0 && (
+                          <span className="block text-[10px] text-emerald-600 font-bold">You save {formatINR(totalSavings)}</span>
+                        )}
+                      </div>
+                      <span className="text-amber-600 font-black text-base">{formatINR(total)}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -827,13 +939,13 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                   onClick={() => setShowModal(true)}
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm transition-all shadow-lg shadow-amber-500/25 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <span>⚡ Get Instant Custom Quote</span>
+                  <span>{isPriceOnRequest ? `⚡ Inquire for ${activeTierData.title} Rates` : "⚡ Get Instant Custom Quote"}</span>
                   <span>→</span>
                 </button>
 
                 <a
                   href={`https://wa.me/${cleanWhatsApp || "918091638090"}?text=${encodeURIComponent(
-                    `Hi Be My Traveller! I'm interested in booking the "${pkg.title}" with ${activeTierData.title} accommodation for ${adults} Adults on ${travelDate}. Estimated total: ${formatINR(total)}.`
+                    `Hi Be My Traveller! I'm interested in booking the "${pkg.title}" with ${activeTierData.title} accommodation for ${adults} Adults on ${travelDate}. ${isPriceOnRequest ? "Please provide package pricing & availability." : `Estimated total: ${formatINR(total)}.`}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
