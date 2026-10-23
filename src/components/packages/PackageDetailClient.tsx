@@ -123,10 +123,38 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
 
   // Helper for hotel based on current selected tier
   const getDayHotel = (dayItem: PackageData["itinerary"][number]) => {
+    // 1. If explicit hotelsByTier entry exists for the active tier, use it!
     if (dayItem.hotelsByTier && dayItem.hotelsByTier[hotelTier]?.trim()) {
       return dayItem.hotelsByTier[hotelTier]!.trim();
     }
-    return dayItem.hotel || "Verified Mountain Stay";
+
+    // 2. If dayItem.hotel contains multiple slash-separated tier stays, intelligently extract the active tier
+    const raw = (dayItem.hotel || "").trim();
+    if (raw.includes("/")) {
+      const parts = raw.split("/").map((p) => p.trim());
+      if (hotelTier === "budget") {
+        const match = parts.find((p) => p.includes("2★") || /budget|homestay|tent|cottage|camp/i.test(p));
+        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
+        return parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw;
+      }
+      if (hotelTier === "standard") {
+        const match = parts.find((p) => p.includes("3★") || /standard|deluxe 3|3 star/i.test(p));
+        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
+        return parts[0] ? parts[0].replace(/\s*\([2-5]★\)/g, "").trim() : raw;
+      }
+      if (hotelTier === "deluxe") {
+        const match = parts.find((p) => p.includes("4★") || /super deluxe|4 star/i.test(p));
+        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
+        return parts[1] || parts[0];
+      }
+      if (hotelTier === "luxury") {
+        const match = parts.find((p) => p.includes("5★") || /luxury|5 star|resort|spa/i.test(p));
+        if (match) return match.replace(/\s*\([2-5]★\)/g, "").trim();
+        return parts[parts.length - 1] || parts[0];
+      }
+    }
+
+    return raw || "Verified Mountain Stay";
   };
 
   // Helper for day transport
@@ -562,7 +590,7 @@ export default function PackageDetailClient({ pkg }: { pkg: PackageData }) {
                           </p>
                           {/* Transport start before meals, followed by dynamic hotel for active tier */}
                           <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200/80">
+                            <span className="flex items-center gap-1 text-slate-600 font-medium">
                               <span>{getTransportIcon(dayTransport)}</span>
                               <span>{dayTransport}</span>
                             </span>

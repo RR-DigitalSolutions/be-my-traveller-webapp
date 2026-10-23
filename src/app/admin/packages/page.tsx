@@ -1107,8 +1107,19 @@ export default function AdminPackagesPage() {
         ? Math.round(standardPrice / (1 - discPercent / 100))
         : Math.round(standardPrice * 1.25);
 
+      const sanitizedItinerary = (formData.itinerary || []).map((dayItem: any) => {
+        const hMap = dayItem.hotelsByTier || {};
+        const activeHotel = hMap.deluxe || hMap.standard || hMap.budget || hMap.luxury || dayItem.hotel || "";
+        return {
+          ...dayItem,
+          hotel: activeHotel,
+          hotelsByTier: hMap,
+        };
+      });
+
       const payload = {
         ...formData,
+        itinerary: sanitizedItinerary,
         startingPrice: standardPrice,
         originalPrice: computedOriginal,
         destination: formData.route || formData.destination,
@@ -1842,63 +1853,6 @@ export default function AdminPackagesPage() {
                         <option value="IN_REVIEW">In Review</option>
                         <option value="ARCHIVED">Archived</option>
                       </select>
-                    </div>
-                  </div>
-
-                  {/* Mode of Transportation (Vehicle Category) */}
-                  <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                        <span>🚗</span> Mode of Transportation (Vehicle Category)
-                      </label>
-                      <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
-                        Shows in itinerary header before Meals
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <select
-                          value={
-                            [
-                              "Private AC Sedan (Dzire / Etios)",
-                              "Private AC SUV (Innova / Ertiga / Crysta)",
-                              "Tempo Traveller (12 / 17 / 26 Seater)",
-                              "Luxury Tourist Bus / Volvo",
-                              "Train / Rail Journey",
-                              "Flight Included",
-                              "Walking / Trekking Tour",
-                              "Private AC Sedan / SUV",
-                            ].includes(formData.transportType)
-                              ? formData.transportType
-                              : "CUSTOM"
-                          }
-                          onChange={(e) => {
-                            if (e.target.value !== "CUSTOM") {
-                              setFormData({ ...formData, transportType: e.target.value });
-                            }
-                          }}
-                          className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer"
-                        >
-                          <option value="Private AC Sedan (Dzire / Etios)">🚗 Sedan (Dzire / Etios)</option>
-                          <option value="Private AC SUV (Innova / Ertiga / Crysta)">🚙 SUV (Innova / Ertiga / Crysta)</option>
-                          <option value="Private AC Sedan / SUV">🚗/🚙 Private AC Sedan / SUV</option>
-                          <option value="Tempo Traveller (12 / 17 / 26 Seater)">🚐 Tempo Traveller (12 / 17 / 26 Seater)</option>
-                          <option value="Luxury Tourist Bus / Volvo">🚌 Luxury Bus / Volvo</option>
-                          <option value="Train / Rail Journey">🚂 Train / Rail Tour</option>
-                          <option value="Flight Included">✈️ Flight Transfer</option>
-                          <option value="Walking / Trekking Tour">🚶 Walking / Trekking</option>
-                          <option value="CUSTOM">✏️ Custom Transportation Mode</option>
-                        </select>
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          value={formData.transportType}
-                          onChange={(e) => setFormData({ ...formData, transportType: e.target.value })}
-                          placeholder="e.g. Private AC SUV / Sedan"
-                          className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -3072,130 +3026,123 @@ export default function AdminPackagesPage() {
                           <div className="bg-slate-900/50 p-3.5 rounded-xl border border-slate-800 space-y-2.5">
                             <div className="flex items-center justify-between">
                               <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-                                <span>🏨</span> Hotel Stays by Package Category (Multiple Hotels allowed, separated by /)
+                                <span>🏨</span> Day Hotel Stays by Category (Multiple alternative hotels allowed, separate with /)
                               </span>
-                              <span className="text-[10px] text-slate-400">
-                                Dynamic switches when client selects category
+                              <span className="text-[10px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">
+                                Changes live on client tier selection
                               </span>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                              {isBudgetActive && (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                                    <span>🏠</span> 2★ Budget Stays
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={dayHotels.budget || ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        itinerary: prev.itinerary.map((d, i) =>
-                                          i === idx
-                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), budget: val } }
-                                            : d
-                                        ),
-                                      }));
-                                    }}
-                                    placeholder="e.g. Hotel Green View Budget / Similar"
-                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                  />
-                                </div>
-                              )}
-
-                              {isStandardActive && (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
-                                    <span>🏨</span> 3★ Deluxe Stays
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={dayHotels.standard || ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        itinerary: prev.itinerary.map((d, i) =>
-                                          i === idx
-                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), standard: val } }
-                                            : d
-                                        ),
-                                      }));
-                                    }}
-                                    placeholder="e.g. Pine View Boutique Stay / Snow Peak Stay"
-                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                  />
-                                </div>
-                              )}
-
-                              {isDeluxeActive && (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
-                                    <span>🌟</span> 4★ Super Deluxe Stays
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={dayHotels.deluxe || ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        itinerary: prev.itinerary.map((d, i) =>
-                                          i === idx
-                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), deluxe: val } }
-                                            : d
-                                        ),
-                                      }));
-                                    }}
-                                    placeholder="e.g. Riverfront Grand Resort / Woodridge Chalet"
-                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
-                                  />
-                                </div>
-                              )}
-
-                              {isLuxuryActive && (
-                                <div className="space-y-1">
-                                  <label className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
-                                    <span>👑</span> 5★ Luxury Resort Stays
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={dayHotels.luxury || ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        itinerary: prev.itinerary.map((d, i) =>
-                                          i === idx
-                                            ? { ...d, hotelsByTier: { ...(d.hotelsByTier || {}), luxury: val } }
-                                            : d
-                                        ),
-                                      }));
-                                    }}
-                                    placeholder="e.g. Oberoi Cecil / Wildflower Hall"
-                                    className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-purple-500"
-                                  />
-                                </div>
-                              )}
-
-                              {/* Fallback default hotel */}
-                              <div className="space-y-1 sm:col-span-2">
-                                <label className="text-[10px] font-medium text-slate-400">
-                                  Default / Fallback Hotel Summary (Used if specific tier stay is blank)
+                              {/* 1. Budget 2★ / Special Stays */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                  <span>🏠</span> 2★ Budget / Tent / Cottage / Homestay Stays
                                 </label>
                                 <input
                                   type="text"
-                                  value={dayItem.hotel}
-                                  onChange={(e) =>
+                                  value={dayHotels.budget || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
                                     setFormData((prev) => ({
                                       ...prev,
-                                      itinerary: prev.itinerary.map((d, i) => (i === idx ? { ...d, hotel: e.target.value } : d)),
-                                    }))
-                                  }
-                                  placeholder="e.g. Verified Boutique Mountain Resort"
-                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-400 focus:outline-hidden focus:border-amber-500"
+                                      itinerary: prev.itinerary.map((d, i) =>
+                                        i === idx
+                                          ? {
+                                              ...d,
+                                              hotel: d.hotel || val,
+                                              hotelsByTier: { ...(d.hotelsByTier || {}), budget: val },
+                                            }
+                                          : d
+                                      ),
+                                    }));
+                                  }}
+                                  placeholder="e.g. Riverside Camping Tent / Cozy Homestay / Budget Stay"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+
+                              {/* 2. Deluxe 3★ Stays */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                                  <span>🏨</span> 3★ Deluxe Stays
+                                </label>
+                                <input
+                                  type="text"
+                                  value={dayHotels.standard || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) =>
+                                        i === idx
+                                          ? {
+                                              ...d,
+                                              hotel: d.hotel || val,
+                                              hotelsByTier: { ...(d.hotelsByTier || {}), standard: val },
+                                            }
+                                          : d
+                                      ),
+                                    }));
+                                  }}
+                                  placeholder="e.g. Pine View Boutique Stay / Snow Peak Stay"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+
+                              {/* 3. Super Deluxe 4★ Stays */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                                  <span>🌟</span> 4★ Super Deluxe Stays
+                                </label>
+                                <input
+                                  type="text"
+                                  value={dayHotels.deluxe || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) =>
+                                        i === idx
+                                          ? {
+                                              ...d,
+                                              hotel: val || d.hotel,
+                                              hotelsByTier: { ...(d.hotelsByTier || {}), deluxe: val },
+                                            }
+                                          : d
+                                      ),
+                                    }));
+                                  }}
+                                  placeholder="e.g. Riverfront Grand Resort / Woodridge Chalet"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-amber-500"
+                                />
+                              </div>
+
+                              {/* 4. Luxury 5★ Resort Stays */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-purple-300 flex items-center gap-1">
+                                  <span>👑</span> 5★ Luxury Resort Stays
+                                </label>
+                                <input
+                                  type="text"
+                                  value={dayHotels.luxury || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      itinerary: prev.itinerary.map((d, i) =>
+                                        i === idx
+                                          ? {
+                                              ...d,
+                                              hotel: d.hotel || val,
+                                              hotelsByTier: { ...(d.hotelsByTier || {}), luxury: val },
+                                            }
+                                          : d
+                                      ),
+                                    }));
+                                  }}
+                                  placeholder="e.g. The Oberoi Cecil / Span Resort & Spa"
+                                  className="w-full px-2.5 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-hidden focus:border-purple-500"
                                 />
                               </div>
                             </div>
