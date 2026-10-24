@@ -302,6 +302,7 @@ function PackagesContent() {
     { name: "LUXURY", label: "Luxury Escapes" },
     { name: "FAMILY", label: "Family Vacations" },
   ]);
+  const [packagesList, setPackagesList] = useState<IPackageItem[]>(ALL_PACKAGES);
 
   // Lead Enquiry Modal State
   const [selectedPackageForEnquiry, setSelectedPackageForEnquiry] = useState<IPackageItem | null>(null);
@@ -332,6 +333,43 @@ function PackagesContent() {
       }
     };
     loadThemes();
+
+    const loadDbPackages = async () => {
+      try {
+        const response = await fetch("/api/v1/packages?limit=100");
+        if (!response.ok) return;
+        const data = await response.json();
+        const livePackages: any[] = Array.isArray(data.packages) ? data.packages : [];
+        if (livePackages.length > 0) {
+          const liveItems: IPackageItem[] = livePackages.map((p) => ({
+            slug: p.slug,
+            title: p.title,
+            destination: p.destination,
+            region: p.region || "Incredible India",
+            nights: Number(p.nights) || 5,
+            days: Number(p.days) || 6,
+            theme: String(p.theme || "HILL_STATION").toUpperCase(),
+            originalPrice: p.originalPrice || "₹35,000",
+            price: p.price || "₹24,999",
+            discount: p.discount || "20% OFF",
+            rating: Number(p.rating) || 4.9,
+            reviews: Number(p.reviews) || 120,
+            inclusions: Array.isArray(p.inclusions) && p.inclusions.length > 0 ? p.inclusions : ["Hotel Stay", "Private Cab", "Daily Meals"],
+            img: p.img,
+            tags: Array.isArray(p.tags) ? p.tags : [],
+          }));
+
+          setPackagesList((prev) => {
+            const liveSlugs = new Set(liveItems.map((item) => item.slug));
+            const fallbacks = prev.filter((item) => !liveSlugs.has(item.slug));
+            return [...liveItems, ...fallbacks];
+          });
+        }
+      } catch (error) {
+        console.warn("Unable to load live database packages for packages page.", error);
+      }
+    };
+    loadDbPackages();
   }, []);
 
   const handleClearFilters = () => {
@@ -379,7 +417,7 @@ function PackagesContent() {
 
   // Filter packages based on active filters
   const filteredPackages = useMemo(() => {
-    return ALL_PACKAGES.filter((p) => {
+    return packagesList.filter((p) => {
       // 1. Destination / Keyword Search
       if (searchDestination.trim()) {
         const query = searchDestination.toLowerCase().trim();
@@ -395,9 +433,19 @@ function PackagesContent() {
 
       // 2. Theme Filter
       if (selectedTheme !== "ALL") {
-        const packageThemes = Array.isArray(p.theme) ? p.theme : [p.theme].filter(Boolean);
+        const packageThemes = Array.isArray((p as any).themeList)
+          ? (p as any).themeList
+          : Array.isArray(p.theme)
+          ? p.theme
+          : [p.theme].filter(Boolean);
         const selectedValue = normalizeThemeValue(selectedTheme);
-        const matchesTheme = packageThemes.some((t) => normalizeThemeValue(t) === selectedValue);
+        const matchesTheme = packageThemes.some((t: any) => {
+          const str = String(t || "");
+          return (
+            normalizeThemeValue(str) === selectedValue ||
+            str.toLowerCase().replace(/[^a-z0-9]+/g, "-") === selectedTheme.toLowerCase().replace(/[^a-z0-9]+/g, "-")
+          );
+        });
         if (!matchesTheme) return false;
       }
 
@@ -412,7 +460,7 @@ function PackagesContent() {
 
       return true;
     });
-  }, [searchDestination, selectedTheme, selectedDuration]);
+  }, [packagesList, searchDestination, selectedTheme, selectedDuration]);
 
   const hasActiveFilters = Boolean(
     searchDestination || initialFrom || initialMonth || (selectedDuration !== "ALL" && selectedDuration !== initialDuration) || selectedTheme !== "ALL"

@@ -58,7 +58,6 @@ interface OfferItem {
   sortOrder: number;
 }
 
-// Lightweight catalog types from the DB
 interface DbPackage {
   _id: string;
   name?: string;
@@ -66,11 +65,24 @@ interface DbPackage {
   slug: string;
   tagline?: string;
   coverImage?: string;
+  coverImageStr?: string;
+  gallery?: any[];
   basePrice?: number;
   startingPrice?: number;
+  discountPercent?: number;
+  originalPrice?: number;
   nights?: number;
   days?: number;
   status?: string;
+  theme?: string[] | string;
+  route?: string;
+  destination?: string;
+  highlights?: string[];
+  inclusions?: string[];
+  hotelTiers?: any;
+  tag?: string;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 interface DbDestination {
@@ -712,6 +724,23 @@ export default function HomepageContentAdmin() {
   // International destinations picker
   const [showIntlPicker, setShowIntlPicker] = useState(false);
 
+  // Speciality Theme Packages picker
+  const [showThemePkgPicker, setShowThemePkgPicker] = useState(false);
+  const [themePkgSearch, setThemePkgSearch] = useState("");
+  const [themePkgFilter, setThemePkgFilter] = useState("ALL");
+  const [selectedThemePkgIds, setSelectedThemePkgIds] = useState<Set<string>>(new Set());
+  const [availableThemes, setAvailableThemes] = useState<{ code: string; label: string; slug: string }[]>([
+    { code: "HONEYMOON", label: "Honeymoon & Romance", slug: "honeymoon" },
+    { code: "ADVENTURE", label: "Adventure & Trekking", slug: "adventure" },
+    { code: "HERITAGE", label: "Heritage & Culture", slug: "heritage" },
+    { code: "BEACH", label: "Beach & Islands", slug: "beach" },
+    { code: "WILDLIFE", label: "Wildlife & Safari", slug: "wildlife" },
+    { code: "PILGRIMAGE", label: "Pilgrimage & Spiritual", slug: "pilgrimage" },
+    { code: "HILL_STATION", label: "Hill Stations", slug: "hill-station" },
+    { code: "FAMILY", label: "Family Holidays", slug: "family" },
+    { code: "LUXURY", label: "Luxury Escapes", slug: "luxury" },
+  ]);
+
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 4000);
@@ -786,6 +815,45 @@ export default function HomepageContentAdmin() {
     sortOrder: type === "domestic" ? domesticSpots.length : intlSpots.length,
   });
 
+  // Convert a DB package to a Speciality ThemePackageItem card
+  const dbPkgToThemeCard = (p: DbPackage, overrideTheme?: string): ThemePackageItem => {
+    const pkgTitle = p.title || p.name || p.slug || "Speciality Theme Tour";
+    let chosenTheme = overrideTheme;
+    if (!chosenTheme) {
+      if (Array.isArray(p.theme) && p.theme[0]) {
+        chosenTheme = String(p.theme[0]).toLowerCase().replace(/_/g, "-");
+      } else if (typeof p.theme === "string" && p.theme) {
+        chosenTheme = p.theme.toLowerCase().replace(/_/g, "-");
+      } else {
+        chosenTheme = "honeymoon";
+      }
+    }
+
+    const startingPrice = Number(p.hotelTiers?.standard?.pricePerAdult) || Number(p.startingPrice) || Number(p.basePrice) || 29999;
+    const basePrice = Number(p.originalPrice) || (p.discountPercent ? Math.round(startingPrice / (1 - p.discountPercent / 100)) : Math.round(startingPrice * 1.25));
+    const discountPct = Number(p.discountPercent) || (basePrice > startingPrice ? Math.round(((basePrice - startingPrice) / basePrice) * 100) : 25);
+    const coverImg = p.coverImageStr || p.coverImage || (Array.isArray(p.gallery) && p.gallery[0] ? (typeof p.gallery[0] === "string" ? p.gallery[0] : (p.gallery[0] as any).url) : "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80");
+
+    return {
+      id: `tp-${p._id}`,
+      theme: chosenTheme,
+      title: pkgTitle,
+      destination: p.route || p.destination || p.tagline || (p.nights ? `${p.nights}N / ${p.days || p.nights + 1}D Tour` : pkgTitle),
+      nights: p.nights && p.days ? `${p.nights} Nights / ${p.days} Days` : "5 Nights / 6 Days",
+      originalPrice: `₹${basePrice.toLocaleString("en-IN")}`,
+      price: `₹${startingPrice.toLocaleString("en-IN")}`,
+      discount: `${discountPct}% OFF`,
+      rating: Number(p.averageRating) || 4.9,
+      reviews: Number(p.reviewCount) || 150,
+      specialInclusion: (Array.isArray(p.highlights) && p.highlights[0]) || (Array.isArray(p.inclusions) && p.inclusions[0]) || "Handcrafted Tour & Dedicated Cab",
+      img: coverImg,
+      badge: p.tag || "Signature Tour",
+      slug: p.slug,
+      isActive: true,
+      sortOrder: themePackages.length,
+    };
+  };
+
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -850,6 +918,22 @@ export default function HomepageContentAdmin() {
       }
     };
     fetchContent();
+
+    // Load dynamic themes for homepage content manager
+    fetch("/api/v1/themes")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.themes) && data.themes.length > 0) {
+          setAvailableThemes(
+            data.themes.map((th: any) => ({
+              code: String(th.name || th.slug || "").trim().toUpperCase(),
+              label: String(th.label || th.name || th.slug || "").trim(),
+              slug: String(th.slug || th.name || "").trim().toLowerCase(),
+            }))
+          );
+        }
+      })
+      .catch((err) => console.warn("Failed to load themes:", err));
   }, []);
 
   const handleSave = async () => {
@@ -1452,38 +1536,49 @@ export default function HomepageContentAdmin() {
           ══════════════════════════════════════════════════════════ */}
           {activeTab === "THEMES" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Speciality Holiday Themes Packages</h2>
                   <p className="text-xs text-slate-500">
-                    Theme-based signature packages (Honeymoon, Adventure, Heritage, Beach, Wildlife, Pilgrimage).
+                    Theme-based signature packages categorized by your travel interests (Honeymoon, Adventure, Heritage, etc.).
                   </p>
                 </div>
-                <button
-                  onClick={() =>
-                    setEditThemePkg({
-                      id: `tp-${Date.now()}`,
-                      theme: "honeymoon",
-                      title: "New Curated Signature Tour",
-                      destination: "Destination Details",
-                      nights: "5 Nights / 6 Days",
-                      originalPrice: "₹40,000",
-                      price: "₹29,999",
-                      discount: "25% OFF",
-                      rating: 4.9,
-                      reviews: 150,
-                      specialInclusion: "Complimentary Dinner & Special Sightseeing",
-                      img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
-                      badge: "Signature Tour",
-                      slug: "new-signature-tour",
-                      isActive: true,
-                      sortOrder: themePackages.length,
-                    })
-                  }
-                  className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  + Add Theme Package
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setShowThemePkgPicker(true);
+                      fetchDbPackages();
+                    }}
+                    className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <span>✨</span> Select from Added Packages
+                  </button>
+                  <button
+                    onClick={() =>
+                      setEditThemePkg({
+                        id: `tp-${Date.now()}`,
+                        theme: availableThemes[0]?.slug || "honeymoon",
+                        title: "New Curated Signature Tour",
+                        destination: "Destination Details",
+                        nights: "5 Nights / 6 Days",
+                        originalPrice: "₹40,000",
+                        price: "₹29,999",
+                        discount: "25% OFF",
+                        rating: 4.9,
+                        reviews: 150,
+                        specialInclusion: "Complimentary Dinner & Special Sightseeing",
+                        img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
+                        badge: "Signature Tour",
+                        slug: "new-signature-tour",
+                        isActive: true,
+                        sortOrder: themePackages.length,
+                      })
+                    }
+                    className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    + Add Theme Package
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2962,18 +3057,26 @@ export default function HomepageContentAdmin() {
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Theme Category</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-slate-700">Theme Category</label>
+                    <a
+                      href="/admin/content/themes"
+                      target="_blank"
+                      className="text-[10px] text-amber-600 hover:underline font-semibold"
+                    >
+                      ⚙️ Manage Themes
+                    </a>
+                  </div>
                   <select
                     value={editThemePkg.theme}
                     onChange={(e) => setEditThemePkg({ ...editThemePkg, theme: e.target.value })}
-                    className="w-full p-2 border rounded-lg capitalize"
+                    className="w-full p-2 border rounded-lg"
                   >
-                    <option value="honeymoon">Honeymoon</option>
-                    <option value="adventure">Adventure</option>
-                    <option value="heritage">Heritage</option>
-                    <option value="beach">Beach</option>
-                    <option value="wildlife">Wildlife</option>
-                    <option value="pilgrimage">Pilgrimage</option>
+                    {availableThemes.map((th) => (
+                      <option key={th.slug || th.code} value={th.slug || th.code.toLowerCase()}>
+                        {th.label} ({th.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -3590,6 +3693,257 @@ export default function HomepageContentAdmin() {
                       const data = await res.json();
                       if (data.success) {
                         showToast(`✓ Published ${newCards.length} package(s) live to Best-Selling section!`);
+                      } else {
+                        showToast(data.error || "Failed to publish", "error");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || "Failed to save to database", "error");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-lg bg-amber-500 font-bold text-xs text-slate-950 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {saving ? "Saving..." : "Add & Publish Live"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DB PICKER MODAL: SELECT SPECIALITY THEME PACKAGES ── */}
+      {showThemePkgPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-3xl w-full max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div>
+                <h3 className="font-bold text-base text-slate-900">Select Packages for Speciality Themes</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Choose from your active database tour packages to showcase in the Speciality Holiday Themes homepage section.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowThemePkgPicker(false);
+                  setThemePkgSearch("");
+                  setSelectedThemePkgIds(new Set());
+                }}
+                className="text-slate-400 hover:text-slate-700 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Search & Theme Filter Controls */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                placeholder="Search packages by title, route, or slug..."
+                value={themePkgSearch}
+                onChange={(e) => setThemePkgSearch(e.target.value)}
+                className="flex-1 p-2.5 border border-slate-200 rounded-lg text-xs focus:outline-hidden focus:border-amber-500"
+              />
+              <select
+                value={themePkgFilter}
+                onChange={(e) => setThemePkgFilter(e.target.value)}
+                className="p-2.5 border border-slate-200 rounded-lg text-xs bg-white text-slate-700 focus:outline-hidden focus:border-amber-500"
+              >
+                <option value="ALL">All Themes</option>
+                {availableThemes.map((th) => (
+                  <option key={th.code} value={th.code}>
+                    {th.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {dbPkgLoading ? (
+              <div className="py-12 flex flex-col items-center gap-2">
+                <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-slate-500">Loading tour packages from database...</p>
+              </div>
+            ) : dbPackages.length === 0 ? (
+              <div className="py-12 text-center space-y-2">
+                <p className="text-sm font-bold text-slate-600">No packages found in database.</p>
+                <p className="text-xs text-slate-400">Create tour packages in Admin → Tour Packages first.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[46vh] overflow-y-auto pr-1">
+                {dbPackages
+                  .filter((p) => {
+                    // Search match
+                    if (themePkgSearch.trim()) {
+                      const q = themePkgSearch.toLowerCase().trim();
+                      const matchTitle = (p.title || p.name || "").toLowerCase().includes(q);
+                      const matchRoute = (p.route || p.destination || p.tagline || "").toLowerCase().includes(q);
+                      const matchSlug = (p.slug || "").toLowerCase().includes(q);
+                      if (!matchTitle && !matchRoute && !matchSlug) return false;
+                    }
+                    // Theme filter match
+                    if (themePkgFilter !== "ALL") {
+                      const target = themePkgFilter.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+                      const pThemes = Array.isArray(p.theme) ? p.theme : p.theme ? [p.theme] : [];
+                      const hasTheme = pThemes.some((t) => String(t).toUpperCase().replace(/[^A-Z0-9]+/g, "_") === target);
+                      if (!hasTheme) return false;
+                    }
+                    return true;
+                  })
+                  .map((p) => {
+                    const displayName = p.title || p.name || p.slug;
+                    const alreadyAdded = themePackages.some((tp) => tp.slug === p.slug || tp.id === `tp-${p._id}` || tp.id === p._id);
+                    const isSelected = selectedThemePkgIds.has(p._id);
+                    const rawTheme = Array.isArray(p.theme) ? p.theme.join(", ") : (p.theme || "None");
+
+                    return (
+                      <div
+                        key={p._id}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                          alreadyAdded
+                            ? "border-emerald-200 bg-emerald-50/40 opacity-80 cursor-default"
+                            : isSelected
+                            ? "border-amber-400 bg-amber-50"
+                            : "border-slate-200 bg-white hover:border-amber-300 hover:bg-amber-50/20"
+                        }`}
+                        onClick={() => {
+                          if (alreadyAdded) return;
+                          setSelectedThemePkgIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(p._id)) next.delete(p._id);
+                            else next.add(p._id);
+                            return next;
+                          });
+                        }}
+                      >
+                        {p.coverImageStr || p.coverImage ? (
+                          <img
+                            src={p.coverImageStr || p.coverImage}
+                            alt={displayName}
+                            className="w-16 h-14 rounded-lg object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-16 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-xl shrink-0">
+                            ✨
+                          </div>
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-900 line-clamp-1">{displayName}</p>
+                            {p.tag && (
+                              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
+                                {p.tag}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[10px] text-slate-500">
+                            <span>🕒 {p.nights && p.days ? `${p.nights}N / ${p.days}D` : (p.tagline || p.slug)}</span>
+                            {rawTheme && (
+                              <span className="font-bold text-[9px] uppercase px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                                Theme: {rawTheme}
+                              </span>
+                            )}
+                            {p.status && (
+                              <span className="font-bold text-[9px] uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                                {p.status}
+                              </span>
+                            )}
+                          </div>
+                          {(p.startingPrice || p.basePrice) && (
+                            <p className="text-[11px] font-extrabold text-amber-600 mt-0.5">
+                              From ₹{(p.startingPrice || p.basePrice)?.toLocaleString("en-IN")}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {alreadyAdded ? (
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">
+                              Added
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const card = dbPkgToThemeCard(p);
+                                  setShowThemePkgPicker(false);
+                                  setEditThemePkg(card);
+                                }}
+                                className="px-2.5 py-1 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-md"
+                              >
+                                Customize &amp; Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const card = dbPkgToThemeCard(p);
+                                  setThemePackages([...themePackages, card]);
+                                  showToast(`✓ Added "${displayName}" to Theme Packages! Remember to Save & Publish.`);
+                                }}
+                                className="px-2.5 py-1 text-[11px] font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                              >
+                                + Quick Add
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-3 border-t">
+              <span className="text-xs text-slate-500">{selectedThemePkgIds.size} package(s) selected</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowThemePkgPicker(false);
+                    setThemePkgSearch("");
+                    setSelectedThemePkgIds(new Set());
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-100 font-bold text-xs text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={selectedThemePkgIds.size === 0}
+                  onClick={() => {
+                    const toAdd = dbPackages.filter((p) => selectedThemePkgIds.has(p._id));
+                    const newCards = toAdd.map((p) => dbPkgToThemeCard(p));
+                    setThemePackages([...themePackages, ...newCards]);
+                    setShowThemePkgPicker(false);
+                    setThemePkgSearch("");
+                    setSelectedThemePkgIds(new Set());
+                    showToast(`✓ Added ${newCards.length} theme package(s)! Remember to Save & Publish.`);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-slate-200 font-bold text-xs text-slate-800 hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add Selected ({selectedThemePkgIds.size})
+                </button>
+                <button
+                  disabled={selectedThemePkgIds.size === 0 || saving}
+                  onClick={async () => {
+                    const toAdd = dbPackages.filter((p) => selectedThemePkgIds.has(p._id));
+                    const newCards = toAdd.map((p) => dbPkgToThemeCard(p));
+                    const updated = [...themePackages, ...newCards];
+                    setThemePackages(updated);
+                    setShowThemePkgPicker(false);
+                    setThemePkgSearch("");
+                    setSelectedThemePkgIds(new Set());
+                    try {
+                      setSaving(true);
+                      const res = await fetch("/api/v1/admin/homepage-content", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ themePackages: updated }),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        showToast(`✓ Published ${newCards.length} theme package(s) live to homepage!`);
                       } else {
                         showToast(data.error || "Failed to publish", "error");
                       }

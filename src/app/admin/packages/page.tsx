@@ -207,6 +207,9 @@ export default function AdminPackagesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [themeFilter, setThemeFilter] = useState("ALL");
+  const [availableThemes, setAvailableThemes] = useState<{ code: string; label: string; slug: string }[]>(
+    THEME_OPTIONS.map((t) => ({ code: t, label: t.replace(/_/g, " "), slug: t.toLowerCase().replace(/_/g, "-") }))
+  );
 
   // Hierarchy Destinations State
   const [availableCountries, setAvailableCountries] = useState(DEFAULT_COUNTRIES);
@@ -564,6 +567,25 @@ export default function AdminPackagesPage() {
       }
     }
     loadHierarchy();
+
+    async function loadThemes() {
+      try {
+        const res = await fetch("/api/v1/themes");
+        const data = await res.json();
+        if (Array.isArray(data.themes) && data.themes.length > 0) {
+          setAvailableThemes(
+            data.themes.map((th: any) => ({
+              code: String(th.name || th.slug || "").trim().toUpperCase(),
+              label: String(th.label || th.name || th.slug || "").trim(),
+              slug: String(th.slug || th.name || "").trim().toLowerCase(),
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Could not load dynamic themes:", err);
+      }
+    }
+    loadThemes();
   }, []);
 
   // Location Hierarchy Modification Handlers
@@ -1306,8 +1328,8 @@ export default function AdminPackagesPage() {
               className="px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-300 focus:outline-hidden focus:border-amber-500 cursor-pointer"
             >
               <option value="ALL">All Themes</option>
-              {THEME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              {availableThemes.map((t) => (
+                <option key={t.code} value={t.code}>{t.label} ({t.code})</option>
               ))}
             </select>
           </div>
@@ -1337,7 +1359,13 @@ export default function AdminPackagesPage() {
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
                 {packages
-                  .filter((p) => themeFilter === "ALL" || p.theme?.includes(themeFilter))
+                  .filter((p) => {
+                    if (themeFilter === "ALL") return true;
+                    if (!p.theme) return false;
+                    const target = themeFilter.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+                    const pThemes = Array.isArray(p.theme) ? p.theme : [p.theme];
+                    return pThemes.some((t) => String(t).toUpperCase().replace(/[^A-Z0-9]+/g, "_") === target);
+                  })
                   .map((pkg) => (
                     <tr key={pkg._id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4">
@@ -1842,14 +1870,23 @@ export default function AdminPackagesPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300">Primary Theme</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-300">Primary Theme</label>
+                        <Link
+                          href="/admin/content/themes"
+                          target="_blank"
+                          className="text-[10px] text-amber-400 hover:text-amber-300 hover:underline font-semibold"
+                        >
+                          ⚙️ Manage Themes
+                        </Link>
+                      </div>
                       <select
-                        value={formData.theme[0] || "HILL_STATION"}
+                        value={formData.theme[0] || (availableThemes[0]?.code ?? "HILL_STATION")}
                         onChange={(e) => setFormData({ ...formData, theme: [e.target.value] })}
                         className="w-full px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-hidden focus:border-amber-500 cursor-pointer"
                       >
-                        {THEME_OPTIONS.map((t) => (
-                          <option key={t} value={t}>{t}</option>
+                        {availableThemes.map((t) => (
+                          <option key={t.code} value={t.code}>{t.label} ({t.code})</option>
                         ))}
                       </select>
                     </div>
