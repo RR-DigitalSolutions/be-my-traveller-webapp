@@ -107,19 +107,26 @@ interface ThemePackagesSectionProps {
   initialThemePackages?: any[];
 }
 
+interface ThemeTabItem {
+  id: string;
+  label: string;
+  icon: string;
+  slug?: string;
+}
+
 export default function ThemePackagesSection({ initialThemePackages }: ThemePackagesSectionProps = {}) {
   const [activeTheme, setActiveTheme] = useState<string>("ALL");
   const [themePackagesList, setThemePackagesList] = useState(
     initialThemePackages && initialThemePackages.length > 0 ? initialThemePackages : defaultThemePackages
   );
-  const [themes, setThemes] = useState([
-    { id: "ALL", label: "🌟 All Signature Themes", icon: "✨" },
-    { id: "HONEYMOON", label: "Honeymoon & Romance", icon: "💍" },
-    { id: "ADVENTURE", label: "Adventure & Snow", icon: "🏔️" },
-    { id: "HERITAGE", label: "Heritage & Palaces", icon: "🏰" },
-    { id: "WILDLIFE", label: "Wildlife & Jungle Safaris", icon: "🐅" },
-    { id: "PILGRIMAGE", label: "Spiritual & Temple Circuits", icon: "🛕" },
-    { id: "BEACH", label: "Beach & Island Villas", icon: "🏖️" },
+  const [themes, setThemes] = useState<ThemeTabItem[]>([
+    { id: "ALL", label: "🌟 All Signature Themes", icon: "✨", slug: "all" },
+    { id: "HONEYMOON", label: "Honeymoon & Romance", icon: "💍", slug: "honeymoon" },
+    { id: "ADVENTURE", label: "Adventure & Snow", icon: "🏔️", slug: "adventure" },
+    { id: "HERITAGE", label: "Heritage & Palaces", icon: "🏰", slug: "heritage" },
+    { id: "WILDLIFE", label: "Wildlife & Jungle Safaris", icon: "🐅", slug: "wildlife" },
+    { id: "PILGRIMAGE", label: "Spiritual & Temple Circuits", icon: "🛕", slug: "pilgrimage" },
+    { id: "BEACH", label: "Beach & Island Villas", icon: "🏖️", slug: "beach" },
   ]);
 
   const matchesTheme = (packageTheme: any, targetTheme: string): boolean => {
@@ -161,63 +168,42 @@ export default function ThemePackagesSection({ initialThemePackages }: ThemePack
 
     loadThemes();
 
-    // Load dynamic theme packages from admin content & live published packages
-    const loadAllPackages = async () => {
+    // Load dynamic theme packages from admin content
+    const loadCuratedPackages = async () => {
       try {
-        let curated: any[] = [];
         if (!initialThemePackages || initialThemePackages.length === 0) {
           const homeRes = await fetch("/api/v1/homepage-content", { cache: "no-store" });
           const homeData = await homeRes.json();
           if (homeData.success && Array.isArray(homeData.content?.themePackages) && homeData.content.themePackages.length > 0) {
-            curated = homeData.content.themePackages.filter((p: any) => p.isActive !== false);
+            const active = homeData.content.themePackages.filter((p: any) => p.isActive !== false);
+            if (active.length > 0) {
+              setThemePackagesList(active);
+            }
           }
         } else {
-          curated = initialThemePackages;
-        }
-
-        // Also fetch published packages from database to guarantee newly added packages are visible
-        const pkgRes = await fetch("/api/v1/packages?limit=50", { cache: "no-store" });
-        const pkgData = await pkgRes.json();
-        const dbList = Array.isArray(pkgData.packages) ? pkgData.packages : [];
-
-        // Convert DB packages to theme package card format if not already present in curated
-        const existingSlugs = new Set(curated.map((c) => c.slug));
-        const liveCards = dbList
-          .filter((p: any) => p.slug && !existingSlugs.has(p.slug))
-          .map((p: any) => ({
-            id: `live-${p._id || p.id}`,
-            theme: Array.isArray(p.themeList) && p.themeList.length > 0 ? p.themeList : p.theme,
-            title: p.title,
-            destination: p.destination,
-            nights: `${p.nights} Nights / ${p.days} Days`,
-            originalPrice: p.originalPrice || "₹35,000",
-            price: p.price || "₹24,999",
-            discount: p.discount || "20% OFF",
-            rating: p.rating || 4.9,
-            reviews: p.reviews || 120,
-            specialInclusion: p.specialInclusion || "Verified Hotel Stay & Dedicated Cab",
-            img: p.img,
-            badge: p.badge || "Signature Tour",
-            slug: p.slug,
-            isActive: true,
-          }));
-
-        const merged = [...curated, ...liveCards];
-        if (merged.length > 0) {
-          setThemePackagesList(merged);
+          setThemePackagesList(initialThemePackages);
         }
       } catch (err) {
-        console.warn("Error fetching dynamic theme packages:", err);
+        console.warn("Error fetching curated theme packages:", err);
       }
     };
 
-    loadAllPackages();
+    loadCuratedPackages();
   }, [initialThemePackages]);
 
   const filteredPackages =
     activeTheme === "ALL"
       ? themePackagesList
       : themePackagesList.filter((p) => matchesTheme(p.theme, activeTheme));
+
+  // Exactly max 6 packages for each theme and max 6 in "ALL"
+  const displayedPackages = filteredPackages.slice(0, 6);
+
+  const currentThemeObj = themes.find((t) => t.id === activeTheme);
+  const isAll = activeTheme === "ALL";
+  const themeParam = currentThemeObj?.slug || currentThemeObj?.id || activeTheme;
+  const viewAllHref = isAll ? "/packages" : `/packages?theme=${encodeURIComponent(themeParam)}`;
+  const viewAllText = isAll ? "View All Tour Packages" : `View All ${currentThemeObj?.label || "Theme"} Packages`;
 
   return (
     <section className="py-8 px-4 max-w-7xl mx-auto w-full">
@@ -235,10 +221,11 @@ export default function ThemePackagesSection({ initialThemePackages }: ThemePack
         </div>
 
         <Link
-          href="/packages"
-          className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 self-start md:self-auto"
+          href={viewAllHref}
+          className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 self-start md:self-auto group"
         >
-          View All Tour Packages →
+          <span>{viewAllText}</span>
+          <span className="transition-transform group-hover:translate-x-1">→</span>
         </Link>
       </div>
 
@@ -259,86 +246,104 @@ export default function ThemePackagesSection({ initialThemePackages }: ThemePack
         ))}
       </div>
 
-      {/* Theme Packages Grid */}
-      {filteredPackages.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {filteredPackages.map((pkg) => (
-            <div
-              key={pkg.id}
-              className="rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all flex flex-col justify-between group"
-            >
-              {/* Card Header Media */}
-              <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
-                <img
-                  src={pkg.img}
-                  alt={pkg.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm">
-                    {pkg.badge}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-600 text-white shadow-sm">
-                    {pkg.discount}
-                  </span>
-                </div>
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between bg-slate-950/80 backdrop-blur-md rounded-lg px-2.5 py-1.5 text-white text-xs">
-                  <span className="font-medium">🕒 {pkg.nights}</span>
-                  <span className="text-amber-400 font-bold">★ {pkg.rating} ({pkg.reviews})</span>
-                </div>
-              </div>
-
-              {/* Card Content */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                <div>
-                  <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide block">
-                    {pkg.destination}
-                  </span>
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-amber-600 transition-colors leading-snug mt-1 line-clamp-2">
-                    {pkg.title}
-                  </h3>
-
-                  <div className="mt-2.5 p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/60 text-xs text-amber-900 flex items-center gap-2 font-medium">
-                    <span>✨</span> {pkg.specialInclusion}
+      {/* Theme Packages Grid (Max 6 shown) */}
+      {displayedPackages.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {displayedPackages.map((pkg) => (
+              <div
+                key={pkg.id}
+                className="rounded-xl bg-white border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-500/40 transition-all flex flex-col justify-between group"
+              >
+                {/* Card Header Media */}
+                <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={pkg.img}
+                    alt={pkg.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-amber-500 text-slate-950 shadow-sm">
+                      {pkg.badge}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-600 text-white shadow-sm">
+                      {pkg.discount}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between bg-slate-950/80 backdrop-blur-md rounded-lg px-2.5 py-1.5 text-white text-xs">
+                    <span className="font-medium">🕒 {pkg.nights}</span>
+                    <span className="text-amber-400 font-bold">★ {pkg.rating} ({pkg.reviews})</span>
                   </div>
                 </div>
 
-                {/* Pricing & CTA Button */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                {/* Card Content */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <span className="text-[11px] text-slate-400 line-through block">{pkg.originalPrice}</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-black text-slate-900">{pkg.price}</span>
-                      <span className="text-[11px] text-slate-500">/ person</span>
+                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wide block">
+                      {pkg.destination}
+                    </span>
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-amber-600 transition-colors leading-snug mt-1 line-clamp-2">
+                      {pkg.title}
+                    </h3>
+
+                    <div className="mt-2.5 p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/60 text-xs text-amber-900 flex items-center gap-2 font-medium">
+                      <span>✨</span> {pkg.specialInclusion}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/packages/${pkg.slug}`}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
-                    >
-                      Details
-                    </Link>
-                    <Link
-                      href={`/customize?package=${pkg.slug}`}
-                      className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all"
-                    >
-                      Customize
-                    </Link>
+                  {/* Pricing & CTA Button */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-slate-400 line-through block">{pkg.originalPrice}</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-black text-slate-900">{pkg.price}</span>
+                        <span className="text-[11px] text-slate-500">/ person</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/packages/${pkg.slug}`}
+                        className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
+                      >
+                        Details
+                      </Link>
+                      <Link
+                        href={`/customize?package=${pkg.slug}`}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all"
+                      >
+                        Customize
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Bottom Corner: View All Packages for Selected Theme */}
+          <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-slate-500 font-medium">
+              Showing <span className="font-bold text-slate-800">{displayedPackages.length}</span> of{" "}
+              <span className="font-bold text-slate-800">{filteredPackages.length}</span> shortlisted packages
+              {!isAll && currentThemeObj ? ` for ${currentThemeObj.label}` : ""}.
+            </p>
+            <Link
+              href={viewAllHref}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-white text-xs font-bold transition-all shadow-sm group"
+            >
+              <span>{viewAllText}</span>
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
+        </>
       ) : (
         <div className="p-10 text-center bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
           <p className="text-sm font-bold text-slate-700">Custom tour packages are available for this theme.</p>
           <p className="text-xs text-slate-500">Need a personalized itinerary? Our travel specialists will craft it for you.</p>
           <div className="flex justify-center gap-2 pt-2">
-            <Link href="/packages" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800">
-              Explore All Tour Packages
+            <Link href={viewAllHref} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800">
+              {viewAllText}
             </Link>
             <Link href="/customize" className="px-4 py-2 bg-amber-500 text-slate-950 rounded-lg text-xs font-bold hover:bg-amber-400">
               Customize an Itinerary

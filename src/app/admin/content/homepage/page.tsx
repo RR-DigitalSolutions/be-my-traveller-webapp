@@ -728,6 +728,7 @@ export default function HomepageContentAdmin() {
   const [showThemePkgPicker, setShowThemePkgPicker] = useState(false);
   const [themePkgSearch, setThemePkgSearch] = useState("");
   const [themePkgFilter, setThemePkgFilter] = useState("ALL");
+  const [adminThemeFilter, setAdminThemeFilter] = useState("ALL");
   const [selectedThemePkgIds, setSelectedThemePkgIds] = useState<Set<string>>(new Set());
   const [availableThemes, setAvailableThemes] = useState<{ code: string; label: string; slug: string }[]>([
     { code: "HONEYMOON", label: "Honeymoon & Romance", slug: "honeymoon" },
@@ -1540,7 +1541,7 @@ export default function HomepageContentAdmin() {
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Speciality Holiday Themes Packages</h2>
                   <p className="text-xs text-slate-500">
-                    Theme-based signature packages categorized by your travel interests (Honeymoon, Adventure, Heritage, etc.).
+                    Curated signature packages displayed on the homepage. Up to 6 packages are showcased per theme.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1581,53 +1582,165 @@ export default function HomepageContentAdmin() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {themePackages.map((tp, idx) => (
-                  <div key={tp.id || idx} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between">
-                    <div className="relative h-40 bg-slate-100">
-                      <img src={tp.img} alt={tp.title} className="w-full h-full object-cover" />
-                      <div className="absolute top-2 left-2 flex gap-1">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 uppercase">
-                          {tp.theme}
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950/80 text-amber-400">
-                          {tp.badge}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                      <div>
-                        <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>{tp.nights}</span>
-                          <span className="font-bold text-amber-600">★ {tp.rating}</span>
-                        </div>
-                        <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mt-1">{tp.title}</h3>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">✨ {tp.specialInclusion}</p>
-                      </div>
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] text-slate-400 line-through block">{tp.originalPrice}</span>
-                          <span className="text-base font-extrabold text-slate-900">{tp.price}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => setEditThemePkg({ ...tp })}
-                            className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setThemePackages(themePackages.filter((_, i) => i !== idx))}
-                            className="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              {/* Informational Guidance Banner */}
+              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📌</span>
+                  <span>
+                    <strong>Homepage Display Rule:</strong> Exactly <strong>max 6 packages</strong> are displayed for each theme and 6 in &quot;All Signature Themes&quot;. Use the <strong>↑ / ↓</strong> arrows on cards to order your top 6 signature tours.
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 rounded-md bg-amber-200/60 font-black text-[11px] shrink-0 text-amber-950">
+                  Total Shortlisted: {themePackages.length}
+                </span>
               </div>
+
+              {/* Theme Filter Strip in Admin */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => setAdminThemeFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    adminThemeFilter === "ALL"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  All Themes ({themePackages.length})
+                </button>
+                {availableThemes.map((th) => {
+                  const count = themePackages.filter((tp) => {
+                    const normTp = String(tp.theme || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                    const normTh = th.slug.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                    return normTp === normTh || normTp.replace(/-/g, "_") === th.code.toLowerCase();
+                  }).length;
+                  return (
+                    <button
+                      key={th.code}
+                      type="button"
+                      onClick={() => setAdminThemeFilter(th.slug)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                        adminThemeFilter === th.slug
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      {th.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {themePackages.length === 0 ? (
+                <div className="p-12 text-center bg-white rounded-2xl border border-dashed border-slate-300 space-y-3">
+                  <span className="text-3xl">✨</span>
+                  <p className="text-sm font-bold text-slate-700">No theme packages shortlisted yet.</p>
+                  <p className="text-xs text-slate-400">Click &quot;Select from Added Packages&quot; to pick packages from your tour catalog.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {themePackages
+                    .map((tp, originalIdx) => ({ tp, originalIdx }))
+                    .filter(({ tp }) => {
+                      if (adminThemeFilter === "ALL") return true;
+                      const normTp = String(tp.theme || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                      const normTh = adminThemeFilter.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                      return normTp === normTh || normTp.replace(/-/g, "_") === normTh.replace(/-/g, "_");
+                    })
+                    .map(({ tp, originalIdx }, filteredIdx) => {
+                      const isTop6 = filteredIdx < 6;
+                      return (
+                        <div key={tp.id || originalIdx} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between">
+                          <div className="relative h-40 bg-slate-100">
+                            <img src={tp.img} alt={tp.title} className="w-full h-full object-cover" />
+                            <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-slate-950 uppercase">
+                                {tp.theme}
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950/80 text-amber-400">
+                                {tp.badge}
+                              </span>
+                            </div>
+                            <div className="absolute top-2 right-2 flex items-center gap-1">
+                              {isTop6 ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500 text-slate-950 shadow-xs">
+                                  ✓ Live on Home (#{filteredIdx + 1})
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950/70 text-slate-300">
+                                  Reserve (#{filteredIdx + 1})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between text-xs text-slate-500">
+                                <span>{tp.nights}</span>
+                                <span className="font-bold text-amber-600">★ {tp.rating}</span>
+                              </div>
+                              <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mt-1">{tp.title}</h3>
+                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">✨ {tp.specialInclusion}</p>
+                            </div>
+                            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                              <div>
+                                <span className="text-[10px] text-slate-400 line-through block">{tp.originalPrice}</span>
+                                <span className="text-base font-extrabold text-slate-900">{tp.price}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                {/* Reorder Controls */}
+                                <button
+                                  type="button"
+                                  disabled={originalIdx === 0}
+                                  onClick={() => {
+                                    if (originalIdx <= 0) return;
+                                    const next = [...themePackages];
+                                    const temp = next[originalIdx];
+                                    next[originalIdx] = next[originalIdx - 1];
+                                    next[originalIdx - 1] = temp;
+                                    setThemePackages(next);
+                                  }}
+                                  className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                  title="Move Up in Homepage Order"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={originalIdx === themePackages.length - 1}
+                                  onClick={() => {
+                                    if (originalIdx >= themePackages.length - 1) return;
+                                    const next = [...themePackages];
+                                    const temp = next[originalIdx];
+                                    next[originalIdx] = next[originalIdx + 1];
+                                    next[originalIdx + 1] = temp;
+                                    setThemePackages(next);
+                                  }}
+                                  className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                  title="Move Down in Homepage Order"
+                                >
+                                  ↓
+                                </button>
+                                <button
+                                  onClick={() => setEditThemePkg({ ...tp })}
+                                  className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => setThemePackages(themePackages.filter((_, i) => i !== originalIdx))}
+                                  className="px-2.5 py-1 rounded bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </div>
           )}
 
