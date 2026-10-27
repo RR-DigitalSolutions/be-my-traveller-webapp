@@ -6,6 +6,14 @@ import { useSiteSettings } from "@/context/SiteSettingsContext";
 import Link from "next/link";
 import Image from "next/image";
 
+interface NavTheme {
+  slug: string;
+  label: string;
+  name: string;
+  description?: string;
+  sortOrder: number;
+}
+
 interface ChildPlace {
   name: string;
   slug: string;
@@ -463,14 +471,91 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
       .catch(() => {});
   }, []);
 
-  const specialityTours = [
-    { title: "Honeymoon & Romantic", tagline: "Private pool villas, candlelight dinners, scenic escapes", icon: "💍", theme: "HONEYMOON", href: "/packages?theme=HONEYMOON" },
-    { title: "Women's Special Tours", tagline: "Safe, empowered all-women travel groups with female managers", icon: "💃", theme: "HONEYMOON", href: "/packages?theme=HONEYMOON" },
-    { title: "Senior Citizens Holidays", tagline: "Comfortable pacing, wheelchair assistance, relaxed stays", icon: "🧘‍♂️", theme: "FAMILY", href: "/packages?theme=FAMILY" },
-    { title: "Family Vacations", tagline: "Kid-friendly resorts, theme parks, private cabs", icon: "👨‍👩‍👧‍👦", theme: "FAMILY", href: "/packages?theme=FAMILY" },
-    { title: "Adventure & Treks", tagline: "Spiti, Ladakh 4x4, river rafting, paragliding", icon: "🏔️", theme: "ADVENTURE", href: "/packages?theme=ADVENTURE" },
-    { title: "Spiritual & Pilgrimage", tagline: "Chardham, Kashi, Tirupati, Rameshwaram, Vaishno Devi", icon: "🛕", theme: "PILGRIMAGE", href: "/packages?theme=PILGRIMAGE" },
+  // ── Dynamic Themes from Admin (/api/v1/themes) ──
+  const [navThemes, setNavThemes] = useState<NavTheme[]>([]);
+
+  // Theme icon mapping for known slugs
+  const THEME_ICON_MAP: Record<string, string> = {
+    honeymoon: "💍",
+    romance: "❤️",
+    adventure: "🏔️",
+    trekking: "🥾",
+    family: "👨‍👩‍👧‍👦",
+    heritage: "🏛️",
+    culture: "🎭",
+    luxury: "✨",
+    beach: "🏖️",
+    island: "🏝️",
+    wildlife: "🦁",
+    safari: "🦒",
+    pilgrimage: "🛕",
+    spiritual: "🧘‍♂️",
+    "hill-station": "🌿",
+    "hill-stations": "🌿",
+    "weekend-escape": "🌄",
+    "weekend-getaway": "🌄",
+    solo: "🎒",
+    group: "👥",
+    corporate: "🏢",
+    women: "💃",
+    senior: "🧓",
+    nature: "🌳",
+    snow: "❄️",
+    monsoon: "🌧️",
+    budget: "💰",
+  };
+
+  const getThemeIcon = (slug: string) => {
+    const normalized = slug.toLowerCase().replace(/_/g, "-");
+    return THEME_ICON_MAP[normalized] || THEME_ICON_MAP[normalized.split("-")[0]] || "🌟";
+  };
+
+  const getThemeTagline = (theme: NavTheme) => {
+    if (theme.description) return theme.description;
+    const slug = theme.slug.toLowerCase();
+    if (slug.includes("honeymoon") || slug.includes("romance")) return "Private pool villas, candlelight dinners, scenic escapes";
+    if (slug.includes("adventure") || slug.includes("trek")) return "Spiti, Ladakh 4x4, river rafting, paragliding";
+    if (slug.includes("family")) return "Kid-friendly resorts, theme parks, private cabs";
+    if (slug.includes("heritage") || slug.includes("culture")) return "Palaces, forts, monasteries and cultural discovery";
+    if (slug.includes("luxury")) return "Premium stays, private transfers and curated indulgence";
+    if (slug.includes("beach") || slug.includes("island")) return "Island stays, beach clubs and coastal relaxation";
+    if (slug.includes("wildlife") || slug.includes("safari")) return "Jungle safaris, birding and nature-led escapes";
+    if (slug.includes("pilgrimage") || slug.includes("spiritual")) return "Chardham, Kashi, Tirupati, Vaishno Devi";
+    if (slug.includes("hill")) return "Cool-weather stays and mountain scenic retreats";
+    if (slug.includes("weekend")) return "Short 2–4 day refreshing getaways";
+    return `Handcrafted ${theme.label} holiday packages curated by experts`;
+  };
+
+  useEffect(() => {
+    fetch("/api/v1/themes", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        const active = (data.themes || [])
+          .filter((t: NavTheme) => t.slug && t.label)
+          .sort((a: NavTheme, b: NavTheme) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
+        if (active.length > 0) setNavThemes(active);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fallback static speciality tours shown if API returns empty
+  const fallbackSpecialityTours = [
+    { title: "Honeymoon & Romantic", tagline: "Private pool villas, candlelight dinners, scenic escapes", icon: "💍", href: "/themes/honeymoon" },
+    { title: "Family Vacations", tagline: "Kid-friendly resorts, theme parks, private cabs", icon: "👨‍👩‍👧‍👦", href: "/themes/family" },
+    { title: "Adventure & Treks", tagline: "Spiti, Ladakh 4x4, river rafting, paragliding", icon: "🏔️", href: "/themes/adventure" },
+    { title: "Spiritual & Pilgrimage", tagline: "Chardham, Kashi, Tirupati, Rameshwaram, Vaishno Devi", icon: "🛕", href: "/themes/pilgrimage" },
+    { title: "Heritage & Culture", tagline: "Palaces, forts, monasteries and cultural discovery", icon: "🏛️", href: "/themes/heritage" },
+    { title: "Luxury Escapes", tagline: "Premium stays, private transfers and curated indulgence", icon: "✨", href: "/themes/luxury" },
   ];
+
+  const specialityTours = navThemes.length > 0
+    ? navThemes.map((t) => ({
+        title: t.label,
+        tagline: getThemeTagline(t),
+        icon: getThemeIcon(t.slug),
+        href: `/themes/${t.slug}`,
+      }))
+    : fallbackSpecialityTours;
 
   const customizedHolidays = [
     { title: "100% Tailor-Made Itineraries", desc: "Customize dates, hotel stars, private vehicles.", icon: "✨", href: "/customize" },
@@ -944,7 +1029,7 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
         </div>
       )}
 
-      {/* 3. Speciality Tours */}
+      {/* 3. Speciality Tours — Dynamic from Admin Themes */}
       {activeMenu === "speciality" && (
         <div
           onMouseEnter={() => setActiveMenu("speciality")}
@@ -952,11 +1037,35 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
           className={megaMenuClass}
         >
           <div className="max-w-7xl mx-auto">
-            <div className="pb-2 mb-3 border-b border-slate-100">
-              <h3 className="text-[13.5px] font-black text-slate-900">Signature Speciality Tours</h3>
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-[13.5px] font-black text-slate-900">Signature Speciality & Theme Tours</h3>
+                <p className="text-[10.5px] text-slate-500 mt-0.5">Curated experiences tailored to your travel style</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/themes"
+                  onClick={() => setActiveMenu(null)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] transition-all flex items-center gap-1 shrink-0"
+                >
+                  All Themes
+                </Link>
+                <Link
+                  href="/packages"
+                  onClick={() => setActiveMenu(null)}
+                  className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] shadow-2xs transition-all flex items-center gap-1 shrink-0"
+                >
+                  All Packages →
+                </Link>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {specialityTours.map((theme) => (
+            <div className={`grid gap-2.5 ${
+              specialityTours.length <= 4 ? "grid-cols-4" :
+              specialityTours.length <= 6 ? "grid-cols-3" :
+              specialityTours.length <= 8 ? "grid-cols-4" :
+              "grid-cols-4"
+            }`}>
+              {specialityTours.slice(0, 12).map((theme) => (
                 <Link
                   key={theme.title}
                   href={theme.href}
@@ -973,6 +1082,17 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                 </Link>
               ))}
             </div>
+            {specialityTours.length > 12 && (
+              <div className="mt-2.5 pt-2.5 border-t border-slate-100 text-center">
+                <Link
+                  href="/packages"
+                  onClick={() => setActiveMenu(null)}
+                  className="text-[11px] font-bold text-amber-600 hover:text-amber-700 flex items-center justify-center gap-1"
+                >
+                  View All {specialityTours.length} Theme Tours →
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1257,6 +1377,22 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
               </button>
               {mobileExpandedSection === "speciality" && (
                 <div className="bg-slate-50/90 px-4 py-3 space-y-1.5">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <Link
+                      href="/themes"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-center py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-900 font-bold text-xs"
+                    >
+                      All Themes
+                    </Link>
+                    <Link
+                      href="/packages"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-center py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-xs"
+                    >
+                      All Packages →
+                    </Link>
+                  </div>
                   {specialityTours.map((t) => (
                     <Link
                       key={t.title}
@@ -1265,7 +1401,10 @@ export default function BmtNavMenu({ variant = "transparent" }: BmtNavMenuProps)
                       className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-800 hover:text-amber-600 shadow-2xs"
                     >
                       <span className="text-base">{t.icon}</span>
-                      <span>{t.title}</span>
+                      <div className="min-w-0">
+                        <span className="block font-bold text-[13px]">{t.title}</span>
+                        <span className="text-[10.5px] text-slate-500 line-clamp-1">{t.tagline}</span>
+                      </div>
                     </Link>
                   ))}
                 </div>

@@ -16,6 +16,7 @@ import {
   STATE_SLUG_MAP,
 } from "@/lib/destinations/slug-resolver";
 import { Types } from "mongoose";
+import { HolidayThemeModel, DEFAULT_HOLIDAY_THEMES } from "@/domains/cms/holiday-theme.model";
 
 interface DestinationRouteProps {
   params: Promise<{ slug: string[] }>;
@@ -103,6 +104,7 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
   let dbPackages: any[] = [];
   let dbAttractions: any[] = [];
   let dbActivities: any[] = [];
+  let dbThemes: any[] = [];
   let targetSlug = rawTargetSlug;
 
   // Initial fallback hierarchy guess
@@ -522,9 +524,25 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
         })
         .sort({ createdAt: -1 })
         .toArray();
+
+      // ── Query Active Themes for Destination Theme Filters ──
+      try {
+        dbThemes = await HolidayThemeModel.find({ isActive: true })
+          .sort({ sortOrder: 1, label: 1 })
+          .lean();
+        if (!dbThemes || dbThemes.length === 0) {
+          dbThemes = [...DEFAULT_HOLIDAY_THEMES];
+        }
+      } catch {
+        dbThemes = [...DEFAULT_HOLIDAY_THEMES];
+      }
     }
   } catch (err) {
     console.error("DB Query error on destination page:", err);
+  }
+
+  if (!dbThemes || dbThemes.length === 0) {
+    dbThemes = [...DEFAULT_HOLIDAY_THEMES];
   }
 
   // 2. Resolve Current Destination Info from Database without hardcoded fallbacks
@@ -935,6 +953,36 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           <div className="lg:col-span-2 space-y-8">
 
             {/* ── 1. TOUR PACKAGES GRID ── */}
+            {/* ── Theme Filter Pills (SEO: targets Destination + Theme compound keywords) ── */}
+            {dbThemes.length > 0 && (
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-extrabold text-amber-600 tracking-wider">Browse by Trip Type</span>
+                    <h2 className="text-sm font-black text-slate-900 mt-0.5">{current.name} Tour Packages by Theme</h2>
+                  </div>
+                  <Link
+                    href="/themes"
+                    className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline"
+                  >
+                    All Themes →
+                  </Link>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {dbThemes.map((theme: any) => (
+                    <Link
+                      key={theme.slug}
+                      href={`/themes/${theme.slug}?destination=${encodeURIComponent(current.name)}`}
+                      title={`${current.name} ${theme.label} Tour Packages`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold bg-slate-100 hover:bg-amber-500 text-slate-700 hover:text-slate-950 border border-slate-200 hover:border-amber-500 transition-all"
+                    >
+                      {theme.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {current.packages.length > 0 ? (
               <DestinationPackageGrid
                 destinationName={current.name}
