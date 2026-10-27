@@ -7,6 +7,17 @@ export interface IHolidayTheme extends Document {
   description?: string;
   isActive: boolean;
   sortOrder: number;
+  // SEO, AEO, AIO & GEO Rich Metadata
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+  canonicalUrl?: string;
+  ogImage?: string;
+  heroImage?: string;
+  aiOverviewSummary?: string; // Direct Answer for Answer Engines (Perplexity, SGE, ChatGPT)
+  targetLocations?: string[]; // GEO Targeting regions/cities
+  faqs?: Array<{ q: string; a: string }>; // Q&A for FAQPage Schema & Voice Search
+  richSnippetText?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +53,49 @@ const HolidayThemeSchema = new Schema<IHolidayTheme>(
     sortOrder: {
       type: Number,
       default: 0,
+    },
+    // SEO, AEO, AIO & GEO Schema Fields
+    metaTitle: {
+      type: String,
+      default: "",
+    },
+    metaDescription: {
+      type: String,
+      default: "",
+    },
+    keywords: {
+      type: [String],
+      default: [],
+    },
+    canonicalUrl: {
+      type: String,
+      default: "",
+    },
+    ogImage: {
+      type: String,
+      default: "",
+    },
+    heroImage: {
+      type: String,
+      default: "",
+    },
+    aiOverviewSummary: {
+      type: String,
+      default: "",
+    },
+    targetLocations: {
+      type: [String],
+      default: [],
+    },
+    faqs: [
+      {
+        q: { type: String, default: "" },
+        a: { type: String, default: "" },
+      },
+    ],
+    richSnippetText: {
+      type: String,
+      default: "",
     },
   },
   {

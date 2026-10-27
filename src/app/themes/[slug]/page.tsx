@@ -69,64 +69,64 @@ const DEFAULT_FAQS = [
 ];
 
 function getThemeDestinations(slug: string) {
-  const map: Record<string, Array<{ name: string; slug: string; url: string; icon: string; tagline: string }>> = {
+  const map: Record<string, Array<{ name: string; slug: string; url: string; icon: string; tagline: string; img: string }>> = {
     honeymoon: [
-      { name: "Shimla", slug: "shimla", url: "/destination/india/himachal-pradesh/shimla-tour-packages", icon: "❄️", tagline: "Romantic hill station" },
-      { name: "Manali", slug: "manali", url: "/destination/india/himachal-pradesh/manali-tour-packages", icon: "🏔️", tagline: "Snow & scenic valleys" },
-      { name: "Kashmir", slug: "kashmir", url: "/destination/india/jammu-kashmir-tour-packages", icon: "🌸", tagline: "Heaven on earth" },
-      { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Beach & nightlife" },
-      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Pristine islands" },
-      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Backwaters & spice" },
+      { name: "Shimla", slug: "shimla", url: "/destination/india/himachal-pradesh/shimla-tour-packages", icon: "❄️", tagline: "Romantic hill station", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80" },
+      { name: "Manali", slug: "manali", url: "/destination/india/himachal-pradesh/manali-tour-packages", icon: "🏔️", tagline: "Snow & scenic valleys", img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop&q=80" },
+      { name: "Kashmir", slug: "kashmir", url: "/destination/india/jammu-kashmir-tour-packages", icon: "🌸", tagline: "Heaven on earth", img: "https://images.unsplash.com/photo-1548013146-72479768bada?w=600&auto=format&fit=crop&q=80" },
+      { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Beach & nightlife", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop&q=80" },
+      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Pristine islands", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80" },
+      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Backwaters & spice", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop&q=80" },
     ],
     adventure: [
-      { name: "Spiti Valley", slug: "spiti", url: "/destination/india/himachal-pradesh/spiti-tour-packages", icon: "🏔️", tagline: "High-altitude desert" },
-      { name: "Manali", slug: "manali", url: "/destination/india/himachal-pradesh/manali-tour-packages", icon: "🎿", tagline: "Skiing & biking" },
-      { name: "Ladakh", slug: "ladakh", url: "/destination/india/ladakh-tour-packages", icon: "🚵", tagline: "4x4 & trekking" },
-      { name: "Rishikesh", slug: "rishikesh", url: "/destination/india/uttarakhand/rishikesh-tour-packages", icon: "🚣", tagline: "River rafting hub" },
-      { name: "Sikkim", slug: "sikkim", url: "/destination/india/sikkim-tour-packages", icon: "🌄", tagline: "Himalayan trekking" },
-      { name: "Meghalaya", slug: "meghalaya", url: "/destination/india/meghalaya-tour-packages", icon: "💧", tagline: "Caves & waterfalls" },
+      { name: "Spiti Valley", slug: "spiti", url: "/destination/india/himachal-pradesh/spiti-tour-packages", icon: "🏔️", tagline: "High-altitude desert", img: "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=600&auto=format&fit=crop&q=80" },
+      { name: "Manali", slug: "manali", url: "/destination/india/himachal-pradesh/manali-tour-packages", icon: "🎿", tagline: "Skiing & biking", img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop&q=80" },
+      { name: "Ladakh", slug: "ladakh", url: "/destination/india/ladakh-tour-packages", icon: "🚵", tagline: "4x4 & trekking", img: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&auto=format&fit=crop&q=80" },
+      { name: "Rishikesh", slug: "rishikesh", url: "/destination/india/uttarakhand/rishikesh-tour-packages", icon: "🚣", tagline: "River rafting hub", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80" },
+      { name: "Sikkim", slug: "sikkim", url: "/destination/india/sikkim-tour-packages", icon: "🌄", tagline: "Himalayan trekking", img: "https://images.unsplash.com/photo-1466853817435-05b43fe45b39?w=600&auto=format&fit=crop&q=80" },
+      { name: "Meghalaya", slug: "meghalaya", url: "/destination/india/meghalaya-tour-packages", icon: "💧", tagline: "Caves & waterfalls", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80" },
     ],
     family: [
-      { name: "Shimla Manali", slug: "shimla-manali", url: "/destination/india/himachal-pradesh-tour-packages", icon: "🏔️", tagline: "Classic hill circuit" },
-      { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Beach & fun" },
-      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Forts & palaces" },
-      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Houseboats & nature" },
-      { name: "Nainital", slug: "nainital", url: "/destination/india/uttarakhand/nainital-tour-packages", icon: "🏡", tagline: "Lake-side retreat" },
-      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🐠", tagline: "Island adventure" },
+      { name: "Shimla Manali", slug: "shimla-manali", url: "/destination/india/himachal-pradesh-tour-packages", icon: "🏔️", tagline: "Classic hill circuit", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80" },
+      { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Beach & fun", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop&q=80" },
+      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Forts & palaces", img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&auto=format&fit=crop&q=80" },
+      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Houseboats & nature", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop&q=80" },
+      { name: "Nainital", slug: "nainital", url: "/destination/india/uttarakhand/nainital-tour-packages", icon: "🏡", tagline: "Lake-side retreat", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80" },
+      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🐠", tagline: "Island adventure", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80" },
     ],
     heritage: [
-      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Forts & royal palaces" },
-      { name: "Agra", slug: "agra", url: "/packages?destination=agra", icon: "🕌", tagline: "Taj Mahal & Mughal heritage" },
-      { name: "Hampi", slug: "hampi", url: "/destination/india/karnataka-tour-packages", icon: "🗿", tagline: "Vijayanagara ruins" },
-      { name: "Khajuraho", slug: "khajuraho", url: "/destination/india/madhya-pradesh-tour-packages", icon: "⛩️", tagline: "UNESCO temples" },
-      { name: "Varanasi", slug: "varanasi", url: "/packages?destination=varanasi", icon: "🪔", tagline: "Ghats & spirituality" },
-      { name: "Delhi", slug: "delhi", url: "/packages?destination=delhi", icon: "🕍", tagline: "Mughal & British history" },
+      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Forts & royal palaces", img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&auto=format&fit=crop&q=80" },
+      { name: "Agra", slug: "agra", url: "/packages?destination=agra", icon: "🕌", tagline: "Taj Mahal & Mughal heritage", img: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&auto=format&fit=crop&q=80" },
+      { name: "Hampi", slug: "hampi", url: "/destination/india/karnataka-tour-packages", icon: "🗿", tagline: "Vijayanagara ruins", img: "https://images.unsplash.com/photo-1600100397608-f010f443b821?w=600&auto=format&fit=crop&q=80" },
+      { name: "Khajuraho", slug: "khajuraho", url: "/destination/india/madhya-pradesh-tour-packages", icon: "⛩️", tagline: "UNESCO temples", img: "https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=600&auto=format&fit=crop&q=80" },
+      { name: "Varanasi", slug: "varanasi", url: "/packages?destination=varanasi", icon: "🪔", tagline: "Ghats & spirituality", img: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop&q=80" },
+      { name: "Delhi", slug: "delhi", url: "/packages?destination=delhi", icon: "🕍", tagline: "Mughal & British history", img: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&auto=format&fit=crop&q=80" },
     ],
     pilgrimage: [
-      { name: "Kedarnath", slug: "kedarnath", url: "/destination/india/uttarakhand/kedarnath-tour-packages", icon: "🛕", tagline: "Shiva temple, Himalayas" },
-      { name: "Varanasi", slug: "varanasi", url: "/packages?destination=varanasi", icon: "🪔", tagline: "Moksha & Ganga aarti" },
-      { name: "Tirupati", slug: "tirupati", url: "/destination/india/andhra-pradesh-tour-packages", icon: "🌸", tagline: "Lord Venkateswara" },
-      { name: "Vaishno Devi", slug: "vaishno-devi", url: "/destination/india/jammu-kashmir-tour-packages", icon: "⛰️", tagline: "Trikuta Mountains" },
-      { name: "Shirdi", slug: "shirdi", url: "/destination/india/maharashtra-tour-packages", icon: "🙏", tagline: "Sai Baba Dham" },
-      { name: "Rameshwaram", slug: "rameshwaram", url: "/destination/india/tamil-nadu-tour-packages", icon: "🌊", tagline: "Ramayana sacred site" },
+      { name: "Kedarnath", slug: "kedarnath", url: "/destination/india/uttarakhand/kedarnath-tour-packages", icon: "🛕", tagline: "Shiva temple, Himalayas", img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop&q=80" },
+      { name: "Varanasi", slug: "varanasi", url: "/packages?destination=varanasi", icon: "🪔", tagline: "Moksha & Ganga aarti", img: "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop&q=80" },
+      { name: "Tirupati", slug: "tirupati", url: "/destination/india/andhra-pradesh-tour-packages", icon: "🌸", tagline: "Lord Venkateswara", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&auto=format&fit=crop&q=80" },
+      { name: "Vaishno Devi", slug: "vaishno-devi", url: "/destination/india/jammu-kashmir-tour-packages", icon: "⛰️", tagline: "Trikuta Mountains", img: "https://images.unsplash.com/photo-1595846519845-68e298c2edd8?w=600&auto=format&fit=crop&q=80" },
+      { name: "Shirdi", slug: "shirdi", url: "/destination/india/maharashtra-tour-packages", icon: "🙏", tagline: "Sai Baba Dham", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80" },
+      { name: "Rameshwaram", slug: "rameshwaram", url: "/destination/india/tamil-nadu-tour-packages", icon: "🌊", tagline: "Ramayana sacred site", img: "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?w=600&auto=format&fit=crop&q=80" },
     ],
     luxury: [
-      { name: "Kashmir", slug: "kashmir", url: "/destination/india/jammu-kashmir-tour-packages", icon: "✨", tagline: "Luxury houseboats" },
-      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "👑", tagline: "Palace hotel stays" },
-      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Luxury resorts" },
-      { name: "Maldives", slug: "maldives", url: "/packages?destination=maldives", icon: "🏝️", tagline: "Overwater villas" },
-      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Private beach resorts" },
-      { name: "Shimla", slug: "shimla", url: "/destination/india/himachal-pradesh/shimla-tour-packages", icon: "🏡", tagline: "Heritage hotel stays" },
+      { name: "Kashmir", slug: "kashmir", url: "/destination/india/jammu-kashmir-tour-packages", icon: "✨", tagline: "Luxury houseboats", img: "https://images.unsplash.com/photo-1548013146-72479768bada?w=600&auto=format&fit=crop&q=80" },
+      { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "👑", tagline: "Palace hotel stays", img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&auto=format&fit=crop&q=80" },
+      { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "Luxury resorts", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop&q=80" },
+      { name: "Maldives", slug: "maldives", url: "/packages?destination=maldives", icon: "🏝️", tagline: "Overwater villas", img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&auto=format&fit=crop&q=80" },
+      { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Private beach resorts", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80" },
+      { name: "Shimla", slug: "shimla", url: "/destination/india/himachal-pradesh/shimla-tour-packages", icon: "🏡", tagline: "Heritage hotel stays", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80" },
     ],
   };
 
   const defaultDests = [
-    { name: "Himachal Pradesh", slug: "himachal-pradesh", url: "/destination/india/himachal-pradesh-tour-packages", icon: "🏔️", tagline: "Mountain paradise" },
-    { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Sun, sand & sea" },
-    { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "God's own country" },
-    { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Royal heritage" },
-    { name: "Uttarakhand", slug: "uttarakhand", url: "/destination/india/uttarakhand-tour-packages", icon: "⛰️", tagline: "Dev bhumi" },
-    { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Island escape" },
+    { name: "Himachal Pradesh", slug: "himachal-pradesh", url: "/destination/india/himachal-pradesh-tour-packages", icon: "🏔️", tagline: "Mountain paradise", img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop&q=80" },
+    { name: "Goa", slug: "goa", url: "/destination/india/goa-tour-packages", icon: "🏖️", tagline: "Sun, sand & sea", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop&q=80" },
+    { name: "Kerala", slug: "kerala", url: "/destination/india/kerala-tour-packages", icon: "🌴", tagline: "God's own country", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop&q=80" },
+    { name: "Rajasthan", slug: "rajasthan", url: "/destination/india/rajasthan-tour-packages", icon: "🏰", tagline: "Royal heritage", img: "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600&auto=format&fit=crop&q=80" },
+    { name: "Uttarakhand", slug: "uttarakhand", url: "/destination/india/uttarakhand-tour-packages", icon: "⛰️", tagline: "Dev bhumi", img: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80" },
+    { name: "Andaman", slug: "andaman", url: "/destination/india/andaman-tour-packages", icon: "🌊", tagline: "Island escape", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80" },
   ];
 
   return map[slug] || defaultDests;
@@ -139,6 +139,11 @@ export async function generateMetadata({ params, searchParams }: ThemePageProps)
 
   let themeLabel = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   let themeDesc = "";
+  let customMetaTitle = "";
+  let customMetaDescription = "";
+  let customKeywords: string[] = [];
+  let customOgImage = "";
+  let customCanonical = "";
 
   try {
     await connectDB();
@@ -146,6 +151,13 @@ export async function generateMetadata({ params, searchParams }: ThemePageProps)
     if (theme) {
       themeLabel = theme.label || themeLabel;
       themeDesc = theme.description || "";
+      customMetaTitle = theme.metaTitle || "";
+      customMetaDescription = theme.metaDescription || "";
+      if (Array.isArray(theme.keywords) && theme.keywords.length > 0) {
+        customKeywords = theme.keywords;
+      }
+      customOgImage = theme.ogImage || theme.heroImage || "";
+      customCanonical = theme.canonicalUrl || "";
     }
   } catch {
     /* fallback */
@@ -153,11 +165,12 @@ export async function generateMetadata({ params, searchParams }: ThemePageProps)
 
   const title = destinationParam
     ? `${destinationParam} ${themeLabel} Tour Packages | Best Handcrafted Trips - Be My Traveller`
-    : `${themeLabel} Tour Packages | Best Handcrafted ${themeLabel} Holidays - Be My Traveller`;
+    : customMetaTitle || `${themeLabel} Tour Packages | Best Handcrafted ${themeLabel} Holidays - Be My Traveller`;
 
   const description = destinationParam
     ? `Book verified ${destinationParam} ${themeLabel.toLowerCase()} holiday packages with 4-star and 5-star hotel stays, private sanitized cab, daily meals and 24/7 support. 100% customizable itineraries.`
-    : themeDesc ||
+    : customMetaDescription ||
+      themeDesc ||
       `Book handcrafted ${themeLabel} tour packages with verified 4-star and 5-star hotels, private sanitized cabs, daily meals and 24/7 support. 100% customizable ${themeLabel.toLowerCase()} holidays across India and worldwide. Starting from ₹12,999 per person.`;
 
   const keywords = destinationParam
@@ -165,15 +178,19 @@ export async function generateMetadata({ params, searchParams }: ThemePageProps)
         `${destinationParam} ${themeLabel.toLowerCase()} tour packages`,
         `${destinationParam} ${themeLabel.toLowerCase()} packages`,
         `best ${destinationParam} ${themeLabel.toLowerCase()} tours`,
-        ...(THEME_KEYWORDS[slug] || []),
+        ...(customKeywords.length > 0 ? customKeywords : THEME_KEYWORDS[slug] || []),
       ]
+    : customKeywords.length > 0
+    ? customKeywords
     : THEME_KEYWORDS[slug] || [
         `${themeLabel} tour packages India`,
         `${themeLabel} holiday packages`,
         `best ${themeLabel.toLowerCase()} tours`,
       ];
 
-  const canonicalUrl = destinationParam
+  const canonicalUrl = customCanonical
+    ? customCanonical
+    : destinationParam
     ? `https://www.bemytraveller.com/themes/${slug}?destination=${encodeURIComponent(destinationParam)}`
     : `https://www.bemytraveller.com/themes/${slug}`;
 
@@ -189,7 +206,7 @@ export async function generateMetadata({ params, searchParams }: ThemePageProps)
       siteName: "Be My Traveller",
       images: [
         {
-          url: THEME_HERO_IMAGES[slug] || THEME_HERO_IMAGES.honeymoon,
+          url: customOgImage || THEME_HERO_IMAGES[slug] || THEME_HERO_IMAGES.honeymoon,
           width: 1200,
           height: 630,
           alt: title,
@@ -303,7 +320,7 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
 
   const themeLabel = themeData?.label || slug.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
   const themeDescription = themeData?.description || "";
-  const heroImg = THEME_HERO_IMAGES[slug] || THEME_HERO_IMAGES.honeymoon;
+  const heroImg = themeData?.heroImage || THEME_HERO_IMAGES[slug] || THEME_HERO_IMAGES.honeymoon;
 
   const packages = dbPackages.map((p: any) => {
     const rawPrice = p.price ?? (p.startingPrice ? `₹${Number(p.startingPrice).toLocaleString("en-IN")}` : "₹14,999");
@@ -326,15 +343,20 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
       reviews: p.reviews || 140,
       img: p.coverImage || p.coverImageStr || heroImg,
       inclusions: p.inclusions || ["4-star Hotel Stays", "Private AC Cab", "Daily Breakfast & Dinner"],
-      destination: p.destination || p.destinationName || "",
+      destination: p.destinationName || p.destination || "",
+      route: p.route || p.tagline || p.destination || p.destinationName || "",
     };
   });
 
-  const faqs = THEME_FAQS[slug] || DEFAULT_FAQS;
-  const keywords = THEME_KEYWORDS[slug] || [`${themeLabel} tour packages India`];
-  const canonicalUrl = destinationParam
+  const faqs = (Array.isArray(themeData?.faqs) && themeData.faqs.length > 0)
+    ? themeData.faqs
+    : THEME_FAQS[slug] || DEFAULT_FAQS;
+  const keywords = (Array.isArray(themeData?.keywords) && themeData.keywords.length > 0)
+    ? themeData.keywords
+    : THEME_KEYWORDS[slug] || [`${themeLabel} tour packages India`];
+  const canonicalUrl = themeData?.canonicalUrl || (destinationParam
     ? `https://www.bemytraveller.com/themes/${slug}?destination=${encodeURIComponent(destinationParam)}`
-    : `https://www.bemytraveller.com/themes/${slug}`;
+    : `https://www.bemytraveller.com/themes/${slug}`);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -344,7 +366,7 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
         "@id": `${canonicalUrl}#webpage`,
         url: canonicalUrl,
         name: destinationParam ? `${destinationParam} ${themeLabel} Tour Packages - Be My Traveller` : `${themeLabel} Tour Packages - Be My Traveller`,
-        description: themeDescription || `Best ${themeLabel} holiday packages across India and worldwide`,
+        description: themeData?.metaDescription || themeDescription || `Best ${themeLabel} holiday packages across India and worldwide`,
         breadcrumb: { "@id": `${canonicalUrl}#breadcrumb` },
         inLanguage: "en-IN",
         speakable: {
@@ -403,7 +425,7 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
         url: "https://www.bemytraveller.com",
         telephone: "+918091638090",
         priceRange: "₹₹ - ₹₹₹",
-        areaServed: ["India", "Worldwide"],
+        areaServed: themeData?.targetLocations?.length ? themeData.targetLocations : ["India", "Worldwide"],
         knowsAbout: [themeLabel, "Holiday Packages", "Tour Packages India", "Customized Tours"],
       },
     ],
@@ -418,14 +440,14 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
       <BmtNavMenu />
 
       {/* Hero */}
-      <section className="relative -mt-[96px] pt-[112px] pb-10 min-h-[420px] sm:min-h-[500px] text-white flex items-end overflow-hidden">
+      <section className="relative -mt-[96px] pt-[112px] pb-10 min-h-[380px] sm:min-h-[440px] text-white flex items-end overflow-hidden">
         <img
           src={heroImg}
           alt={`${destinationParam ? `${destinationParam} ` : ""}${themeLabel} Tour Packages`}
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
-        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-10 relative z-10 w-full space-y-3">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/15" />
+        <div className="max-w-[1300px] mx-auto px-4 sm:px-6 lg:px-8 pb-7 sm:pb-9 relative z-10 w-full space-y-2.5">
           <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-amber-300 font-bold drop-shadow-sm">
             <Link href="/" className="hover:underline text-slate-200 hover:text-white">Home</Link>
             <span className="text-slate-400">›</span>
@@ -441,7 +463,7 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
               <span className="text-amber-300">{themeLabel}</span>
             )}
           </nav>
-          <div className="flex items-center flex-wrap gap-2 pt-1">
+          <div className="flex items-center flex-wrap gap-2 pt-0.5">
             <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 backdrop-blur-xs">
               ⭐ 4.9/5 Verified Reviews
             </span>
@@ -457,10 +479,11 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
               </span>
             )}
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+          {/* Theme Title (Small & Compact to Adjust in Two Lines) */}
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-snug drop-shadow-md line-clamp-2 max-w-3xl">
             Best {destinationParam ? `${destinationParam} ` : ""}{themeLabel} Tour Packages
           </h1>
-          <p className="speakable-content text-sm sm:text-base text-white/95 max-w-3xl font-medium drop-shadow-sm">
+          <p className="speakable-content text-xs sm:text-sm text-white/95 max-w-3xl font-medium drop-shadow-sm leading-relaxed">
             {destinationParam
               ? `Discover handcrafted ${destinationParam} ${themeLabel.toLowerCase()} holiday packages with verified luxury stays, private chauffeur, scenic tours and 24/7 concierge assistance.`
               : themeDescription || `Discover handcrafted ${themeLabel.toLowerCase()} holiday packages with verified luxury stays, private cabs, expert guides and 24/7 support - 100% customized to your preferences.`}
@@ -561,13 +584,13 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
               </div>
             </div>
 
-            {/* Section header */}
-            <div className="flex items-center justify-between">
+            {/* Section header (Compact 2-lines max) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span className="text-xs uppercase font-extrabold text-amber-600 tracking-wider">
                   {destinationParam ? `${destinationParam} · ` : ""}{themeLabel} Holidays
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 leading-snug line-clamp-2">
                   {packages.length > 0
                     ? `${packages.length} Curated ${destinationParam ? `${destinationParam} ` : ""}${themeLabel} Packages`
                     : `Handcrafted ${destinationParam ? `${destinationParam} ` : ""}${themeLabel} Itineraries`}
@@ -576,12 +599,29 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
               {packages.length > 0 && (
                 <Link
                   href={`/customize?theme=${encodeURIComponent(themeLabel)}${destinationParam ? `&destination=${encodeURIComponent(destinationParam)}` : ""}`}
-                  className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition-all"
+                  className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs transition-all shrink-0"
                 >
                   ✨ Custom Trip
                 </Link>
               )}
             </div>
+
+            {/* AI Overview / AEO Direct Answer Card (if configured in Admin) */}
+            {themeData?.aiOverviewSummary && (
+              <div className="bg-gradient-to-r from-purple-50 via-amber-50/40 to-white rounded-2xl border border-purple-200/80 p-4 shadow-2xs space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-purple-600 text-white font-extrabold text-[10px] uppercase tracking-wider">
+                    AI Overview
+                  </span>
+                  <span className="text-xs font-bold text-purple-950">
+                    Key Highlights &amp; Inclusions for {themeLabel}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                  {themeData.aiOverviewSummary}
+                </p>
+              </div>
+            )}
 
             {/* Packages grid or bespoke CTA */}
             {packages.length > 0 ? (
@@ -598,25 +638,43 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
                         alt={pkg.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-slate-950/80 backdrop-blur-md text-amber-400 border border-slate-800">
+
+                      {/* Top-Left Corner: Theme Title Badge */}
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[9.5px] font-black uppercase tracking-wider bg-slate-950/85 backdrop-blur-md text-amber-400 border border-slate-800/80 shadow-2xs">
                           {themeLabel}
                         </span>
                       </div>
-                      {pkg.destination && (
-                        <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-white/90 text-slate-800 text-[10px] font-bold">
-                          📍 {pkg.destination}
+
+                      {/* Top-Right Corner (Opposite side): Trip Route Badge (Reduced font, non-overlapping) */}
+                      {(pkg.route || pkg.destination) && (
+                        <div className="absolute top-2.5 right-2.5 z-10 max-w-[55%]">
+                          <span
+                            title={pkg.route || pkg.destination}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 backdrop-blur-md text-slate-800 text-[9px] font-bold shadow-2xs border border-white/60 truncate max-w-full"
+                          >
+                            <span className="shrink-0 text-[10px]">📍</span>
+                            <span className="truncate">{pkg.route || pkg.destination}</span>
+                          </span>
                         </div>
                       )}
-                      <div className="absolute bottom-3 right-3 px-2 py-1 rounded-lg bg-amber-500 text-slate-950 text-[11px] font-black">
+
+                      {/* Bottom-Right: Price Badge */}
+                      <div className="absolute bottom-2.5 right-2.5 z-10 px-2 py-1 rounded-lg bg-amber-500 text-slate-950 text-[11px] font-black shadow-xs">
                         {pkg.price}
                       </div>
                     </div>
                     <div className="p-4 flex flex-col flex-1">
-                      <h3 className="font-bold text-slate-900 text-sm group-hover:text-amber-600 transition-colors leading-snug line-clamp-2">
+                      <h3 className="font-bold text-slate-900 text-[13.5px] group-hover:text-amber-600 transition-colors leading-snug line-clamp-2">
                         {pkg.title}
                       </h3>
-                      <p className="text-xs text-slate-500 mt-1">{pkg.nights}</p>
+                      {pkg.route && (
+                        <p className="text-[10.5px] text-slate-500 font-medium truncate flex items-center gap-1 mt-1">
+                          <span className="text-amber-500 shrink-0 text-xs">📍</span>
+                          <span className="truncate">{pkg.route}</span>
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-600 mt-1 font-semibold">{pkg.nights}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
                         {(pkg.inclusions || []).slice(0, 3).map((inc: string, i: number) => (
                           <span
@@ -675,23 +733,36 @@ export default async function ThemePackagePage({ params, searchParams }: ThemePa
               </div>
             )}
 
-            {/* Popular Destinations for Theme */}
-            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-              <div>
-                <span className="text-xs uppercase font-extrabold text-amber-600 tracking-wider">Top Destinations</span>
-                <h2 className="text-xl font-black text-slate-900 mt-0.5">Explore {themeLabel} Destinations</h2>
+            {/* Popular Destinations for Theme (Visual Photo Cards instead of Icons) */}
+            <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1 border-b border-slate-100 pb-3">
+                <div>
+                  <span className="text-xs uppercase font-extrabold text-amber-600 tracking-wider">Top Destinations</span>
+                  <h2 className="text-xl font-black text-slate-900 mt-0.5">Explore {themeLabel} Destinations</h2>
+                </div>
+                <span className="text-xs text-slate-500 font-medium">Handpicked scenic hubs</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {themeDestinations.map((dest) => (
                   <Link
                     key={dest.slug}
                     href={dest.url}
-                    className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-400/60 transition-all group"
+                    className="flex items-center gap-3 p-2 rounded-xl bg-slate-50/90 hover:bg-amber-50/70 border border-slate-200/90 hover:border-amber-400 transition-all group overflow-hidden shadow-2xs hover:shadow-xs"
                   >
-                    <span className="text-base">{dest.icon}</span>
-                    <div className="min-w-0">
-                      <p className="font-bold text-xs text-slate-900 group-hover:text-amber-700 truncate">{dest.name}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{dest.tagline}</p>
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-slate-200">
+                      <img
+                        src={dest.img}
+                        alt={dest.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-xs text-slate-900 group-hover:text-amber-700 truncate flex items-center justify-between">
+                        <span>{dest.name}</span>
+                        <span className="text-[10px] text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                      </p>
+                      <p className="text-[10.5px] text-slate-500 truncate mt-0.5">{dest.tagline}</p>
                     </div>
                   </Link>
                 ))}

@@ -14,6 +14,24 @@ function normalizeThemeInput(payload: Record<string, any>) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+  const keywords = Array.isArray(payload.keywords)
+    ? payload.keywords.map(String).map((s) => s.trim()).filter(Boolean)
+    : typeof payload.keywords === "string"
+    ? payload.keywords.split(",").map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
+  const targetLocations = Array.isArray(payload.targetLocations)
+    ? payload.targetLocations.map(String).map((s) => s.trim()).filter(Boolean)
+    : typeof payload.targetLocations === "string"
+    ? payload.targetLocations.split(",").map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
+  const faqs = Array.isArray(payload.faqs)
+    ? payload.faqs
+        .map((f: any) => ({ q: String(f.q || "").trim(), a: String(f.a || "").trim() }))
+        .filter((f: any) => f.q && f.a)
+    : [];
+
   return {
     slug: slug || "travel-theme",
     name: name || label || "TRAVEL",
@@ -21,6 +39,16 @@ function normalizeThemeInput(payload: Record<string, any>) {
     description: String(payload.description || "").trim(),
     isActive: payload.isActive !== false,
     sortOrder: Number(payload.sortOrder ?? 0),
+    metaTitle: String(payload.metaTitle || "").trim(),
+    metaDescription: String(payload.metaDescription || "").trim(),
+    keywords,
+    canonicalUrl: String(payload.canonicalUrl || "").trim(),
+    ogImage: String(payload.ogImage || "").trim(),
+    heroImage: String(payload.heroImage || "").trim(),
+    aiOverviewSummary: String(payload.aiOverviewSummary || "").trim(),
+    targetLocations,
+    faqs,
+    richSnippetText: String(payload.richSnippetText || "").trim(),
   };
 }
 

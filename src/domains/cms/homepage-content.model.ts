@@ -82,6 +82,8 @@ export interface IHomepageContent extends Document {
     rating: number;
     reviews: number;
     specialInclusion: string;
+    highlights?: string[];
+    route?: string;
     img: string;
     badge: string;
     slug: string;
@@ -249,6 +251,8 @@ const HomepageContentSchema = new Schema<IHomepageContent>(
       rating: { type: Number, default: 4.8 },
       reviews: { type: Number, default: 0 },
       specialInclusion: { type: String, default: "" },
+      highlights: [{ type: String }],
+      route: { type: String, default: "" },
       img: { type: String, default: "" },
       badge: { type: String, default: "" },
       slug: { type: String, default: "" },

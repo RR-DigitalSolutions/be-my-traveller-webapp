@@ -95,6 +95,7 @@ export async function GET(req: NextRequest) {
         reviews: Number(p.reviewCount) || 128,
         inclusions: Array.isArray(p.inclusions) && p.inclusions.length > 0 ? p.inclusions : ["Verified 4★ Stay", "Private Cab", "Breakfast & Dinner"],
         specialInclusion: (Array.isArray(p.highlights) && p.highlights[0]) || (Array.isArray(p.inclusions) && p.inclusions[0]) || "Verified Mountain Stay & Transfers",
+        highlights: Array.isArray(p.highlights) && p.highlights.length > 0 ? p.highlights : (Array.isArray(p.inclusions) ? p.inclusions : []),
         img: coverImg,
         badge: p.tag || (discountPct > 0 ? `${discountPct}% OFF` : "Best Seller"),
         tags: Array.isArray(p.highlights) ? p.highlights : [],

@@ -119,6 +119,8 @@ interface ThemePackageItem {
   rating: number;
   reviews: number;
   specialInclusion: string;
+  highlights?: string[];
+  route?: string;
   img: string;
   badge: string;
   slug: string;
@@ -389,6 +391,12 @@ const DEFAULT_THEME_PACKAGES: ThemePackageItem[] = [
     rating: 4.9,
     reviews: 210,
     specialInclusion: "Candlelight Dinner & Shikara Sunset Ride",
+    highlights: [
+      "Candlelight Dinner with Floral Setup",
+      "Private Shikara Sunset Ride on Dal Lake",
+      "Gulmarg Gondola Phase-1 Cable Car Excursion",
+      "Verified 4★ Heritage Resort & Houseboat Stays",
+    ],
     img: "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80",
     badge: "Honeymoon Special",
     slug: "5-nights-kashmir-gulmarg-tour",
@@ -407,6 +415,12 @@ const DEFAULT_THEME_PACKAGES: ThemePackageItem[] = [
     rating: 4.8,
     reviews: 142,
     specialInclusion: "Dedicated 4x4 Vehicle & Expert Driver",
+    highlights: [
+      "Dedicated 4x4 Expedition Vehicle & Expert Driver",
+      "Solang Valley ATV & Rohtang Snow Pass",
+      "Scenic Chandratal High-Altitude Lake Camping",
+      "Cozy Riverside Luxury Camp Stay with Bonfire",
+    ],
     img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&auto=format&fit=crop&q=80",
     badge: "High Altitude Thrill",
     slug: "6-nights-spiti-valley-circuit-road-trip",
@@ -425,6 +439,12 @@ const DEFAULT_THEME_PACKAGES: ThemePackageItem[] = [
     rating: 4.9,
     reviews: 185,
     specialInclusion: "Luxury Desert Camp with Folk Dance & Dinner",
+    highlights: [
+      "Lake Pichola Sunset Boat Cruise in Udaipur",
+      "Sam Sand Dunes Camel Safari & Desert Camp",
+      "Authentic Rajasthani Cultural Dinner & Folk Dance",
+      "4★ Heritage Haveli & Royal Palace Stays",
+    ],
     img: "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800&auto=format&fit=crop&q=80",
     badge: "Royal Heritage",
     slug: "6-nights-royal-rajasthan-forts-tour",
@@ -443,6 +463,12 @@ const DEFAULT_THEME_PACKAGES: ThemePackageItem[] = [
     rating: 4.9,
     reviews: 164,
     specialInclusion: "Premium Catamaran Ferry Tickets Included",
+    highlights: [
+      "Premium Catamaran Ferry Tickets (Makruzz/Nautika)",
+      "Elephant Beach Snorkeling & Water Activities",
+      "Radhanagar Beach Asia's Best Sunset Experience",
+      "Private AC Chauffeur Transfers & Airport Pickup",
+    ],
     img: "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?w=800&auto=format&fit=crop&q=80",
     badge: "Tropical Paradise",
     slug: "5-nights-andaman-havelock-island-getaway",
@@ -835,11 +861,18 @@ export default function HomepageContentAdmin() {
     const discountPct = Number(p.discountPercent) || (basePrice > startingPrice ? Math.round(((basePrice - startingPrice) / basePrice) * 100) : 25);
     const coverImg = p.coverImageStr || p.coverImage || (Array.isArray(p.gallery) && p.gallery[0] ? (typeof p.gallery[0] === "string" ? p.gallery[0] : (p.gallery[0] as any).url) : "https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=800&auto=format&fit=crop&q=80");
 
+    const cardHighlights: string[] = (Array.isArray(p.highlights) && p.highlights.length > 0)
+      ? p.highlights.map((h: any) => String(h || "").trim()).filter(Boolean)
+      : (Array.isArray(p.inclusions) && p.inclusions.length > 0)
+      ? p.inclusions.map((i: any) => String(i || "").trim()).filter(Boolean)
+      : ["Handcrafted Tour & Dedicated Cab", "Verified 4★ Resort Stay", "Daily Breakfast Included", "Private Sanitized Transfers"];
+
     return {
       id: `tp-${p._id}`,
       theme: chosenTheme,
       title: pkgTitle,
       destination: p.route || p.destination || p.tagline || (p.nights ? `${p.nights}N / ${p.days || p.nights + 1}D Tour` : pkgTitle),
+      route: p.route || p.destination || "",
       nights: p.nights && p.days ? `${p.nights} Nights / ${p.days} Days` : "5 Nights / 6 Days",
       originalPrice: `₹${basePrice.toLocaleString("en-IN")}`,
       price: `₹${startingPrice.toLocaleString("en-IN")}`,
@@ -847,6 +880,7 @@ export default function HomepageContentAdmin() {
       rating: Number(p.averageRating) || 4.9,
       reviews: Number(p.reviewCount) || 150,
       specialInclusion: (Array.isArray(p.highlights) && p.highlights[0]) || (Array.isArray(p.inclusions) && p.inclusions[0]) || "Handcrafted Tour & Dedicated Cab",
+      highlights: cardHighlights,
       img: coverImg,
       badge: p.tag || "Signature Tour",
       slug: p.slug,
@@ -1680,7 +1714,29 @@ export default function HomepageContentAdmin() {
                                 <span className="font-bold text-amber-600">★ {tp.rating}</span>
                               </div>
                               <h3 className="font-bold text-sm text-slate-900 line-clamp-2 mt-1">{tp.title}</h3>
-                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1">✨ {tp.specialInclusion}</p>
+                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-1 font-medium">{tp.destination || tp.route}</p>
+                              {(() => {
+                                const hls: string[] = (Array.isArray(tp.highlights) && tp.highlights.length > 0)
+                                  ? tp.highlights
+                                  : typeof tp.specialInclusion === "string" && tp.specialInclusion.trim()
+                                  ? tp.specialInclusion.split(/\n|•|&|,/).map((s: string) => s.trim()).filter(Boolean)
+                                  : [];
+                                return (
+                                  <div className="mt-2 space-y-1">
+                                    {hls.slice(0, 4).map((hl: string, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                                        <span className="truncate">{hl}</span>
+                                      </div>
+                                    ))}
+                                    {hls.length > 4 && (
+                                      <span className="text-[10px] text-amber-600 font-semibold block pt-0.5">
+                                        +{hls.length - 4} more highlights
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                               <div>
@@ -3235,14 +3291,79 @@ export default function HomepageContentAdmin() {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Special Inclusion</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Tour Route / Cities</label>
+                  <span className="text-[10px] text-slate-400">Matches Best-Selling Packages style under Title</span>
+                </div>
                 <input
                   type="text"
-                  value={editThemePkg.specialInclusion}
-                  onChange={(e) => setEditThemePkg({ ...editThemePkg, specialInclusion: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
+                  placeholder="e.g. Srinagar (2N) · Gulmarg (1N) · Pahalgam (2N)"
+                  value={editThemePkg.destination || ""}
+                  onChange={(e) => setEditThemePkg({ ...editThemePkg, destination: e.target.value, route: e.target.value })}
+                  className="w-full p-2 border rounded-lg text-xs"
                 />
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">Tour Highlights (One per line)</label>
+                  <span className="text-[10px] text-slate-500 font-medium">Max 4 lines shown on card</span>
+                </div>
+                <textarea
+                  rows={4}
+                  placeholder={`Candlelight Dinner with Floral Setup\nPrivate Shikara Sunset Ride on Dal Lake\nGulmarg Gondola Phase-1 Cable Car Excursion\nVerified 4★ Heritage Resort & Houseboat Stays`}
+                  value={
+                    Array.isArray(editThemePkg.highlights) && editThemePkg.highlights.length > 0
+                      ? editThemePkg.highlights.join("\n")
+                      : editThemePkg.specialInclusion || ""
+                  }
+                  onChange={(e) => {
+                    const rawLines = e.target.value.split("\n");
+                    const cleaned = rawLines.map((l) => l.trim()).filter(Boolean);
+                    setEditThemePkg({
+                      ...editThemePkg,
+                      highlights: cleaned,
+                      specialInclusion: cleaned[0] || e.target.value,
+                    });
+                  }}
+                  className="w-full p-2.5 border rounded-lg text-xs font-mono leading-relaxed"
+                />
+              </div>
+
+              {/* Live Preview: All Added Tour Highlights on Modal with Right (Check) Icon */}
+              {(() => {
+                const currentHls: string[] = (Array.isArray(editThemePkg.highlights) && editThemePkg.highlights.length > 0)
+                  ? editThemePkg.highlights
+                  : typeof editThemePkg.specialInclusion === "string" && editThemePkg.specialInclusion.trim()
+                  ? editThemePkg.specialInclusion.split(/\n|•|&|,/).map((s: string) => s.trim()).filter(Boolean)
+                  : [];
+                if (currentHls.length === 0) return null;
+                return (
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                        All Added Tour Highlights ({currentHls.length})
+                      </span>
+                      <span className="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded-full">
+                        ✓ Package Card Preview
+                      </span>
+                    </div>
+                    <div className="space-y-1.5 pt-0.5">
+                      {currentHls.map((hl, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-slate-700 bg-white p-2 rounded-lg border border-slate-100 shadow-3xs">
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                            <span className="font-medium truncate">{hl}</span>
+                          </div>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold shrink-0 ${i < 4 ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-500"}`}>
+                            {i < 4 ? `Line ${i + 1} (Live on Card)` : "In Details Modal"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div>
                 <div className="flex items-center justify-between mb-1">
