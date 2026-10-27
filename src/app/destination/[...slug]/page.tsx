@@ -640,6 +640,9 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
       reviews: p.reviews || 140,
       img: p.coverImage || p.coverImageStr || dbDest?.coverImageStr || dbDest?.coverImage || "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=800&auto=format&fit=crop&q=80",
       inclusions: p.inclusions || ["4★ Hotel Stays", "Private AC Cab", "Daily Breakfast & Dinner"],
+      theme: Array.isArray(p.theme) ? p.theme : p.theme ? [p.theme] : [],
+      themes: Array.isArray(p.themes) ? p.themes : p.themes ? [p.themes] : [],
+      primaryTheme: p.primaryTheme || (Array.isArray(p.theme) ? p.theme[0] : p.theme) || "",
     };
   });
 
@@ -952,41 +955,12 @@ export default async function DestinationPage({ params }: DestinationRouteProps)
           {/* Left 2 Columns: Tour Packages (#1), Destination Carousel (#2), Overview (#3), Attractions (#4), Activities (#5), FAQs (#6) */}
           <div className="lg:col-span-2 space-y-8">
 
-            {/* ── 1. TOUR PACKAGES GRID ── */}
-            {/* ── Theme Filter Pills (SEO: targets Destination + Theme compound keywords) ── */}
-            {dbThemes.length > 0 && (
-              <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <span className="text-[10px] uppercase font-extrabold text-amber-600 tracking-wider">Browse by Trip Type</span>
-                    <h2 className="text-sm font-black text-slate-900 mt-0.5">{current.name} Tour Packages by Theme</h2>
-                  </div>
-                  <Link
-                    href="/themes"
-                    className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline"
-                  >
-                    All Themes →
-                  </Link>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {dbThemes.map((theme: any) => (
-                    <Link
-                      key={theme.slug}
-                      href={`/themes/${theme.slug}?destination=${encodeURIComponent(current.name)}`}
-                      title={`${current.name} ${theme.label} Tour Packages`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold bg-slate-100 hover:bg-amber-500 text-slate-700 hover:text-slate-950 border border-slate-200 hover:border-amber-500 transition-all"
-                    >
-                      {theme.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {/* ── 1. TOUR PACKAGES GRID (with Search, Theme Dropdown, Theme Pills & Sorting) ── */}
             {current.packages.length > 0 ? (
               <DestinationPackageGrid
                 destinationName={current.name}
                 packages={current.packages}
+                availableThemes={dbThemes}
               />
             ) : (
               <div className="bg-white p-7 rounded-2xl border border-slate-200 shadow-xs space-y-4 text-center">
