@@ -285,37 +285,39 @@ export default function DestinationPackageGrid({
         </div>
       </div>
 
-      {/* ── Browse by Trip Type Pills (Synchronized with Theme Dropdown) ── */}
+      {/* ── Browse by Trip Type Pills (Ultra-Compact & App-Like on Mobile) ── */}
       {themeList.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[10px] uppercase font-extrabold text-amber-600 tracking-wider">
-                Browse by Trip Type
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-2.5 sm:p-3.5 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60 shrink-0">
+                Trip Types
               </span>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">
-                {destinationName} Tour Packages by Theme
+              <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                {destinationName} by Theme
               </h3>
             </div>
             <Link
               href="/themes"
-              className="text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline flex items-center gap-0.5"
+              className="text-[10.5px] sm:text-[11px] font-bold text-amber-600 hover:text-amber-700 hover:underline flex items-center gap-0.5 shrink-0 ml-2"
             >
               All Themes →
             </Link>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* App-like Horizontal Scroll on Mobile, Neat Flow on Desktop */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 -mx-1 px-1 sm:mx-0 sm:px-0 sm:flex-wrap touch-pan-x">
             <button
               type="button"
               onClick={() => setSelectedTheme("ALL")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-all cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                 selectedTheme === "ALL"
-                  ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs font-black ring-2 ring-amber-400/30"
-                  : "bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-slate-950 border border-slate-200"
+                  ? "bg-amber-500 text-slate-950 border-amber-500 shadow-2xs font-black ring-1 ring-amber-400/50"
+                  : "bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-slate-950 border border-slate-200/80"
               }`}
             >
               <span>🌟</span>
-              <span>All Types ({packages.length})</span>
+              <span>All ({packages.length})</span>
             </button>
             {themeList.map((theme) => {
               const isSelected = selectedTheme === theme.slug;
@@ -325,15 +327,15 @@ export default function DestinationPackageGrid({
                   type="button"
                   onClick={() => setSelectedTheme(isSelected ? "ALL" : theme.slug)}
                   title={`${destinationName} ${theme.label} Tour Packages`}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11.5px] font-bold transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs font-black ring-2 ring-amber-400/40"
-                      : "bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-slate-950 border border-slate-200"
+                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-2xs font-black ring-1 ring-amber-400/50"
+                      : "bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-slate-950 border border-slate-200/80"
                   }`}
                 >
-                  <span>{theme.icon}</span>
+                  <span className="text-xs">{theme.icon}</span>
                   <span>{theme.label}</span>
-                  {isSelected && <span className="text-[10px] bg-slate-950/20 px-1 rounded-full">✓</span>}
+                  {isSelected && <span className="text-[9px] bg-slate-950/20 px-1 rounded-full ml-0.5">✓</span>}
                 </button>
               );
             })}
